@@ -1,0 +1,116 @@
+name: Deploy MERN App (QAS / PRD)
+
+on:
+  push:
+    branches:
+      - main     # QAS
+      - master   # PRD
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      # --------------------------------------------------------------------
+      # 1️⃣ Checkout code
+      # --------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------------------------
+      # 2️⃣ Resolve environment from branch
+      # --------------------------------------------------------------------
+      - name: Resolve environment from branch
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+            echo "ENV=QAS" >> $GITHUB_ENV
+            echo "APP_ENV=quality" >> $GITHUB_ENV
+            echo "VITE_APP_ENV=quality" >> $GITHUB_ENV
+            echo "APP_DIR=/var/www/ecompliance-qas" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF_NAME}" == "master" ]]; then
+            echo "ENV=PRD" >> $GITHUB_ENV
+            echo "APP_ENV=production" >> $GITHUB_ENV
+            echo "VITE_APP_ENV=production" >> $GITHUB_ENV
+            echo "APP_DIR=/var/www/ecompliance-prd" >> $GITHUB_ENV
+          else
+            echo "❌ Unsupported branch: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+
+      # --------------------------------------------------------------------
+      # 3️⃣ Deploy BACKEND code
+      # --------------------------------------------------------------------
+      - name: Deploy backend source
+        run: |
+          echo "🚀 Deploying backend to $APP_DIR/backend"
+          rm -rf $APP_DIR/backend
+          mkdir -p $APP_DIR/backend
+          rsync -av --delete api/ $APP_DIR/backend/
+
+      # --------------------------------------------------------------------
+      # 4️⃣ Generate backend .env from template
+      # --------------------------------------------------------------------
+      - name: Generate backend .env
+        run: |
+          cd $APP_DIR/backend
+          sed "s/{{APP_ENV}}/${APP_ENV}/g" .env.template > .env
+
+      # --------------------------------------------------------------------
+      # 5️⃣ Install backend dependencies (npm)
+      # --------------------------------------------------------------------
+      - name: Install backend dependencies
+        run: |
+          cd $APP_DIR/backend
+          npm install --omit=dev
+
+      # --------------------------------------------------------------------
+      # 6️⃣ Reload backend via PM2
+      # --------------------------------------------------------------------
+      - name: Reload backend with PM2
+        run: |
+          cd $APP_DIR/backend
+          pm2 reload ecosystem.config.cjs --update-env
+
+      # --------------------------------------------------------------------
+      # 7️⃣ Deploy FRONTEND code
+      # --------------------------------------------------------------------
+      - name: Deploy frontend source
+        run: |
+          echo "🚀 Deploying frontend to $APP_DIR/frontend"
+          rm -rf $APP_DIR/frontend
+          mkdir -p $APP_DIR/frontend
+          rsync -av --delete app/ $APP_DIR/frontend/
+
+      # --------------------------------------------------------------------
+      # 8️⃣ Generate frontend .env from template
+      # --------------------------------------------------------------------
+      - name: Generate frontend .env
+        run: |
+          cd $APP_DIR/frontend
+          sed "s/{{VITE_APP_ENV}}/${VITE_APP_ENV}/g" .env.template > .env
+
+      # --------------------------------------------------------------------
+      # 9️⃣ Install frontend dependencies (pnpm)
+      # --------------------------------------------------------------------
+      - name: Install frontend dependencies
+        run: |
+          cd $APP_DIR/frontend
+          pnpm install
+
+      # --------------------------------------------------------------------
+      # 🔟 Build frontend (Vite)
+      # --------------------------------------------------------------------
+      - name: Build frontend
+        run: |
+          cd $APP_DIR/frontend
+          pnpm build
+
+      # --------------------------------------------------------------------
+      # ✅ Deployment complete
+      # --------------------------------------------------------------------
+      - name: Deployment completed
+        run: |
+          echo "✅ Deployment successful"
+          echo "Environment: $ENV"
+          echo "Backend APP_ENV: $APP_ENV"
+          echo "Frontend VITE_APP_ENV: $VITE_APP_ENV"

@@ -1,0 +1,41 @@
+.drawer-container {
+    padding: 2rem;
+
+    .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+    }
+    .title {
+        font-size: 1.5rem;
+    }
+    .input-container { margin: 0 0 1rem 0; }
+    .drawer-form {
+        margin: 2rem 0;
+    }
+
+    .action-buttons {
+        display: flex; align-items: center; gap: 1rem;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 0;
+
+        .reset-button {
+            color: gold;
+            border: 0.1rem solid gold;
+            padding: 0.5rem 1rem;
+            border-radius: 0.2rem;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 600;
+            letter-spacing: 0.1rem;
+        }
+    }
+
+}

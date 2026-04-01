@@ -1,0 +1,58 @@
+/* Makes dropdown header look EXACTLY like input */
+.input-like {
+    position: relative;
+    width: 100%;
+    padding: 0.8rem;
+    border: 0.1rem solid var(--bg);
+    border-radius: 0.2rem;
+    background: #fff;
+    cursor: pointer;
+}
+
+.input-like:focus {
+    outline: none;
+    transition: all 0.2s ease;
+    box-shadow: 0rem 0rem 0.8rem var(--bg);
+}
+
+.placeholder {
+    color: #a1a1aa;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* Dropdown */
+.dropdown-list {
+    position: absolute;
+    top: 46%;
+    width: inherit;
+    /* border: 0.1rem solid var(--bg); */
+    border-top: none;
+    background: #fff;
+    box-shadow: 0rem 0rem 0.8rem var(--bg);
+    z-index: 10;
+}
+
+.dropdown-item {
+    padding: 0.8rem;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: #f4f4f5;
+}
+
+.dropdown-action {
+    padding: 0.8rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: #0d47a1;
+}
+
+.dropdown-back {
+    display: inline-block;
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: #0d47a1;
+}

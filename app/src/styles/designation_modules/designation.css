@@ -1,0 +1,102 @@
+.designation-container {
+  background: #19a974;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+/* Toolbar */
+.designation-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.add-btn {
+  background: #0d8f5a;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.column-select,
+/* .search-input, */
+.date-picker {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+}
+
+/* .search-input {
+  background: #6ec6a4;
+  color: #fff;
+} */
+
+.icon-btn {
+  background: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+/* Table */
+.designation-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #19a974;
+}
+
+.designation-table thead {
+  background: #f8f9fa;
+}
+
+.designation-table th {
+  padding: 10px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.designation-table td {
+  padding: 10px;
+  color: rgb(0, 0, 0);
+}
+
+/* Status */
+.status {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.status.active {
+  color: #eaffea;
+}
+
+.status.inactive {
+  color: #ffdede;
+}
+
+/* Actions */
+.actions span {
+  margin-right: 6px;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.actions .view {
+  background: #2563eb;
+  color: white;
+}
+
+.actions .edit {
+  background: #22c55e;
+  color: white;
+}
+
+.actions .delete {
+  background: #ef4444;
+  color: white;
+}

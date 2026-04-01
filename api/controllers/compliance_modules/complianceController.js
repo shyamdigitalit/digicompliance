@@ -1,0 +1,458 @@
+import mongoose from 'mongoose';
+import moment from 'moment';
+
+import complianceModel from '../../models/compliance_modules/complianceModel.js';
+import dynapprvlModel from '../../models/adminmgmt/dynapproval/dynapprvlModel.js';
+
+import { uploadFile, deleteFile } from '../../utilities/fileOperations.js';
+import { isValidObjectId } from '../../utilities/isValidObjectId.js';
+import { safeJSONParse } from '../../utilities/safeJSONParse.js';
+import { fetchApprovalDetails } from '../adminmgmt/dynapproval/dynapprvlController.js';
+const { Types } = mongoose;
+import { mailConfig } from '../../configs/mailConfig.js';
+
+/* ======================================================
+   Helpers
+====================================================== */
+
+const toObjectId = v => (isValidObjectId(v) ? new Types.ObjectId(v) : null);
+
+const mapIds = payload => ({
+    plant: toObjectId(payload.plant),
+    department: toObjectId(payload.department),
+    complianceType: toObjectId(payload.complianceType),
+    complianceCategorization: toObjectId(payload.complianceCategorization),
+    complianceFrequency: toObjectId(payload.complianceFrequency),
+    criticality: toObjectId(payload.criticality),
+    penaltyType: toObjectId(payload.penaltyType)
+});
+
+const checkApprover = async user => {
+    // console.log(user);
+    const accPlnt = user?.acc_plnt?._id ? toObjectId(user?.acc_plnt?._id) : null;
+    const accDept = user?.acc_dept?._id ? toObjectId(user?.acc_dept?._id) : null;
+    if (user?.acc_typ?.heirarchy === 3 && !accPlnt && !accDept) {
+        return [];
+    }
+
+    const matchCriteria = {
+        'apprvr_dtl.apprvr': new Types.ObjectId(user._id),
+        status: 'Active'
+    };
+    if (user?.acc_typ?.heirarchy === 3) {
+        matchCriteria['apprvl_creator_base'] = accPlnt;
+        matchCriteria['apprvl_func'] = accDept;
+    }
+    else if (user?.acc_typ?.heirarchy !== 3) {
+        if (accPlnt) matchCriteria['apprvl_creator_base'] = accPlnt;
+    }
+
+    const pipeline = [
+        { $unwind: '$apprvr_dtl' },
+        { $match: matchCriteria },
+        {
+            $group: {
+                _id: '$_id',
+                apprvl_code: { $first: '$apprvl_code' },
+                apprvl_creator_base: { $first: '$apprvl_creator_base' },
+                apprvl_func: { $first: '$apprvl_func' },
+                status: { $first: '$status' },
+                apprvl_lvl: { $first: '$apprvr_dtl.apprvl_lvl' },
+                is_approver: { $first: true },
+                apprvr: { $first: { $arrayElemAt: ['$apprvr_dtl.apprvr', 0] } }
+            }
+        },
+        { $sort: { createdAt: -1 } }
+    ]
+    const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline);
+    const resAppvrDtl = dynapprvlRecords?.some(itm => itm.apprvr.acc_uname === user.acc_uname)
+    return { apprvlDetails: dynapprvlRecords, isApprvr: resAppvrDtl }
+};
+
+const fetchComplianceDetails = async user => {
+    if (user?.acc_typ?.heirarchy === 3 && !user?.acc_plnt && !user?.acc_dept) {
+        return { success: false, message: 'Plant/Department missing' };
+    }
+    const accPlnt = user?.acc_plnt?._id ? toObjectId(user?.acc_plnt?._id) : null;
+    const accDept = user?.acc_dept?._id ? toObjectId(user?.acc_dept?._id) : null;
+
+    const approverInfo = await checkApprover(user);
+    console.log(approverInfo);
+
+    const matchCriteria = {}
+    if (user?.acc_typ?.heirarchy === 3) {
+        matchCriteria['plant'] = accPlnt;
+        matchCriteria['department'] = accDept;
+    }
+    else {
+        if (accPlnt) matchCriteria['plant'] = accPlnt;
+    }
+
+    const approvalMap = (approverInfo?.apprvlDetails || []).map(a => ({
+        plant: String(a.apprvl_creator_base?._id),
+        department: String(a.apprvl_func?._id),
+        apprvl_lvl: a.apprvl_lvl, acc_id: a.apprvr?._id
+    }));
+
+    const pipeline = [
+        ...(Object.keys(matchCriteria).length ? [{ $match: matchCriteria }] : []),
+        { $lookup: { from: 'plants', localField: 'plant', foreignField: '_id', as: 'plant' } },
+        { $unwind: { path: '$plant', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'departments', localField: 'department', foreignField: '_id', as: 'department' } },
+        { $unwind: { path: '$department', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'compliancetypes', localField: 'complianceType', foreignField: '_id', as: 'complianceType' } },
+        { $unwind: { path: '$complianceType', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'compliancecategories', localField: 'complianceCategorization', foreignField: '_id', as: 'complianceCategorization' } },
+        { $unwind: { path: '$complianceCategorization', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'compliancefrequencies', localField: 'complianceFrequency', foreignField: '_id', as: 'complianceFrequency' } },
+        { $unwind: { path: '$complianceFrequency', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'criticalities', localField: 'criticality', foreignField: '_id', as: 'criticality' } },
+        { $unwind: { path: '$criticality', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'penalties', localField: 'penaltyType', foreignField: '_id', as: 'penaltyType' } },
+        { $unwind: { path: '$penaltyType', preserveNullAndEmptyArrays: true } },
+
+        // { $addFields: { isApprover: approverInfo.length > 0 } },
+        {
+            $addFields: {
+                approvalMatch: {
+                    $first: {
+                        $filter: {
+                            input: approvalMap,
+                            as: 'ap',
+                            cond: {
+                                $and: [
+                                    { $eq: ['$$ap.plant', { $toString: '$plant._id' }] },
+                                    { $eq: ['$$ap.department', { $toString: '$department._id' }] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $addFields: {
+                plantName: '$plant.plantName',
+                departmentName: '$department.departmentName',
+                complianceTypeName: '$complianceType.complianceTypeName',
+                complianceCategoryName: '$complianceCategorization.complianceCategoryName',
+                complianceFrequencyName: '$complianceFrequency.complianceFrequencyName',
+                criticalityName: '$criticality.criticalityName',
+                penaltyName: '$penaltyType.penaltyName',
+                approvalLevel: {
+                    $cond: [{ $and: [{ $ifNull: ['$approvalMatch.apprvl_lvl', false] }, { $eq: ['$currentPendingApprovalLevel', '$approvalMatch.apprvl_lvl'] }] }, '$approvalMatch.apprvl_lvl', 0]
+                }, isApprover: {
+                    $cond: [{ $and: [{ $ifNull: ['$approvalMatch.apprvl_lvl', false] }, { $eq: ['$currentPendingApprovalLevel', '$approvalMatch.apprvl_lvl'] }] }, true, false]
+                },
+                createdAtITC: { $dateToString: { format: '%d-%m-%Y %H:%M:%S', date: '$createdAt', timezone: '+05:30' } },
+                updatedAtITC: { $dateToString: { format: '%d-%m-%Y %H:%M:%S', date: '$updatedAt', timezone: '+05:30' } }
+            }
+        },
+        { $sort: { updatedAt: -1 } }
+    ];
+
+    const data = await complianceModel.aggregate(pipeline);
+    return { success: true, data };
+};
+
+const generateId = (user, lastIndex=0) =>
+    (`${user?.acc_plnt?.plantCode}${user?.acc_dept?.departmentCode}${parseInt(lastIndex || 0)+1}`);
+
+const calculateApproval = (user, maxLvl, currLvl, flag) => {
+    const approved = flag !== 0;
+    const next = currLvl + 1;
+
+    return {
+        status: approved && next <= maxLvl ? 'Pending' : approved ? 'Active' : 'Closed',
+        approvalStatus: approved && next <= maxLvl ? `Pending L${next} Approval` : approved ? 'Approved' : 'Rejected',
+        currentPendingApprovalLevel: approved && next <= maxLvl ? next : 0,
+        approvalDetails: {
+            approvalLevel: currLvl,
+            approvalOption: approved ? 'Approval' : 'Rejection',
+            approver: user._id,
+            approvalDate: moment().format('DD-MM-YYYY'),
+            approvalTime: moment().format('HH:mm:ss')
+        }
+    };
+};
+
+const sendMailToApprover = async (plant, department, currentPendingApprovalLevel) => {
+    const approvals = await fetchApprovalDetails(String(plant?._id), String(department?._id), null);
+    const currentLevelApprovers = approvals[0]?.apprvr_dtl
+    ?.find(ad => ad.apprvl_lvl === parseInt(currentPendingApprovalLevel, 10))
+    ?.apprvr?.map(a => ({ ...a, approvalLevel: parseInt(currentPendingApprovalLevel, 10) })) || [];
+
+    // console.log(currentLevelApprovers);
+    if (currentLevelApprovers?.length === 0) return { success: false };
+    const recipients = currentLevelApprovers.map(a => a.acc_eml && a.acc_eml.trim()).filter(Boolean);
+    // console.log('Recipients:', recipients);
+    const mailResponse = await mailConfig(
+        recipients,
+        [],
+        [],
+        `Approval Required: Compliance Pending L${currentPendingApprovalLevel} Approval`,
+        `<p>Dear Approver,</p>
+        <p>A compliance record is pending your approval at Level ${currentPendingApprovalLevel}.</p>
+        <p>Please log in to the eCompliance system to review and take necessary action.</p>
+        <p>Regards,<br/>eCompliance System</p>`,
+        []
+    );
+    if (mailResponse?.response) return { success: true, message: 'Email sent successfully', data: mailResponse };
+    else return { success: false, message: 'Failed to send email' };
+}
+
+/* ======================================================
+   File helpers
+====================================================== */
+
+const uploadFiles = async (files = [], userId) => {
+    const uploaded = [];
+    const duplicates = [];
+
+    await Promise.allSettled(
+        files.map(async f => {
+            try {
+                const res = await uploadFile(f.buffer, f.originalname, f.mimetype);
+                if (res?.file) {
+                    uploaded.push({
+                        filId: res.file._id,
+                        filName: res.file.filename,
+                        filContentType: res.file.metadata?.contentType,
+                        filContentSize: res.file.length,
+                        filUploadStatus: 'Done',
+                        fileUploadedby: userId
+                    });
+                }
+            } catch (err) {
+                if (err?.message?.includes('Duplicate')) duplicates.push(f.originalname);
+                else console.error('Upload error:', err);
+            }
+        })
+    );
+
+    return { uploaded, duplicates };
+};
+
+const deleteFiles = async (ids = []) => {
+    await Promise.allSettled(
+        ids.map(id => deleteFile(id).catch(e => console.error('Delete error:', e)))
+    );
+};
+
+
+
+
+
+/* ================================================================================================================
+// ----------------------------------------------------------------------------------------------------------------
+// CONTROLLERS-----------------------------------------------------------------------------------------------------
+
+/* ======================================================
+   CREATE
+====================================================== */
+
+export const create = async (req, res) => {
+    try {
+        const user = req.user;
+        const compPayload = safeJSONParse(req.body);
+
+        const ids = mapIds(compPayload);
+        const plantId = ids.plant || user?.acc_plnt?._id;
+        const departmentId = ids.department || user?.acc_dept?._id;
+
+        const existingData = await fetchComplianceDetails(user);
+        compPayload.complianceId = generateId(user, existingData?.data?.length)
+
+        const files = req.files?.allDocs || [];
+        const { uploaded } = await uploadFiles([].concat(files), user?._id);
+
+        const approvals = await fetchApprovalDetails(String(plantId), String(departmentId), user);
+        // console.log(approvals);
+        const hasApproval = approvals.length > 0;
+
+        const compliance = await complianceModel.create({
+            ...compPayload,
+            ...ids,
+            plant: plantId,
+            department: departmentId,
+            allDocs: uploaded,
+            status: hasApproval ? 'Open' : 'Active',
+            approvalStatus: hasApproval ? 'Pending L1 Approval' : 'Approved',
+            currentPendingApprovalLevel: hasApproval ? 1 : 0,
+            createdby: user?._id
+        });
+        if (!compliance) return res.status(400).json({ success: false, message: 'Failed to create compliance record' });
+
+        const mailRes = await sendMailToApprover(user, compliance.currentPendingApprovalLevel)
+        if (!mailRes.success) {
+            console.error('Error sending mail to approver:', mailRes.message);
+            res.status(201).json({ success: true, data: compliance, message: 'Compliance record created successfully' });
+        }
+        else {
+            res.status(201).json({ success: true, data: compliance, message: 'Compliance record created successfully' });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/* ======================================================
+   READ
+====================================================== */
+
+export const read = async (req, res) => {
+    try {
+        const result = await fetchComplianceDetails(req.user);
+        res.status(result.success ? 200 : 400).json({ success: result.success, data: result.data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/* ======================================================
+   READ BY ID
+====================================================== */
+
+export const readById = async (req, res) => {
+    try {
+        if (!isValidObjectId(req.query.id)) {
+            return res.status(400).json({ success: false, message: 'Invalid ID' });
+        }
+
+        const data = await complianceModel
+            .findById(req.query.id)
+            .populate(['plant', 'department', 'createdby', 'updatedby'])
+            .lean();
+
+        if (!data) return res.status(404).json({ success: false });
+
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/* ======================================================
+   UPDATE
+====================================================== */
+
+export const update = async (req, res) => {
+    try {
+        const id = req.query.id;
+        const user = req.user;
+        const payload = safeJSONParse(req.body);
+
+        const ids = mapIds(payload);
+
+        if (payload.removedDocs?.length) {
+            await deleteFiles(payload.removedDocs);
+            await complianceModel.findByIdAndUpdate(id, {
+                $pull: { allDocs: { filId: { $in: payload.removedDocs } } }
+            });
+        }
+
+        const files = req.files?.allDocs || [];
+        const { uploaded } = await uploadFiles([].concat(files), user?._id);
+
+        const updated = await complianceModel.findByIdAndUpdate(
+            id,
+            { ...payload, ...ids, updatedby: user?._id, $push: { allDocs: { $each: uploaded } } },
+            { new: true }
+        );
+
+        res.status(201).json({ success: true, data: updated });
+
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/* ======================================================
+   APPROVE / REJECT
+====================================================== */
+
+export const approve = async (req, res) => {
+    try {
+        const id = req.query.id;
+        const user = req.user;
+        const flag = Number(req.query.flg || 1);
+        const { plant, department, currentPendingApprovalLevel } = safeJSONParse(req.body);
+
+        const approvals = await fetchApprovalDetails(String(plant?._id), String(department?._id), user);
+        const result = calculateApproval(user, approvals[0]?.apprvr_dtl?.length, currentPendingApprovalLevel, flag);
+
+        const apprvData = await complianceModel.findByIdAndUpdate(
+            id,
+            {
+                status: result.status,
+                approvalStatus: result.approvalStatus,
+                currentPendingApprovalLevel: result.currentPendingApprovalLevel,
+                updatedby: user._id,
+                $push: { approvalDetails: result.approvalDetails }
+            },
+            { new: true }
+        );
+
+        if (!apprvData) return res.status(404).json({ success: false, message: 'Compliance record not found' });
+
+        // console.log(apprvData);
+        const mailRes = await sendMailToApprover(apprvData.plant, apprvData.department, apprvData.currentPendingApprovalLevel)
+        if (!mailRes.success) {
+            console.error('Error sending mail to approver:', mailRes.message)
+            res.status(201).json({ success: true, data: apprvData, message: `Compliance record ${flag === 1 ? 'approved' : 'rejected'} successfully` });
+        }
+        else {
+            res.status(201).json({ success: true, data: apprvData, message: `Compliance record ${flag === 1 ? 'approved' : 'rejected'} successfully` });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/* ======================================================
+   STATUS UPDATE
+====================================================== */
+
+export const statusUpdate = async (req, res) => {
+    try {
+        const data = await complianceModel.findByIdAndUpdate(
+            req.params.id,
+            { status: req.body.status, updatedby: req.user._id },
+            { new: true }
+        );
+        res.status(201).json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/* ======================================================
+   REMOVE
+====================================================== */
+
+export const remove = async (req, res) => {
+    try {
+        const comp = await complianceModel.findById(req.params.id);
+        if (!comp) return res.status(404).json({ success: false });
+
+        await deleteFiles(comp.allDocs?.map(d => d.filId));
+        comp.isDeleted = true;
+        comp.updatedby = req.user._id;
+        await comp.save();
+
+        res.status(200).json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export default {
+    create,
+    read,
+    readById,
+    update,
+    approve,
+    statusUpdate,
+    remove
+};

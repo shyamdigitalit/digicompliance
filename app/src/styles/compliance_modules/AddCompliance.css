@@ -1,0 +1,240 @@
+.add-form {
+  width: 80%;
+  max-width: 80rem;
+  padding: 2rem;
+  color: var(--theme-dark);
+}
+
+.form-grid {
+  display: grid;
+  justify-content: center;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+label {
+  color: var(--theme-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem;
+}
+
+.form-grid input,
+.form-grid select {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 0.8rem;
+  border-radius: 0.2rem;
+  border: 0.1rem solid var(--bg);
+  outline: none;
+
+  &:disabled {
+    background-color: #91bbaf;
+    color: #000000;
+    cursor: not-allowed;
+  }
+  &::placeholder {
+    color: var(--theme-dark);
+    font-size: 0.8rem;
+    font-style: italic;
+  }
+  &:focus {
+    transition: all 0.2s ease;
+    box-shadow: 0rem 0rem 0.8rem var(--bg);
+  }
+}
+.dropdwn {
+  position: relative;
+  width: 100%;
+}
+
+.form-grid input{
+  cursor: text;
+}
+.form-grid select{
+  cursor: pointer;
+}
+
+.form-group-files {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  padding: 0.5rem;
+  grid-auto-columns: 100%;
+}
+
+.form-group {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  /* grid-column: span 1; */
+  padding: 0.5rem;
+}
+
+/* file input styles */
+.selected-files {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 1rem;
+  color: var(--theme-dark);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.05rem;
+  border: 0.1rem dashed #94f5d5;
+}
+.selected-files li {
+  margin-bottom: 0.15rem;
+}
+.file-item {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+  margin-bottom: 0.2rem;
+}
+.remove-file {
+  background: none;
+  border: none;
+  color: red;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+
+
+.form-actions {
+  padding: 0.5rem;
+  margin-top: 3rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.cancel {
+  background: #dc2626;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 5rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+
+  &:hover {
+    background: #b91c1c;
+  }
+}
+
+.submit {
+  background: #166534;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 5rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+
+  &:hover {
+    background: #14532d;
+  }
+}
+
+.refresh {
+  background: #836609;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 5rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+
+  &:hover {
+    background: #795f0a;
+  }
+}
+
+/* CONFIRM POPUP */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.confirm-box {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 0.3rem;
+  width: 25rem;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.yes {
+  background: #22c55e;
+  border: none;
+  padding: 0.4rem 0.8rem;
+}
+
+.no {
+  background: #f97316;
+  border: none;
+  padding: 0.4rem 0.8rem;
+}
+
+.message {
+    color: #000;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+/* File Section Box */
+.file-box {
+  border: 1px solid #dcdcdc;
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.file-box h4 {
+  margin-bottom: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* File List */
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-list li {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.file-actions {
+  display: flex;
+  gap: 8px;
+}

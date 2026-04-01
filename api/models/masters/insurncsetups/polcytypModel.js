@@ -1,0 +1,15 @@
+import mongoose from "mongoose";
+
+const { Schema, model, Types } = mongoose;
+
+const PolcytypSchema = new Schema(
+  {
+    policytypeCode: { type: String, required: true },
+    policytypeName: { type: String, required: true },
+    status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
+    createdby: { type: Types.ObjectId, ref: 'Account', required: true },
+    updatedby: { type: Types.ObjectId, ref: 'Account' }
+  }, { timestamps: true }
+);
+
+export default model('Policytype', PolcytypSchema);

@@ -1,0 +1,239 @@
+/* PAGE BACKGROUND */
+.login-page {
+  min-height: 100vh;
+  background-color: #177455;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* LOGIN CONTAINER */
+.login-boxx {
+  width: 420px;
+  text-align: center;
+  color: #ffffff;
+  background: #ccfff22a;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+/* LOGO */
+.login-logo img {
+  width: 170px;
+  margin-bottom: 18px;
+}
+
+/* MAIN TITLE */
+.login-title {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 28px;
+}
+
+/* SUB TITLE */
+.login-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+/* FORM */
+.login-form {
+  width: 100%;
+}
+
+/* INPUT GROUP */
+.login-form label {
+  display: block;
+  font-size: 11px;
+  text-align: left;
+  margin: 0 0 4px 6px;
+  color: #e6e6e6;
+}
+
+/* INPUT FIELD */
+.login-form input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 3px;
+  border: none;
+  outline: none;
+  margin-bottom: 18px;
+  font-size: 13px;
+}
+
+/* OPTIONS ROW */
+/* .login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  margin-bottom: 22px;
+} */
+
+/* REMEMBER ME */
+.login-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* FORGOT PASSWORD */
+.login-options a {
+  color: #cce5ff;
+  text-decoration: none;
+}
+
+/* LOGIN BUTTON */
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #0f7abf;
+  border: none;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.login-btn:hover {
+  background-color: #0d6aa8;
+}
+
+.login-options {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  margin-bottom: 20px;
+}
+
+.forgot-link {
+  color: #cce5ff;
+  text-decoration: none;
+  font-size: 11px;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+/* ///////////////////////////////// Dashboard Body */
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  background-color: #157a5c;
+  border-radius: 10px;
+
+  width: 100%;
+  max-width: 100rem;
+  margin: 20px auto;
+  box-sizing: border-box;
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .dashboard-header {
+    gap: 10px;
+    padding: 12px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px;
+  }
+}
+
+
+/* Left button */
+.add-btn {
+  background-color: #0f9d73;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Right controls */
+.header-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  min-width: 160px;
+}
+
+.search-input {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 200px;
+}
+
+.download-btn {
+  border: 1px solid #ccc;
+  background: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 📱 Mobile */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+}
+
+.show-password {
+  display: inline-flex;
+  align-items: center;   /* ✅ vertical alignment fix */
+  gap: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.show-password input[type="checkbox"] {
+  margin: 0;            /* ✅ removes browser default offset */
+}
+
+.filter-date {
+  border: 1px solid #ccc;
+  background: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+}

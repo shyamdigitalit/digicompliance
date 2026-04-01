@@ -1,0 +1,87 @@
+:root {
+    --white: #ffffff;
+    --black: #000000;
+    --grey: #5b5b5b;
+    --lightgrey: #dce0dfef;
+    --light: #cffff5;
+    --light-bright: #defdf8;
+    --dark: #0f221d;
+    --theme-light: #78ffc2ff;
+    --theme: #00ff8cff;
+    --theme-dark: #1b3027ff;
+    --theme-palette: #332d3d;
+    --bg-light: #97b3a7;
+    --bg: #5fac86;
+    --bg-dark: #334740;
+    --hdng-light: #1b122a;
+    --hdng: #502a8d;
+    --hdng-dark: #d7c5f5;
+    --sbhdng-light: #492835;
+    --sbhdng: #975169;
+    --sbhdng-dark: #c3f5ea;
+    --tnyhdng-light: #10133a;
+    --tnyhdng: #525197;
+    --tnyhdng-dark: #bebaf8;
+    --thdr-light: #35313f;
+    --thdr-dark: #a993d1;
+    --tbdy-dark: #ac9ace;
+    --tbdy: #e5dbf1;
+    --tbdy-light: #25212b;
+    --tbdy-txt-dark: #a29eaa;
+    --tbdy-txt-light: #151416;
+    --tdivdr-dark: #322e3d;
+    --tdivdr-light: #c3b4ee;
+    --drp-palette: #8c65e7;
+    --drp-palette-alt: #5a4385;
+    --hdng-shadw: 0.3rem 0.3rem 2rem #161215, -0rem 0.3rem 2rem #161215, -0rem -0rem 0rem #161215, 0.3rem -0rem 2rem #161215;
+    --hdng-shadw-light: 0.3rem 0.3rem 2rem #94748c, -0rem 0.3rem 2rem #94748c, -0rem -0rem 0rem #94748c, 0.3rem -0rem 2rem #94748c;
+    --sec-shadw: 0.05rem 0.05rem 0.5rem #cabce0, 0.05rem -0.05rem 0.5rem #cabce0, -0.05rem -0.05rem 0.5rem #cabce0, -0.05rem -0.05rem 0.5rem #cabce0;
+    --sec-shadw-inst: 0.2rem 0.2rem 0.5rem #cabce0 inset, 0.2rem -0.2rem 0.5rem #cabce0 inset, -0.2rem -0.2rem 0.5rem #cabce0 inset, -0.2rem -0.2rem 0.5rem #cabce0 inset;
+    --sec-shadw-light: 0.1rem 0.1rem 1rem #e3dcf0, 0.1rem -0.1rem 1rem #e3dcf0, -0.1rem -0.1rem 1rem #e3dcf0, -0.1rem -0.1rem 1rem #e3dcf0;
+    --sec-shadw-light-inst: 0.1rem 0.1rem 1rem #e3dcf0 inset, 0.1rem -0.1rem 1rem #e3dcf0 inset, -0.1rem -0.1rem 1rem #e3dcf0 inset, -0.1rem -0.1rem 1rem #e3dcf0 inset;
+}
+
+html {
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+body {
+    background-color: #dce0dfef;
+    padding: 0;
+    margin: 0;
+    font-size: 62.5%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+html, body, #root {
+  height: 100%;
+}
+* { box-sizing: border-box; }
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+ul {
+    list-style-type: none;
+}
+.MuiButtonBase-root.MuiListItemButton-root {
+    padding: 0.3rem 1rem;
+}
+
+/* custom scrollbar */
+::-webkit-scrollbar {
+    width: 0rem;
+    height: 0.3rem;
+}
+::-webkit-scrollbar-thumb {
+    background-color: var(--theme);
+    border-radius: 5rem;
+    /* background-color: #3a415c; */
+}
+::-webkit-scrollbar-track {
+    background-color: var(--light);
+    /* background-color: #29303b; */
+}
+::-webkit-scrollbar-corner {
+    background-color: var(--bg-light);
+}
