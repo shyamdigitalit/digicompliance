@@ -1,254 +1,246 @@
-import React from 'react'
-import ComplianceTable from './compliance_modules/ComplianceTable';
-import AddCompliance from './compliance_modules/AddCompliance';
-import axiosInstance from '../config/axiosInstance';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchMasters } from '../redux/slices/masterSlice';
-import { showSnackbar } from '../redux/slices/snackbar';
-import * as XLSX from 'xlsx';
-import AddIcon from '@mui/icons-material/Add';
-import { FileSpreadsheet } from 'lucide-react';
+import React, { useState } from "react";
+import "./styles/Dashboard.css";
+import { useNavigate, useLocation } from "react-router-dom";
+
+import FilePresentIcon from '@mui/icons-material/FilePresent';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 const Dashboard = () => {
-  const dispatch = useDispatch();
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
-  // console.log(user);
-  const [selectedColumn, setSelectedColumn] = React.useState('');
-  const [searchValue, setSearchValue] = React.useState('');
 
-  const [showAdd, setShowAdd] = React.useState(false);
-  const [tableData, setTableData] = React.useState([]);
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  const [fromDate, setFromDate] = React.useState('');
-  const [toDate, setToDate] = React.useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const fetchMaster = React.useCallback(() => {
-    dispatch(fetchMasters());
-  }, [dispatch])
-  React.useEffect(() => {
-    if (isAuthenticated) {
-      fetchMaster();
+  const [activeMenu, setActiveMenu] = useState("Dashboard");
+
+  const deadlines = [
+    {
+      title: "Fire Safety Inspection",
+      plant: "Mumbai Plant A",
+      priority: "Critical",
+      days: "5 days"
+    },
+    {
+      title: "ISO Audit Review",
+      plant: "Delhi Plant B",
+      priority: "High",
+      days: "8 days"
+    },
+    {
+      title: "Labour Law Compliance",
+      plant: "Bangalore Plant C",
+      priority: "Medium",
+      days: "13 days"
+    },
+    {
+      title: "Environmental Assessment",
+      plant: "Mumbai Plant A",
+      priority: "High",
+      days: "15 days"
     }
-  }, [fetchMaster, isAuthenticated])
+  ];
 
-  const getdata = React.useCallback(async () => {
-  try {
-    const res = await axiosInstance.get('/api/comp/fetch');
-
-    if (res.status === 200) {
-      setTableData(res.data.data);
-    } else {
-      setTableData([]);
+  const activities = [
+    {
+      text: "Completed Safety Inspection - Mumbai Plant A",
+      user: "John Doe",
+      time: "2 hours ago"
+    },
+    {
+      text: "Approved Quality Audit - Delhi Plant",
+      user: "Michael Smith",
+      time: "4 hours ago"
+    },
+    {
+      text: "Updated Labour Law Compliance",
+      user: "Sarah Lee",
+      time: "6 hours ago"
+    },
+    {
+      text: "Rejected Product Testing Report",
+      user: "Robert Brown",
+      time: "1 day ago"
     }
-  } catch (error) {
-    console.error(error);
-    dispatch(
-      showSnackbar({
-        message: 'Failed to fetch compliance data.',
-        severity: 'error'
-      })
-    );
-  }
-}, [dispatch]);
+  ];
 
-const filteredData = React.useMemo(() => {
-  return tableData.filter(row => {
-    if (fromDate && toDate) {
-      const rowDate = new Date(row.createdAt);
-      const start = new Date(fromDate);
-      const end = new Date(toDate);
-
-      end.setHours(23, 59, 59, 999);
-
-      if (rowDate < start || rowDate > end) {
-        return false;
-      }
-    }
-
-    if (selectedColumn && searchValue) {
-      const cellValue = row[selectedColumn];
-      if (!cellValue) return false;
-
-      return cellValue
-        .toString()
-        .toLowerCase()
-        .includes(searchValue.toLowerCase());
-    }
-
-    return true;
-  });
-}, [tableData, fromDate, toDate, selectedColumn, searchValue]);
-
-
-  React.useEffect(() => {
-    if (isAuthenticated) {
-      getdata();
-    }
-  }, [getdata, isAuthenticated]);
-
-  const handleAdd = async (formData) => {
-    try {
-      const res = await axiosInstance.post('/api/comp/create', formData);
-
-      if (res.status === 201) {
-        dispatch(showSnackbar({ message: 'Compliance added successfully!', severity: 'success' }));
-
-        // ✅ ALWAYS re-fetch after add
-        await getdata();
-        setShowAdd(false);
-      } else {
-        dispatch(showSnackbar({ message: 'Failed to add compliance.', severity: 'error' }));
-      }
-    } catch (error) {
-      console.error(error);
-      dispatch(showSnackbar({ message: 'Something went wrong.', severity: 'error' }));
-    }
+  const getTagClass = (priority) => {
+    if (priority === "Critical") return "tag red";
+    if (priority === "High") return "tag orange";
+    return "tag yellow";
   };
-
-  const handleStatusChange = (id, status) => {
-    setTableData(prev =>
-      prev.map(row =>
-        row.id === id ? { ...row, status } : row
-      )
-    );
-  };
-
-  const handleExport = () => {
-    let exportData
-    if (!filteredData.length) {
-      dispatch(showSnackbar({ message: 'No data available to export.', severity: 'warning' }));
-      return;
-    }
-    else {
-      dispatch(showSnackbar({ message: 'Exporting data...', severity: 'info' }));
-      exportData = filteredData?.map(({
-        _id,
-        plant,
-        department,
-        complianceType,
-        complianceCategorization,
-        complianceFrequency,
-        criticality,
-        penaltyType,
-        allDocs,
-        approvalDetails,
-        createdAt,
-        updatedAt,
-        __v,
-        ...rest
-      }) => rest);
-      console.log(exportData);
-
-      // ✅ Convert JSON → Worksheet (ALL columns automatically)
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      // ✅ Create Workbook
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Compliance');
-      // ✅ Export file
-      XLSX.writeFile(workbook, 'Compliance_Datasheet.xlsx');
-    }
-  };
-
 
   return (
-    <div className="dash-body">
+    <div className="dashboard">
 
-      <main className="content">
-        {!showAdd ? (
-          <>
-            {/* HEADER */}
-            <div className="dashboard-header">
-              <div className="header-functions">
-                {
-                  (user?.acc_typ?.heirarchy===3 && user?.acc_plnt?._id && user?.acc_dept?._id) && (
-                    <button
-                      className="icon-btn add"
-                      data-tooltip="Add Compliance"
-                      onClick={() => setShowAdd(true)}
-                    >
-                      <AddIcon />
-                    </button>
-                  )
-                }
-              </div>
+      <div className="sidebar">
+        <h2 className="logo">Compliance System</h2>
 
-              <div className="header-actions">
-                <select
-                  className="filter-select"
-                  value={selectedColumn}
-                  onChange={(e) => setSelectedColumn(e.target.value)}
-                >
-                  <option value="">Select Column</option>
-                  <option value="complianceId">Compliance Id</option>
-                  <option value="plantName">Plant</option>
-                  <option value="departmentName">Department</option>
-                  <option value="complianceTypeName">Compliance Type</option>
-                  <option value="complianceCategoryName">Compliance Categorization</option>
-                  <option value="complianceFrequencyName">Compliance Frequency</option>
-                  <option value="criticalityName">Criticality</option>
-                  <option value="penaltyName">Penalty</option>
-                  <option value="complianceHeader">Compliance Header</option>
-                </select>
+        <ul>
+          <li
+            className={location.pathname === "/dashboard" ? "active" : ""}
+            onClick={() => navigate("/dashboard")}
+          >
+            Dashboard
+          </li>
 
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search..."
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  disabled={!selectedColumn}
-                />
+          <li
+            className={location.pathname === "/compliance" ? "active" : ""}
+            onClick={() => navigate("/compliance")}
+          >
+            Compliance
+          </li>
 
+          <li>Documents</li>
+          <li>Users</li>
+          <li>Settings</li>
+        </ul>
 
-                <input
-                  type="date"
-                  className="filter-select"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                />
+        <div className="sidebar-footer">
+          <div className="footer-box">
+            <h4>Manage Compliance Data</h4>
+            <p>Download reports or view important docs</p>
 
-                <input
-                  type="date"
-                  className="filter-select"
-                  value={toDate}
-                  min={fromDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                />
+            <button>Export Data</button>
+            <button>View Docs</button>
+          </div>
+        </div>
+      </div>
 
-                <section>
-                  {/* <button className="calendar-btn">📅</button> */}
-                  <button
-                    className="icon-btn export-zip"
-                    onClick={handleExport}
-                    data-tooltip="Download Report as Excel"
-                  >
-                    <FileSpreadsheet style={{width:'100%'}} />
-                  </button>
-                </section>
+      <div className="main">
 
-                {/* <button className="download-btn">⬇</button> */}
-              </div>
+        <div className="topbar">
+          <input placeholder="Search compliance, documents..." />
+          <div className="user">{user?.name || "User"}</div>
+        </div>
+
+        <div className="stats">
+          <div className="card">
+            <span>
+              <p><strong>Total Compliance</strong></p>
+              <FilePresentIcon style={{ color: "#1e73be", fontSize: "20px" }} />
+            </span>
+            <h2>248</h2>
+            <span className="positive">+12% this month</span>
+          </div>
+
+          <div className="card">
+            <span><p><strong>Pending</strong></p>
+              <AccessTimeIcon style={{ color: "#f97316", fontSize: "20px" }} />
+            </span>
+            <h2 className="pending-number">32</h2>
+            <span className="muted">Requires attention</span>
+          </div>
+
+          <div className="card">
+            <span><p><strong>Critical</strong></p>
+              <ErrorOutlineIcon style={{ color: "#ef4444", fontSize: "20px" }} />
+            </span>
+            <h2 className="critical-number">8</h2>
+            <span className="muted">High priority</span>
+          </div>
+
+          <div className="card">
+            <span><p><strong>Completed</strong></p>
+              <CheckCircleOutlineIcon style={{ color: "#22c55e", fontSize: "20px" }} />
+            </span>
+            <h2 className="completed-number">208</h2>
+            <span className="positive">83% completion</span>
+          </div>
+        </div>
+
+        <div className="content">
+
+          <div className="left">
+            <h3>Upcoming Deadlines</h3>
+
+            <ul>
+              {deadlines.map((item, index) => (
+                <li key={index}>
+                  <div className="row">
+                    <strong>{item.title}</strong>
+                    <span className={getTagClass(item.priority)}>
+                      {item.priority}
+                    </span>
+                  </div>
+                  <div className="sub">{item.plant}</div>
+                  <div className="days">{item.days}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="right">
+            <h3>Recent Activity</h3>
+
+            <ul>
+              {activities.map((item, index) => (
+                <li key={index}>
+                  {item.text}
+                  <div className="sub">by {item.user}</div>
+                  <span className="time">{item.time}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="bottom">
+
+          <div className="progress">
+            <h4>Compliance by Category</h4>
+
+            <div className="category">
+              <span>Health & Safety</span>
+              <span>72/85 (85%)</span>
+            </div>
+            <div className="bar">
+              <div className="fill" style={{ width: "85%" }}></div>
             </div>
 
-            {/* TABLE (BELOW HEADER) */}
-            <div className="table-section">
-              <ComplianceTable
-                data={filteredData}
-                onStatusChange={handleStatusChange}
-                onRefresh={getdata}
-              />
+            <div className="category">
+              <span>Quality Management</span>
+              <span>54/62 (87%)</span>
             </div>
-          </>
-        ) : (
-          <AddCompliance
-            onCancel={() => setShowAdd(false)}
-            onSubmit={handleAdd}
-          />
-        )}
-      </main>
+            <div className="bar">
+              <div className="fill" style={{ width: "87%" }}></div>
+            </div>
+          </div>
 
+          <div className="progress">
+            <h4>Quality Distribution</h4>
+
+            <div className="category">
+              <span>Good</span>
+              <span>75%</span>
+            </div>
+            <div className="bar">
+              <div className="fill good" style={{ width: "75%" }}></div>
+            </div>
+
+            <div className="category">
+              <span>Fair</span>
+              <span>20%</span>
+            </div>
+            <div className="bar">
+              <div className="fill fair" style={{ width: "20%" }}></div>
+            </div>
+
+            <div className="category">
+              <span>Poor</span>
+              <span>5%</span>
+            </div>
+            <div className="bar">
+              <div className="fill poor" style={{ width: "5%" }}></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
   );
-}
+};
 
 export default Dashboard;
