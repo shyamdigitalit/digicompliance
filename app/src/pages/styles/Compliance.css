@@ -1,40 +1,84 @@
-.main h2 {
-    margin-top: 10px;
+.compliance-page {
+    padding: 20px 30px;
 }
 
-.subtitle {
-    color: #6b7280;
+/* HEADER */
+.header h2 {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.header p {
     font-size: 13px;
+    color: #6b7280;
     margin-bottom: 15px;
 }
 
-.filters {
+/* FILTER BOX */
+.filter-box {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.filter-row {
     display: flex;
     gap: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
-.filters input,
-.filters select {
-    padding: 8px;
+.filter-row input {
+    flex: 1;
+    padding: 10px;
     border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
-.add-btn {
+.filter-row select {
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.second {
+    justify-content: space-between;
+}
+
+/* BUTTONS */
+.light-btn {
+    background: #f1f5f9;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.dark-btn {
     background: #111827;
     color: white;
     border: none;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: 8px;
+}
+
+.add-btn {
+    margin-left: auto;
+    background: #111827;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
     cursor: pointer;
 }
 
-.table-container {
+/* TABLE */
+.table-box {
     background: white;
-    border-radius: 10px;
-    padding: 15px;
+    border-radius: 12px;
     border: 1px solid #e5e7eb;
+    padding: 10px;
 }
 
 table {
@@ -43,9 +87,9 @@ table {
 }
 
 th, td {
-    text-align: left;
-    padding: 10px;
+    padding: 12px;
     font-size: 13px;
+    text-align: left;
 }
 
 th {
@@ -62,44 +106,34 @@ tr {
     cursor: pointer;
 }
 
+/* TAGS */
 .tag {
     padding: 3px 8px;
     border-radius: 6px;
     font-size: 11px;
 }
 
-.tag.high {
-    background: #ffedd5;
-    color: #ea580c;
-}
+.tag.high { background: #ffedd5; color: #ea580c; }
+.tag.medium { background: #fef9c3; color: #ca8a04; }
+.tag.critical { background: #fee2e2; color: #dc2626; }
+.tag.low { background: #e0f2fe; color: #0284c7; }
 
-.tag.medium {
-    background: #fef9c3;
-    color: #ca8a04;
-}
-
-.tag.critical {
-    background: #fee2e2;
-    color: #dc2626;
-}
-
+/* STATUS */
 .status {
     padding: 3px 8px;
     border-radius: 6px;
     font-size: 11px;
 }
 
-.status.completed {
-    background: #dcfce7;
-    color: #16a34a;
-}
+.status.completed { background: #dcfce7; color: #16a34a; }
+.status.pending { background: #fee2e2; color: #dc2626; }
+.status.in\ progress { background: #dbeafe; color: #2563eb; }
+.status.overdue { background: #fee2e2; color: #b91c1c; }
 
-.status.pending {
-    background: #fee2e2;
-    color: #dc2626;
-}
-
-.status.progress {
-    background: #dbeafe;
-    color: #2563eb;
+/* FOOTER */
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 12px;
 }
