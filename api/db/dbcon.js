@@ -8,12 +8,12 @@ const appenv = process.env.APP_ENV || 'quality';
 const env = process.env.NODE_ENV || 'dev';
 
 const dbUrl = appenv === 'production'
-    ? (env === 'live' ? (console.log('Live (Production Server)'), `${dbUrlConn}ecomplianceprddb?appName=ecomplianceapp`) : (console.log('Dev (Production Server)'), `${dbUrlConn}ecompliancedb?appName=ecomplianceapp`))
-    : (env === 'live' ? (console.log('Live (Quality Server)'), `${dbUrlConn}ecomplianceqasdb?appName=ecomplianceapp`) : (console.log('Dev (Quality Server)'), `${dbUrlConn}ecompliancedb?appName=ecomplianceapp`));
+    ? (env === 'live' ? (console.log('Live (Production Server)'), `${dbUrlConn}digitcomplianceprddb?appName=digitcomplianceapp`) : (console.log('Dev (Production Server)'), `${dbUrlConn}digitcompliancedb?appName=digitcomplianceapp`))
+    : (env === 'live' ? (console.log('Live (Quality Server)'), `${dbUrlConn}digitcomplianceqasdb?appName=digitcomplianceapp`) : (console.log('Dev (Quality Server)'), `${dbUrlConn}digitcompliancedb?appName=digitcomplianceapp`));
 
 const dbnm = appenv === 'production'
-    ? (env === 'live' ? (console.log('Live (Production Server)'), 'ecomplianceprddb') : (console.log('Dev (Production Server)'), 'ecompliancedb'))
-    : (env === 'live' ? (console.log('Live (Quality Server)'), 'ecomplianceqasdb') : (console.log('Dev (Quality Server)'), 'ecompliancedb'));
+    ? (env === 'live' ? (console.log('Live (Production Server)'), 'digitcomplianceprddb') : (console.log('Dev (Production Server)'), 'digitcompliancedb'))
+    : (env === 'live' ? (console.log('Live (Quality Server)'), 'digitcomplianceqasdb') : (console.log('Dev (Quality Server)'), 'digitcompliancedb'));
 
 
 mongoose.set('strictQuery', false); // Disable strict query mode
