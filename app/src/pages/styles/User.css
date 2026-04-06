@@ -1,0 +1,101 @@
+.user-header {
+  margin-bottom: 20px;
+}
+
+.user-header h2 {
+  font-size: 22px;
+}
+
+.user-header p {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Filters */
+.user-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.user-filters input {
+  flex: 1;
+  padding: 8px;
+}
+
+.user-filters select,
+.light-btn {
+  padding: 8px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+}
+
+.dark-btn {
+  margin-left: auto;
+  background: #111827;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Table */
+.user-table {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #eee;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #f9fafb;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  font-size: 14px;
+}
+
+tr {
+  border-bottom: 1px solid #eee;
+}
+
+/* Username link */
+.link {
+  color: #2563eb;
+  cursor: pointer;
+}
+
+/* Tags */
+.tag {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.tag.blue { background: #dbeafe; color: #1e3a8a; }
+.tag.purple { background: #ede9fe; color: #5b21b6; }
+.tag.green { background: #dcfce7; color: #166534; }
+.tag.orange { background: #ffedd5; color: #9a3412; }
+
+/* Edit */
+.edit {
+  color: #2563eb;
+  cursor: pointer;
+}
+
+/* Footer */
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}

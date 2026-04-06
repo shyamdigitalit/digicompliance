@@ -1,0 +1,116 @@
+.doc-header {
+  margin-bottom: 20px;
+}
+
+.doc-header h2 {
+  font-size: 22px;
+}
+
+.doc-header p {
+  color: #666;
+  font-size: 14px;
+}
+
+/* Upload Box */
+.upload-box {
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 40px;
+  text-align: center;
+  background: #fafafa;
+  margin-bottom: 20px;
+}
+
+.upload-content p {
+  margin: 10px 0;
+  font-weight: 500;
+}
+
+.upload-content span {
+  font-size: 12px;
+  color: #777;
+}
+
+.upload-content button {
+  margin-top: 10px;
+  padding: 8px 14px;
+  border: none;
+  background: #111827;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filters input {
+  flex: 1;
+  padding: 8px;
+}
+
+.filters select,
+.light-btn {
+  padding: 8px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+}
+
+.light-btn {
+  cursor: pointer;
+}
+
+/* Table */
+.table-container {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #eee;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #f9fafb;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  font-size: 14px;
+}
+
+tr {
+  border-bottom: 1px solid #eee;
+}
+
+.doc-name {
+  color: #2563eb;
+  font-weight: 500;
+}
+
+/* Tags */
+.tag {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.tag.certificate { background: #dcfce7; color: #166534; }
+.tag.report { background: #dbeafe; color: #1e3a8a; }
+.tag.checklist { background: #fef3c7; color: #92400e; }
+.tag.form { background: #fee2e2; color: #991b1b; }
+.tag.record { background: #ede9fe; color: #5b21b6; }
+
+.actions {
+  cursor: pointer;
+} 

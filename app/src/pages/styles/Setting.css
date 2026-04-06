@@ -1,0 +1,245 @@
+/* ================= HEADER ================= */
+.settings-header {
+  margin-bottom: 20px;
+}
+
+.settings-header h2 {
+  font-size: 22px;
+}
+
+.settings-header p {
+  color: #666;
+  font-size: 14px;
+}
+
+/* ================= LAYOUT ================= */
+.settings-container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* ================= SIDEBAR ================= */
+.settings-sidebar {
+  width: 230px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  padding: 10px;
+  position: sticky;   /* 🔥 FIX: sidebar not scrolling */
+  top: 20px;
+}
+
+/* Sidebar Items */
+.settings-item {
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.settings-item:hover {
+  background: #f1f5f9;
+}
+
+.settings-item.active {
+  background: #e0edff;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+/* Masters submenu */
+.master-submenu {
+  margin-left: 8px;
+  margin-top: 5px;
+}
+
+.settings-subitem {
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #444;
+}
+
+.settings-subitem:hover {
+  background: #f1f5f9;
+}
+
+/* ================= CONTENT ================= */
+.settings-content {
+  flex: 1;
+}
+
+/* ================= PROFILE CARD ================= */
+.profile-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid #eee;
+}
+
+.profile-card h3 {
+  margin-bottom: 5px;
+}
+
+.profile-card p {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 15px;
+}
+
+/* Avatar */
+.profile-top {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.avatar {
+  width: 50px;
+  height: 50px;
+  background: #2563eb;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+}
+
+/* ================= FORM ================= */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.form-grid div {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: #555;
+}
+
+input,
+select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+/* ================= MASTER ================= */
+.master-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+}
+
+/* Header */
+.master-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.master-header h3 {
+  margin: 0;
+}
+
+/* Form */
+.master-form {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.master-form input {
+  flex: 1;
+}
+
+/* ================= TABLE ================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th {
+  text-align: left;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+  background: #f9fafb;
+}
+
+th,
+td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+  background: #f9fafb;
+}
+
+/* ================= BUTTONS ================= */
+.dark-btn {
+  background: #111827;
+  color: #fff;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dark-btn:hover {
+  opacity: 0.9;
+}
+
+.light-btn {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.light-btn:hover {
+  background: #f9fafb;
+}
+
+/* ================= TAG ================= */
+.tag.green {
+  background: #dcfce7;
+  color: #166534;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+  .settings-container {
+    flex-direction: column;
+  }
+
+  .settings-sidebar {
+    width: 100%;
+    position: relative;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

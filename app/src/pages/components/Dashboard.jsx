@@ -1,161 +1,225 @@
-import React from "react";
+import React, { useMemo } from "react";
 import "../styles/Dashboard.css";
-
-import FilePresentIcon from '@mui/icons-material/FilePresent';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import FilePresentIcon        from '@mui/icons-material/FilePresent';
+import AccessTimeIcon         from '@mui/icons-material/AccessTime';
+import ErrorOutlineIcon       from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CalendarTodayIcon      from '@mui/icons-material/CalendarToday';
+
+const COMPLIANCE_KEY = "compliance_data";
+const ACTIVITY_KEY   = "activity_log";
+
+const defaultCompliance = [
+  { id:"CMP-001", plant:"Mumbai Plant A",    dept:"Operations", type:"Safety Inspection", category:"Health & Safety",    freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate:"2026-04-11" },
+  { id:"CMP-002", plant:"Delhi Plant B",     dept:"Quality",    type:"ISO Audit Review",  category:"Quality Management", freq:"Quarterly", criticality:"Critical", status:"Pending",     dueDate:"2026-04-14" },
+  { id:"CMP-003", plant:"Bangalore Plant C", dept:"HR",         type:"Labour Law Compliance", category:"Statutory",    freq:"Annual",    criticality:"Medium",   status:"In Progress", dueDate:"2026-04-19" },
+  { id:"CMP-004", plant:"Mumbai Plant A",    dept:"Environment",type:"Environmental Assessment", category:"Environmental", freq:"Monthly", criticality:"High",   status:"Pending",     dueDate:"2026-04-21" },
+  { id:"CMP-005", plant:"Delhi Plant B",     dept:"Operations", type:"Fire Safety",        category:"Health & Safety",    freq:"Weekly",    criticality:"High",     status:"Completed",   dueDate:"2026-04-22" },
+  { id:"CMP-006", plant:"Bangalore Plant C", dept:"Quality",    type:"Product Testing",    category:"Quality Management", freq:"Daily",     criticality:"Medium",   status:"In Progress", dueDate:"2026-04-17" },
+  { id:"CMP-007", plant:"Mumbai Plant A",    dept:"HR",         type:"Employee Training",  category:"Statutory",          freq:"Quarterly", criticality:"Low",      status:"Pending",     dueDate:"2026-04-23" },
+  { id:"CMP-008", plant:"Delhi Plant B",     dept:"Environment",type:"Waste Management",   category:"Environmental",      freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate:"2026-04-26" },
+];
+
+const defaultActivities = [
+  { text:"Completed Safety Inspection - Mumbai Plant A", user:"John Smith",      time:"2 hours ago" },
+  { text:"Approved Quality Audit - Delhi plant",         user:"Michael Chen",    time:"4 hours ago" },
+  { text:"Updated Labour Law Compliance",                user:"Sarah Johnson",   time:"5 hours ago" },
+  { text:"Created New Compliance Record",                user:"Emily Davis",     time:"1 day ago"   },
+  { text:"Rejected Product Testing Report",              user:"Robert Wilson",   time:"1 day ago"   },
+  { text:"Scheduled Safety Training Session - Bengaluru",user:"Lisa Patel",      time:"2 days ago"  },
+];
 
 const Dashboard = () => {
+  const complianceData = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem(COMPLIANCE_KEY)) || defaultCompliance; }
+    catch { return defaultCompliance; }
+  }, []);
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const activities = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem(ACTIVITY_KEY)) || defaultActivities; }
+    catch { return defaultActivities; }
+  }, []);
 
-  const deadlines = [
-    { title: "Fire Safety Inspection", plant: "Mumbai Plant A", priority: "Critical", days: "5 days" },
-    { title: "ISO Audit Review", plant: "Delhi Plant B", priority: "High", days: "8 days" },
-    { title: "Labour Law Compliance", plant: "Bangalore Plant C", priority: "Medium", days: "13 days" },
-    { title: "Environmental Assessment", plant: "Mumbai Plant A", priority: "High", days: "15 days" }
-  ];
+  const stats = useMemo(() => ({
+    total:     complianceData.length,
+    pending:   complianceData.filter(c => c.status === "Pending").length,
+    critical:  complianceData.filter(c => c.criticality === "Critical").length,
+    completed: complianceData.filter(c => c.status === "Completed").length,
+  }), [complianceData]);
 
-  const activities = [
-    { text: "Completed Safety Inspection - Mumbai Plant A", user: "John Doe", time: "2 hours ago" },
-    { text: "Approved Quality Audit - Delhi Plant", user: "Michael Smith", time: "4 hours ago" },
-    { text: "Updated Labour Law Compliance", user: "Sarah Lee", time: "6 hours ago" },
-    { text: "Rejected Product Testing Report", user: "Robert Brown", time: "1 day ago" }
-  ];
+  const upcomingDeadlines = useMemo(() => {
+    const today = new Date();
+    return complianceData
+      .filter(c => c.status !== "Completed" && c.dueDate)
+      .map(c => ({ ...c, daysLeft: Math.ceil((new Date(c.dueDate) - today) / 86400000) }))
+      .sort((a, b) => a.daysLeft - b.daysLeft)
+      .slice(0, 4);
+  }, [complianceData]);
 
-  const getTagClass = (priority) => {
-    if (priority === "Critical") return "tag red";
-    if (priority === "High") return "tag orange";
-    return "tag yellow";
+  const categoryBreakdown = useMemo(() => {
+    const cats = {};
+    complianceData.forEach(c => {
+      if (!cats[c.category]) cats[c.category] = { total: 0, completed: 0 };
+      cats[c.category].total++;
+      if (c.status === "Completed") cats[c.category].completed++;
+    });
+    return Object.entries(cats).map(([name, v]) => ({
+      name, total: v.total, completed: v.completed,
+      pct: Math.round((v.completed / v.total) * 100),
+    }));
+  }, [complianceData]);
+
+  const statusDist = useMemo(() => {
+    const total = complianceData.length || 1;
+    const completed  = complianceData.filter(c => c.status === "Completed").length;
+    const inProgress = complianceData.filter(c => c.status === "In Progress").length;
+    const pending    = complianceData.filter(c => c.status === "Pending" || c.status === "Overdue").length;
+    return [
+      { label:"Good",  count:completed,  pct:Math.round(completed  / total * 100), cls:"good" },
+      { label:"Fair",  count:inProgress, pct:Math.round(inProgress / total * 100), cls:"fair" },
+      { label:"Poor",  count:pending,    pct:Math.round(pending    / total * 100), cls:"poor" },
+    ];
+  }, [complianceData]);
+
+  const tagClass = (p) =>
+    p === "Critical" ? "tag red" : p === "High" ? "tag orange" : p === "Medium" ? "tag yellow" : "tag blue";
+
+  const daysLabel = (d) => d < 0 ? `${Math.abs(d)} days overdue` : d === 0 ? "Due today" : `${d} days`;
+  const daysClass = (d) => `deadline-days${d < 0 ? " overdue-text" : d <= 5 ? " urgent-text" : ""}`;
+
+  const formatDate = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
   };
+
+  const completionPct = stats.total ? Math.round(stats.completed / stats.total * 100) : 0;
 
   return (
     <>
+      {/* Page header */}
+      <div className="dash-header">
+        <h2>Dashboard</h2>
+        <p>Overview of compliance status and activities</p>
+      </div>
 
-      {/* Stats */}
+      {/* Stat cards */}
       <div className="stats">
         <div className="card">
-          <span>
-            <p><strong>Total Compliance</strong></p>
-            <FilePresentIcon style={{ color: "#1e73be" }} />
-          </span>
-          <h2>248</h2>
+          <div className="card-top">
+            <span className="card-label">Total Compliance</span>
+            <div className="card-icon blue"><FilePresentIcon style={{ color:"#2563eb" }} /></div>
+          </div>
+          <h2>{stats.total}</h2>
+          <div className="card-sub positive">↑ +12 this month</div>
         </div>
 
         <div className="card">
-          <span>
-            <p><strong>Pending</strong></p>
-            <AccessTimeIcon style={{ color: "#f97316" }} />
-          </span>
-          <h2>32</h2>
+          <div className="card-top">
+            <span className="card-label">Pending</span>
+            <div className="card-icon orange"><AccessTimeIcon style={{ color:"#f97316" }} /></div>
+          </div>
+          <h2 style={{ color:"#f97316" }}>{stats.pending}</h2>
+          <div className="card-sub warning">Requires attention</div>
         </div>
 
         <div className="card">
-          <span>
-            <p><strong>Critical</strong></p>
-            <ErrorOutlineIcon style={{ color: "#ef4444" }} />
-          </span>
-          <h2>8</h2>
+          <div className="card-top">
+            <span className="card-label">Critical</span>
+            <div className="card-icon red"><ErrorOutlineIcon style={{ color:"#ef4444" }} /></div>
+          </div>
+          <h2 style={{ color:"#ef4444" }}>{stats.critical}</h2>
+          <div className="card-sub danger">High priority</div>
         </div>
 
         <div className="card">
-          <span>
-            <p><strong>Completed</strong></p>
-            <CheckCircleOutlineIcon style={{ color: "#22c55e" }} />
-          </span>
-          <h2>208</h2>
+          <div className="card-top">
+            <span className="card-label">Completed</span>
+            <div className="card-icon green"><CheckCircleOutlineIcon style={{ color:"#22c55e" }} /></div>
+          </div>
+          <h2 style={{ color:"#22c55e" }}>{stats.completed}</h2>
+          <div className="card-sub success">{completionPct}% completion rate</div>
         </div>
       </div>
 
-      {/* Content */}
+      {/* Middle row */}
       <div className="content">
+        {/* Upcoming Deadlines */}
         <div className="left">
-          <h3>Upcoming Deadlines</h3>
-          <ul>
-            {deadlines.map((item, i) => (
-              <li key={i}>
-                <div className="row">
-                  <strong>{item.title}</strong>
-                  <span className={getTagClass(item.priority)}>
-                    {item.priority}
-                  </span>
+          <div className="panel-header">
+            <h3>Upcoming Deadlines</h3>
+            <CalendarTodayIcon />
+          </div>
+          {upcomingDeadlines.length === 0
+            ? <p style={{ color:"#9ca3af", fontSize:"13px" }}>No upcoming deadlines</p>
+            : upcomingDeadlines.map((item, i) => (
+              <div className="deadline-item" key={i}>
+                <div className="deadline-left">
+                  <div className="deadline-title">{item.type}</div>
+                  <div className="deadline-plant">{item.plant}</div>
                 </div>
-                <div className="sub">{item.plant}</div>
-                <div className="days">{item.days}</div>
-              </li>
-            ))}
-          </ul>
+                <span className={tagClass(item.criticality)}>{item.criticality}</span>
+                <div className="deadline-right">
+                  <div className={daysClass(item.daysLeft)}>{daysLabel(item.daysLeft)}</div>
+                  <div className="deadline-date">{formatDate(item.dueDate)}</div>
+                </div>
+              </div>
+            ))
+          }
         </div>
 
+        {/* Recent Activity */}
         <div className="right">
-          <h3>Recent Activity</h3>
-          <ul>
-            {activities.map((item, i) => (
-              <li key={i}>
-                {item.text}
-                <div className="sub">by {item.user}</div>
-                <span className="time">{item.time}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="panel-header">
+            <h3>Recent Activity</h3>
+          </div>
+          {activities.slice(0, 6).map((item, i) => (
+            <div className="activity-item" key={i}>
+              <div className="activity-dot" />
+              <div className="activity-body">
+                <div className="activity-text">{item.text}</div>
+                <div className="activity-meta">By: {item.user}</div>
+              </div>
+              <div className="activity-time">{item.time}</div>
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* Bottom row */}
       <div className="bottom">
-
         <div className="progress">
           <h4>Compliance by Category</h4>
-
-          <div className="category">
-            <span>Health & Safety</span>
-            <span>72/85 (85%)</span>
-          </div>
-          <div className="bar">
-            <div className="fill" style={{ width: "85%" }}></div>
-          </div>
-
-          <div className="category">
-            <span>Quality Management</span>
-            <span>54/62 (87%)</span>
-          </div>
-          <div className="bar">
-            <div className="fill" style={{ width: "87%" }}></div>
-          </div>
+          {categoryBreakdown.map((cat, i) => (
+            <React.Fragment key={i}>
+              <div className="category">
+                <span>{cat.name}</span>
+                <span>{cat.completed}/{cat.total} ({cat.pct}%)</span>
+              </div>
+              <div className="bar">
+                <div className="fill" style={{ width:`${cat.pct}%` }} />
+              </div>
+            </React.Fragment>
+          ))}
         </div>
 
         <div className="progress">
           <h4>Quality Distribution</h4>
-
-          <div className="category">
-            <span>Good</span>
-            <span>75%</span>
-          </div>
-          <div className="bar">
-            <div className="fill good" style={{ width: "75%" }}></div>
-          </div>
-
-          <div className="category">
-            <span>Fair</span>
-            <span>20%</span>
-          </div>
-          <div className="bar">
-            <div className="fill fair" style={{ width: "20%" }}></div>
-          </div>
-
-          <div className="category">
-            <span>Poor</span>
-            <span>5%</span>
-          </div>
-          <div className="bar">
-            <div className="fill poor" style={{ width: "5%" }}></div>
-          </div>
+          {statusDist.map((s, i) => (
+            <React.Fragment key={i}>
+              <div className="category">
+                <span>{s.label}</span>
+                <span>{s.pct}%</span>
+              </div>
+              <div className="bar">
+                <div className={`fill ${s.cls}`} style={{ width:`${s.pct}%` }} />
+              </div>
+            </React.Fragment>
+          ))}
         </div>
-
       </div>
     </>
   );
 };
 
 export default Dashboard;
-
