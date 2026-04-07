@@ -104,6 +104,8 @@ const checkComplianceNotifications = async () => {
 };
 
 let activeComplianceJob = null;
+
+
 export const complianceScheduler = async () => {
   const settings = await settingsModel.findById("APP_SETTINGS").lean();
   const notifHour = settings?.notifTime

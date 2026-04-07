@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Setting.css";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux/slices/auth";
+import axiosInstance from "../../config/axiosInstance";
 
 const masterList = [
-  "department", "designation", "plant", "compliancetype",
+  "Account Type", "plant", "department", "organization", "designation", "compliancetype",
   "compliancecategory", "compliancefrequency", "criticality", "penaltytype"
 ];
 
@@ -12,6 +15,7 @@ const PLANTS = ["Mumbai Plant A", "Delhi Plant B", "Bangalore Plant C"];
 const TIMEZONES = ["GMT +5:30 (India)", "GMT +0:00 (UTC)", "GMT -5:00 (EST)", "GMT +8:00 (CST)"];
 
 const Settings = () => {
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("Profile");
   const [showMasters, setShowMasters] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -47,6 +51,20 @@ const Settings = () => {
     setTimeout(() => setSaved(false), 2500);
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await axiosInstance.post("/api/auth/logout");
+      if (response.status === 200) {
+        console.log("Logged out successfully");
+        localStorage.removeItem("user");
+        dispatch(logout())
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   return (
     <>
       <div className="settings-header">
@@ -56,7 +74,7 @@ const Settings = () => {
 
       <div className="settings-container">
         <div className="settings-sidebar">
-          {["Profile", "Notifications", "Security", "Organization", "System"].map((item) => (
+          {["Profile", "Security", "Notifications"].map((item) => (
             <div
               key={item}
               className={`settings-item ${activeTab === item ? "active" : ""}`}
@@ -86,6 +104,12 @@ const Settings = () => {
               ))}
             </div>
           )}
+
+          <div className={`settings-item Logout`}>
+            <div className="logout-btn" onClick={handleLogout}>
+              Logout
+            </div>
+          </div>
         </div>
 
         <div className="settings-content">
@@ -164,6 +188,7 @@ const Settings = () => {
                   </label>
                 ))}
               </div>
+              <div className="timer"></div>
               <button className="dark-btn" style={{ marginTop: "20px" }}>Save Preferences</button>
             </div>
           )}
@@ -204,6 +229,8 @@ const Settings = () => {
               </div>
             </div>
           )}
+
+          
         </div>
       </div>
     </>

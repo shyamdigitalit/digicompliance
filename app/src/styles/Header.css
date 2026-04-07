@@ -1,0 +1,18 @@
+.header {
+    padding: 16px 80px;
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    gap: 20px
+}
+
+.icn {
+    color: #2a3d3c;
+    font-size: 1.35rem;
+    margin-left: 0.35rem;
+
+    &:hover {
+        color: #9c38ff;
+        cursor: pointer;
+    }
+}

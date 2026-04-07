@@ -33,10 +33,10 @@ const Layout = () => {
     location.pathname.startsWith(path) ||
     (path === "/setting" && location.pathname.startsWith("/masters"));
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
+  // const handleLogout = () => {
+  //   localStorage.removeItem("user");
+  //   navigate("/login");
+  // };
 
   const quickLinks = search.trim()
     ? navItems.filter(n => n.label.toLowerCase().includes(search.toLowerCase()))

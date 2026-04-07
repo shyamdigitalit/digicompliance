@@ -1,0 +1,7 @@
+.sidebar-bottom {
+
+    .MuiAvatar-root.MuiAvatar-circular {
+        margin-left: -5px;
+        margin-right: 5px;
+    }
+}

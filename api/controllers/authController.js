@@ -67,7 +67,7 @@ const loginUser = async (req, res) => {
             }
 
             res.status(200)
-            // .cookie('accessToken', accessToken, { httpOnly: true, sameSite: 'Lax', secure: env === 'live', maxAge: accessTokenExpiryTTL })
+            .cookie('accessToken', accessToken, { httpOnly: true, sameSite: 'Lax', secure: env === 'live', maxAge: accessTokenExpiryTTL })
             .cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'Lax', secure: env === 'live', maxAge: refreshTokenExpiryTTL })
             .json({ message: 'Login successful', statuscode: 200, data: usrDta, accessToken });
         }
