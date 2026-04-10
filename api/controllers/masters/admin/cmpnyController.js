@@ -9,7 +9,7 @@ const create = async (req, res) => {
         if (user) {
             Object.assign(cmpnyPayld, { status: 'Active', createdby: user?._id });
         }
-        const existingCmpny = await cmpnyModel.findOne({ companyCode: cmpnyPayld.companyCode });
+        const existingCmpny = await cmpnyModel.findOne({ code: cmpnyPayld.code });
         if (existingCmpny) {
             return res.status(409).json({ message: "Company code already exists" });
         }
@@ -33,41 +33,15 @@ const create = async (req, res) => {
 const read = async (req, res) => {
     try {
         const pipeline = [
-            { $sort: { updatedAt: -1 } },
-            {
-                $lookup: {
-                    from: 'accounts',
-                    localField: 'createdby',
-                    foreignField: '_id',
-                    as: 'createdby'
-                }
-            },
+            { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
             { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
-            {
-                $lookup: {
-                    from: 'accounts',
-                    localField: 'updatedby',
-                    foreignField: '_id',
-                    as: 'updatedby'
-                }
-            },
+            { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
             { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
             { $addFields: {
-                createdAtITC: {
-                    $dateToString: {
-                        format: "%d-%m-%Y %H:%M:%S",
-                        date: '$createdAt',
-                        timezone: "+05:30"
-                    }
-                },
-                updatedAtITC: {
-                    $dateToString: {
-                        format: "%d-%m-%Y %H:%M:%S",
-                        date: '$updatedAt',
-                        timezone: "+05:30"
-                    }
-                }
-            }}
+                createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
+                updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
+            }},
+            { $sort: { updatedAt: 1 } }
         ]
         const cmpnyRecords = await cmpnyModel.aggregate(pipeline)
 

@@ -35,6 +35,9 @@ const Users = () => {
         console.log(response.data?.data?.Acc);
         setData(response.data?.data?.Acc);
       }
+      else {
+        setData([]);
+      }
     } catch (error) {
       console.error(error)
     }

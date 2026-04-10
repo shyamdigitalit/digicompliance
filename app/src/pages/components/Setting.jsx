@@ -6,7 +6,7 @@ import { logout } from "../../redux/slices/auth";
 import axiosInstance from "../../config/axiosInstance";
 
 const masterList = [
-  "Account Type", "plant", "department", "organization", "designation", "compliancetype",
+  "Account Type", "plant", "department", "company", "designation", "compliancetype",
   "compliancecategory", "compliancefrequency", "criticality", "penaltytype"
 ];
 

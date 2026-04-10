@@ -6,7 +6,7 @@ const create = async (req, res) => {
         const user = req.user;
         
         Object.assign(deptPayld, { status: 'Active', createdby: user._id });
-        const existingDept = await deptModel.findOne({ departmentCode: deptPayld.departmentCode });
+        const existingDept = await deptModel.findOne({ code: deptPayld.code });
         if (existingDept) {
             return res.status(409).json({ message: "Department code already exists", statuscode: 409 });
         } else {
@@ -38,7 +38,7 @@ const read = async (req, res) => {
                 createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
                 updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
             }},
-            { $sort: { departmentCode: 1 } }
+            { $sort: { updatedAt: 1 } }
         ]
         const deptRecords = await deptModel.aggregate(pipeline)
         res.status(200).json({

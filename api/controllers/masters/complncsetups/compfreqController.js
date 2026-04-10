@@ -6,9 +6,9 @@ const create = async (req, res) => {
         const user = req.user;
 
         Object.assign(compfreqPayld, { status: 'Active', createdby: user._id });
-        const existingCompfreq = await compfreqModel.findOne({ complianceFrequencyName: compfreqPayld.complianceFrequencyName });
+        const existingCompfreq = await compfreqModel.findOne({ code: compfreqPayld.code });
         if (existingCompfreq) {
-            return res.status(409).json({ message: "Compliance Frequency name already exists", statuscode: 409 });
+            return res.status(409).json({ message: "Compliance Frequency code already exists", statuscode: 409 });
         } else {
             const compfreq = await compfreqModel.create(compfreqPayld);
             if (!compfreq) {

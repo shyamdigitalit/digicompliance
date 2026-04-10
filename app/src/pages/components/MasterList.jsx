@@ -1,82 +1,68 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "../styles/Setting.css";
+import axiosInstance from "../../config/axiosInstance";
 
-const getMasterKey = (type) => `master_${type}`;
-
-const defaultData = {
-  department: [
-    { name: "Operations", code: "OPS", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Human Resources", code: "HR", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Quality", code: "QA", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Environment", code: "ENV", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-  ],
-  designation: [
-    { name: "Plant Head", code: "PH", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Compliance Officer", code: "CO", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Safety Officer", code: "SO", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-  ],
-  plant: [
-    { name: "Mumbai Plant A", code: "MUM-A", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Delhi Plant B", code: "DEL-B", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Bangalore Plant C", code: "BLR-C", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-  ],
-  criticality: [
-    { name: "Critical", code: "CRIT", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "High", code: "HIGH", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Medium", code: "MED", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Low", code: "LOW", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-  ],
-  compliancetype: [
-    { name: "Safety Inspection", code: "SI", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "ISO Audit", code: "ISO", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Labour Law", code: "LL", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Fire Safety", code: "FS", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-  ],
-  compliancecategory: [
-    { name: "Health & Safety", code: "HS", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Quality Management", code: "QM", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Environmental", code: "ENV", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Statutory", code: "STAT", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-  ],
-  compliancefrequency: [
-    { name: "Daily", code: "D", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Weekly", code: "W", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Monthly", code: "M", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Quarterly", code: "Q", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Annual", code: "A", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-  ],
-  penaltytype: [
-    { name: "Monetary Fine", code: "MF", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "License Revocation", code: "LR", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-    { name: "Warning Notice", code: "WN", status: "Active", createdAt: "2026-03-01", updatedAt: "2026-03-10" },
-  ],
-};
+// const getMasterKey = (type) => `master_${type}`;
 
 const MasterList = () => {
   const { type } = useParams();
+  console.log(type);
   const navigate = useNavigate();
 
-  const [data, setData] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(getMasterKey(type))) || defaultData[type] || [];
-    } catch { return defaultData[type] || []; }
-  });
+  const [data, setData] = useState([]);
+  const [saved, setSaved] = useState(false);
+  
+  const fetchMasterData = useCallback(async () => {
+    let apiType = "";
+    switch (type) {
+      case "Account Type": apiType = "acctyp"; break;
+      case "plant": apiType = "plnt"; break;
+      case "department": apiType = "dept"; break;
+      case "company": apiType = "cmpny"; break;
+      case "designation": apiType = "desig"; break;
+      case "compliancetype": apiType = "comptyp"; break;
+      case "compliancecategory": apiType = "compcateg"; break;
+      case "compliancefrequency": apiType = "compfreq"; break;
+      case "criticality": apiType = "criticlty"; break;
+      case "penaltytype": apiType = "penlty"; break;
+    }
 
-  useEffect(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem(getMasterKey(type)));
-      setData(stored || defaultData[type] || []);
-    } catch { setData(defaultData[type] || []); }
+      const response = await axiosInstance.get(`/api/${apiType==="acctyp" ? "acctyp/fetchuppr" : `${apiType}/fetch`}`);
+      setData(response.data?.data || []);
+    } catch (error) {
+      console.error(error)
+    }
   }, [type]);
 
   useEffect(() => {
-    localStorage.setItem(getMasterKey(type), JSON.stringify(data));
-  }, [data, type]);
+    fetchMasterData();
+  }, [fetchMasterData]);
 
-  const handleDelete = (idx) => {
+  const handleDelete = async (idx) => {
     if (window.confirm("Delete this entry?")) {
-      setData(prev => prev.filter((_, i) => i !== idx));
+      let apiType = "";
+      switch (type) {
+        case "Account Type": apiType = "acctyp"; break;
+        case "plant": apiType = "plnt"; break;
+        case "department": apiType = "dept"; break;
+        case "company": apiType = "cmpny"; break;
+        case "designation": apiType = "desig"; break;
+        case "compliancetype": apiType = "comptyp"; break;
+        case "compliancecategory": apiType = "compcateg"; break;
+        case "compliancefrequency": apiType = "compfreq"; break;
+        case "criticality": apiType = "criticlty"; break;
+        case "penaltytype": apiType = "penlty"; break;
+      }
+      const response = await axiosInstance.delete(`/api/${apiType}/delete?id=${data[idx]._id}`);
+      if (response.status === 200) {
+        setSaved(true);
+        setTimeout(() => {
+          setData(prev => prev.filter((_, i) => i !== idx));
+          setSaved(false);
+        }, 1000);
+      }
     }
   };
 
@@ -93,47 +79,92 @@ const MasterList = () => {
           <h3>{label}</h3>
           <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "2px" }}>{data.length} record{data.length !== 1 ? "s" : ""}</p>
         </div>
+        <div style={{ marginTop: "20px", display: "flex", gap: "10px", alignItems: "center" }}>
+          {saved && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Removed! Reloading…</span>}
+        </div>
         <div style={{ display: "flex", gap: "8px" }}>
           <button className="light-btn" onClick={() => navigate(-1)}>← Back</button>
           <button className="dark-btn" onClick={() => navigate(`/masters/${type}/add`)}>+ Add</button>
         </div>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Code</th>
-            <th>Status</th>
-            <th>Created At</th>
-            <th>Updated At</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.length === 0 ? (
-            <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No records yet. Click "+ Add" to create one.</td></tr>
-          ) : data.map((item, i) => (
-            <tr key={i}>
-              <td>{item.name}</td>
-              <td style={{ fontFamily: "monospace", color: "#6b7280" }}>{item.code}</td>
-              <td>
-                <span
-                  className={`tag ${item.status === "Active" ? "green" : "red-light"}`}
-                  onClick={() => handleToggleStatus(i)}
-                  style={{ cursor: "pointer" }}
-                  title="Click to toggle"
-                >{item.status}</span>
-              </td>
-              <td>{item.createdAt}</td>
-              <td>{item.updatedAt}</td>
-              <td>
-                <button onClick={() => handleDelete(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {
+        type === "Account Type" ? (
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Heirarchy</th>
+                <th>Same Level</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th>Updated At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data?.length === 0 ? (
+                <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No records yet. Click "+ Add" to create one.</td></tr>
+              ) : data?.map((item, i) => (
+                <tr key={i}>
+                  <td>{item.typname}</td>
+                  <td>{item.heirarchy}</td>
+                  <td>{String(item.stacklvl)}</td>
+                  <td>
+                    <span
+                      className={`tag ${item.status === "Active" ? "green" : "red-light"}`}
+                      onClick={() => handleToggleStatus(i)}
+                      style={{ cursor: "pointer" }}
+                      title="Click to toggle"
+                    >{item.status}</span>
+                  </td>
+                  <td>{item.createdAt}</td>
+                  <td>{item.updatedAt}</td>
+                  <td>
+                    <button onClick={() => handleDelete(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Code</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th>Updated At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data?.length === 0 ? (
+                <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No records yet. Click "+ Add" to create one.</td></tr>
+              ) : data?.map((item, i) => (
+                <tr key={i}>
+                  <td>{item.name}</td>
+                  <td style={{ fontFamily: "monospace", color: "#6b7280" }}>{item.code}</td>
+                  <td>
+                    <span
+                      className={`tag ${item.status === "Active" ? "green" : "red-light"}`}
+                      onClick={() => handleToggleStatus(i)}
+                      style={{ cursor: "pointer" }}
+                      title="Click to toggle"
+                    >{item.status}</span>
+                  </td>
+                  <td>{item.createdAt}</td>
+                  <td>{item.updatedAt}</td>
+                  <td>
+                    <button onClick={() => handleDelete(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )
+      }      
     </div>
   );
 };

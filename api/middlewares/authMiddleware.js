@@ -49,7 +49,7 @@ export const basicAuth = async (req, res, next) => {
 
 export const jwtHybrdProtect = async (req, res, next) => {
     const token = req.cookies.accessToken;
-    console.log(token);
+    // console.log(token);
     if (!token) return res.status(401).json({ message: 'Not authorized', statuscode: 401 });
 
     try {

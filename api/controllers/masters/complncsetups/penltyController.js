@@ -6,9 +6,9 @@ const create = async (req, res) => {
         const user = req.user;
 
         Object.assign(penltyPayld, { status: 'Active', createdby: user._id });
-        const existingPenlty = await penltyModel.findOne({ penaltyName: penltyPayld.penaltyName });
+        const existingPenlty = await penltyModel.findOne({ code: penltyPayld.code });
         if (existingPenlty) {
-            return res.status(409).json({ message: "Penalty name already exists", statuscode: 409 });
+            return res.status(409).json({ message: "Penalty code already exists", statuscode: 409 });
         } else {
             const penlty = await penltyModel.create(penltyPayld);
             if (!penlty) {

@@ -3,12 +3,13 @@ import criticltyModel from "../../../models/masters/complncsetups/criticltyModel
 const create = async (req, res) => {
     try {
         const criticltyPayld = req.body;
+        console.log(criticltyPayld);
         const user = req.user;
 
         Object.assign(criticltyPayld, { status: 'Active', createdby: user._id });
-        const existingCriticlty = await criticltyModel.findOne({ criticalityName: criticltyPayld.criticalityName });
+        const existingCriticlty = await criticltyModel.findOne({ code: criticltyPayld.code });
         if (existingCriticlty) {
-            return res.status(409).json({ message: "Criticality name already exists", statuscode: 409 });
+            return res.status(409).json({ message: "Criticality code already exists", statuscode: 409 });
         } else {
             const criticlty = await criticltyModel.create(criticltyPayld);
             if (!criticlty) {

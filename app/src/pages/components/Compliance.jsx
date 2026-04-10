@@ -1,29 +1,44 @@
 import React, { useState, useMemo, useEffect } from "react";
 import AddCompliance from "./AddCompliance";
 import "../styles/Compliance.css";
+import axiosInstance from "../../config/axiosInstance";
+import { useCallback } from "react";
 
 const COMPLIANCE_KEY = "compliance_data";
 const ACTIVITY_KEY = "activity_log";
 
-const defaultData = [
-  { id: "CMP-001", plant: "Mumbai Plant A", dept: "Operations", type: "Safety Inspection", category: "Health & Safety", freq: "Monthly", criticality: "High", status: "Completed", dueDate: "2026-04-11" },
-  { id: "CMP-002", plant: "Delhi Plant B", dept: "Quality", type: "ISO Audit", category: "Quality Management", freq: "Quarterly", criticality: "Critical", status: "Pending", dueDate: "2026-04-14" },
-  { id: "CMP-003", plant: "Mumbai Plant A", dept: "HR", type: "Labour Law", category: "Statutory", freq: "Annual", criticality: "Medium", status: "In Progress", dueDate: "2026-04-19" },
-  { id: "CMP-004", plant: "Bangalore Plant C", dept: "Environment", type: "Pollution Control", category: "Environmental", freq: "Monthly", criticality: "Critical", status: "Overdue", dueDate: "2026-04-10" },
-  { id: "CMP-005", plant: "Delhi Plant B", dept: "Operations", type: "Fire Safety", category: "Health & Safety", freq: "Weekly", criticality: "High", status: "Completed", dueDate: "2026-04-21" },
-  { id: "CMP-006", plant: "Bangalore Plant C", dept: "Quality", type: "Product Testing", category: "Quality Management", freq: "Daily", criticality: "Medium", status: "In Progress", dueDate: "2026-04-17" },
-  { id: "CMP-007", plant: "Mumbai Plant A", dept: "HR", type: "Employee Training", category: "Statutory", freq: "Quarterly", criticality: "Low", status: "Pending", dueDate: "2026-04-23" },
-  { id: "CMP-008", plant: "Delhi Plant B", dept: "Environment", type: "Waste Management", category: "Environmental", freq: "Monthly", criticality: "High", status: "Completed", dueDate: "2026-04-26" },
-];
+// const defaultData = [
+//   { id: "CMP-001", plant: "Mumbai Plant A", dept: "Operations", type: "Safety Inspection", category: "Health & Safety", freq: "Monthly", criticality: "High", status: "Completed", dueDate: "2026-04-11" },
+//   { id: "CMP-002", plant: "Delhi Plant B", dept: "Quality", type: "ISO Audit", category: "Quality Management", freq: "Quarterly", criticality: "Critical", status: "Pending", dueDate: "2026-04-14" },
+//   { id: "CMP-003", plant: "Mumbai Plant A", dept: "HR", type: "Labour Law", category: "Statutory", freq: "Annual", criticality: "Medium", status: "In Progress", dueDate: "2026-04-19" },
+//   { id: "CMP-004", plant: "Bangalore Plant C", dept: "Environment", type: "Pollution Control", category: "Environmental", freq: "Monthly", criticality: "Critical", status: "Overdue", dueDate: "2026-04-10" },
+//   { id: "CMP-005", plant: "Delhi Plant B", dept: "Operations", type: "Fire Safety", category: "Health & Safety", freq: "Weekly", criticality: "High", status: "Completed", dueDate: "2026-04-21" },
+//   { id: "CMP-006", plant: "Bangalore Plant C", dept: "Quality", type: "Product Testing", category: "Quality Management", freq: "Daily", criticality: "Medium", status: "In Progress", dueDate: "2026-04-17" },
+//   { id: "CMP-007", plant: "Mumbai Plant A", dept: "HR", type: "Employee Training", category: "Statutory", freq: "Quarterly", criticality: "Low", status: "Pending", dueDate: "2026-04-23" },
+//   { id: "CMP-008", plant: "Delhi Plant B", dept: "Environment", type: "Waste Management", category: "Environmental", freq: "Monthly", criticality: "High", status: "Completed", dueDate: "2026-04-26" },
+// ];
 
 const PAGE_SIZE = 8;
 
 const Compliance = () => {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [data, setData] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(COMPLIANCE_KEY)) || defaultData; }
-    catch { return defaultData; }
-  });
+  const [data, setData] = useState([]);
+  // const [data, setData] = useState(() => {
+  //   try { return JSON.parse(localStorage.getItem(COMPLIANCE_KEY)) || defaultData; }
+  //   catch { return defaultData; }
+  // });
+
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await axiosInstance.get("/api/comp/fetch");
+      setData(response.data?.data || []);
+    } catch (error) {
+      console.error(error)
+    }
+  }, []);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData])
 
   const [search, setSearch] = useState("");
   const [filterPlant, setFilterPlant] = useState("");
@@ -37,7 +52,7 @@ const Compliance = () => {
   }, [data]);
 
   const plants = useMemo(() => [...new Set(data.map(d => d.plant))], [data]);
-  const depts = useMemo(() => [...new Set(data.map(d => d.dept))], [data]);
+  const depts = useMemo(() => [...new Set(data.map(d => d.department))], [data]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();

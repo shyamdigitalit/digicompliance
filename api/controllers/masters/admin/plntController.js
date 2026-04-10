@@ -6,7 +6,7 @@ const create = async (req, res) => {
         const user = req.user;
 
         Object.assign(plntPayld, { status: 'Active', createdby: user._id });
-        const existingPlnt = await plntModel.findOne({ plantCode: plntPayld.plantCode });
+        const existingPlnt = await plntModel.findOne({ code: plntPayld.code });
         if (existingPlnt) {
             return res.status(409).json({ message: "Plant code already exists", statuscode: 409 });
         } else {
@@ -38,7 +38,7 @@ const read = async (req, res) => {
                 createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
                 updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
             }},
-            { $sort: { plantCode: 1 } }
+            { $sort: { updatedAt: 1 } }
         ]
         const plntRecords = await plntModel.aggregate(pipeline)
         res.status(200).json({

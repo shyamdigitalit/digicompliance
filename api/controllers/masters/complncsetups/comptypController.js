@@ -6,9 +6,9 @@ const create = async (req, res) => {
         const user = req.user;
 
         Object.assign(comptypPayld, { status: 'Active', createdby: user._id });
-        const existingComptyp = await comptypModel.findOne({ complianceTypeName: comptypPayld.complianceTypeName });
+        const existingComptyp = await comptypModel.findOne({ code: comptypPayld.code });
         if (existingComptyp) {
-            return res.status(409).json({ message: "Compliance Type name already exists", statuscode: 409 });
+            return res.status(409).json({ message: "Compliance Type code already exists", statuscode: 409 });
         } else {
             const comptyp = await comptypModel.create(comptypPayld);
             if (!comptyp) {

@@ -6,7 +6,7 @@ const create = async (req, res) => {
         const user = req.user;
 
         Object.assign(desigPayld, { status: 'Active', createdby: user._id });
-        const existingDesig = await desigModel.findOne({ designationCode: desigPayld.designationCode });
+        const existingDesig = await desigModel.findOne({ code: desigPayld.code });
         if (existingDesig) {
             return res.status(409).json({ message: "Designation code already exists", statuscode: 409 });
         } else {

@@ -6,9 +6,9 @@ const create = async (req, res) => {
         const user = req.user;
 
         Object.assign(compcategPayld, { status: 'Active', createdby: user._id });
-        const existingCompcateg = await compcategModel.findOne({ complianceCategoryName: compcategPayld.complianceCategoryName });
+        const existingCompcateg = await compcategModel.findOne({ code: compcategPayld.code });
         if (existingCompcateg) {
-            return res.status(409).json({ message: "Compliance Category name already exists", statuscode: 409 });
+            return res.status(409).json({ message: "Compliance Category code already exists", statuscode: 409 });
         } else {
             const compcateg = await compcategModel.create(compcategPayld);
             if (!compcateg) {
