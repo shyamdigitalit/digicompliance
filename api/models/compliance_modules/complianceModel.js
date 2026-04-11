@@ -5,12 +5,14 @@ const { Schema, model, Types } = mongoose
 
 const ComplianceSchema = new Schema({
     complianceId: { type: String, required: true, trim: true },
+    plant: { type: Types.ObjectId, ref: 'Plant' },
+    department: { type: Types.ObjectId, ref: 'Department' },
     complianceType: { type: Types.ObjectId, ref: 'Compliancetype' },
     complianceCategorization: { type: Types.ObjectId, ref: 'Compliancecategory' },
     complianceFrequency: { type: Types.ObjectId, ref: 'Compliancefrequency' },
     criticality: { type: Types.ObjectId, ref: 'Criticality' },
     penaltyType: { type: Types.ObjectId, ref: 'Penalty' },
-    complianceDate: { type: String, trim: true },
+    dueDate: { type: String, trim: true },
     legislation: { type: String, trim: true },
     complianceHeader: { type: String, trim: true },
     complianceDescription: { type: String, trim: true },
@@ -20,8 +22,6 @@ const ComplianceSchema = new Schema({
     complianceStatutoryAuthority: { type: String, trim: true },
     location: { type: String, trim: true },
     scheduledPeriodicity: { type: String, trim: true },
-    plant: { type: Types.ObjectId, ref: 'Plant' },
-    department: { type: Types.ObjectId, ref: 'Department' },
     remarks: { type: String, trim: true },
     allDocs: [{
         filId: { type: String, trim: true, required: true },

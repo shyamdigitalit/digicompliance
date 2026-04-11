@@ -62,7 +62,8 @@ const MasterForm = () => {
         setSaved(true);
         setTimeout(() => navigate(-1), 1000);
       } else {
-        alert("Failed to save entry. Please try again.");
+        setTimeout(() => setSaved(false), 1000);
+        // alert("Failed to save entry. Please try again.");
         return;
       }
     } catch (error) {

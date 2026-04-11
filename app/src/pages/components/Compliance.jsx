@@ -3,26 +3,27 @@ import AddCompliance from "./AddCompliance";
 import "../styles/Compliance.css";
 import axiosInstance from "../../config/axiosInstance";
 import { useCallback } from "react";
+// import { useNavigate } from "react-router-dom";
 
 const COMPLIANCE_KEY = "compliance_data";
 const ACTIVITY_KEY = "activity_log";
-
-// const defaultData = [
-//   { id: "CMP-001", plant: "Mumbai Plant A", dept: "Operations", type: "Safety Inspection", category: "Health & Safety", freq: "Monthly", criticality: "High", status: "Completed", dueDate: "2026-04-11" },
-//   { id: "CMP-002", plant: "Delhi Plant B", dept: "Quality", type: "ISO Audit", category: "Quality Management", freq: "Quarterly", criticality: "Critical", status: "Pending", dueDate: "2026-04-14" },
-//   { id: "CMP-003", plant: "Mumbai Plant A", dept: "HR", type: "Labour Law", category: "Statutory", freq: "Annual", criticality: "Medium", status: "In Progress", dueDate: "2026-04-19" },
-//   { id: "CMP-004", plant: "Bangalore Plant C", dept: "Environment", type: "Pollution Control", category: "Environmental", freq: "Monthly", criticality: "Critical", status: "Overdue", dueDate: "2026-04-10" },
-//   { id: "CMP-005", plant: "Delhi Plant B", dept: "Operations", type: "Fire Safety", category: "Health & Safety", freq: "Weekly", criticality: "High", status: "Completed", dueDate: "2026-04-21" },
-//   { id: "CMP-006", plant: "Bangalore Plant C", dept: "Quality", type: "Product Testing", category: "Quality Management", freq: "Daily", criticality: "Medium", status: "In Progress", dueDate: "2026-04-17" },
-//   { id: "CMP-007", plant: "Mumbai Plant A", dept: "HR", type: "Employee Training", category: "Statutory", freq: "Quarterly", criticality: "Low", status: "Pending", dueDate: "2026-04-23" },
-//   { id: "CMP-008", plant: "Delhi Plant B", dept: "Environment", type: "Waste Management", category: "Environmental", freq: "Monthly", criticality: "High", status: "Completed", dueDate: "2026-04-26" },
-// ];
 
 const PAGE_SIZE = 8;
 
 const Compliance = () => {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [masterData, setMasterData] = useState({
+    plants: [],
+    departments: [],
+    complianceTypes: [],
+    complianceCategories: [],
+    complianceFrequencies: [],
+    criticalities: [],
+    penaltyTypes: []
+  });
   const [data, setData] = useState([]);
+  const [saved, setSaved] = useState(false);
+  // const navigate = useNavigate();
   // const [data, setData] = useState(() => {
   //   try { return JSON.parse(localStorage.getItem(COMPLIANCE_KEY)) || defaultData; }
   //   catch { return defaultData; }
@@ -38,13 +39,44 @@ const Compliance = () => {
   }, []);
   useEffect(() => {
     fetchData();
-  }, [fetchData])
+  }, [fetchData]);
+  const fetchMasterData = useCallback(async () => {
+    try {
+      const [plantsRes, deptsRes, typesRes, categoriesRes, freqsRes, critsRes, penltsRes] = await Promise.allSettled([
+        axiosInstance.get("/api/plnt/fetch"),
+        axiosInstance.get("/api/dept/fetch"),
+        axiosInstance.get("/api/comptyp/fetch"),
+        axiosInstance.get("/api/compcateg/fetch"),
+        axiosInstance.get("/api/compfreq/fetch"),
+        axiosInstance.get("/api/criticlty/fetch"),
+        axiosInstance.get("/api/penlty/fetch")
+      ]);
+      setMasterData({
+        plants: plantsRes.data?.data || [],
+        departments: deptsRes.data?.data || [],
+        complianceTypes: typesRes.data?.data || [],
+        complianceCategories: categoriesRes.data?.data || [],
+        complianceFrequencies: freqsRes.data?.data || [],
+        criticalities: critsRes.data?.data || [],
+        penaltyTypes: penltsRes.data?.data || []
+      });
+    } catch (error) {
+      console.error(error)
+    }
+  }, []);
+  useEffect(() => {
+    fetchMasterData();
+  }, [fetchMasterData]);
 
   const [search, setSearch] = useState("");
   const [filterPlant, setFilterPlant] = useState("");
   const [filterDept, setFilterDept] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterCompTyp, setFilterCompTyp] = useState("");
+  const [filterCompCat, setFilterCompCat] = useState("");
+  const [filterCompFreq, setFilterCompFreq] = useState("");
   const [filterCriticality, setFilterCriticality] = useState("");
+  const [filterPenaltyType, setFilterPenaltyType] = useState("");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -53,44 +85,70 @@ const Compliance = () => {
 
   const plants = useMemo(() => [...new Set(data.map(d => d.plant))], [data]);
   const depts = useMemo(() => [...new Set(data.map(d => d.department))], [data]);
+  const complianceTypes = useMemo(() => [...new Set(data.map(d => d.complianceType))], [data]);
+  const complianceCategories = useMemo(() => [...new Set(data.map(d => d.complianceCategorization))], [data]);
+  const complianceFrequencies = useMemo(() => [...new Set(data.map(d => d.complianceFrequency))], [data]);
+  const criticalities = useMemo(() => [...new Set(data.map(d => d.criticality))], [data]);
+  const penaltyTypes = useMemo(() => [...new Set(data.map(d => d.penaltyType))], [data]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return data.filter(item => {
-      const matchSearch = !q || item.id.toLowerCase().includes(q) || item.type.toLowerCase().includes(q) || item.category.toLowerCase().includes(q) || item.plant.toLowerCase().includes(q);
+      const matchSearch = !q || item.complianceId.toLowerCase().includes(q) || item.complianceType.toLowerCase().includes(q) || item.complianceCategorization.toLowerCase().includes(q) || item.plant.toLowerCase().includes(q);
       const matchPlant = !filterPlant || item.plant === filterPlant;
-      const matchDept = !filterDept || item.dept === filterDept;
+      const matchDept = !filterDept || item.department === filterDept;
       const matchStatus = !filterStatus || item.status === filterStatus;
-      const matchCrit = !filterCriticality || item.criticality === filterCriticality;
-      return matchSearch && matchPlant && matchDept && matchStatus && matchCrit;
+      const matchCompTyp = !filterCompTyp || item.complianceType === filterCompTyp;
+      const matchCompCat = !filterCompCat || item.complianceCategorization === filterCompCat;
+      const matchCompFreq = !filterCompFreq || item.complianceFrequency === filterCompFreq;
+      const matchCriticality = !filterCriticality || item.criticality === filterCriticality;
+      const matchPenaltyType = !filterPenaltyType || item.penaltyType === filterPenaltyType;
+      return matchSearch && matchPlant && matchDept && matchStatus && matchCompTyp && matchCompCat && matchCompFreq && matchCriticality && matchPenaltyType;
     });
-  }, [data, search, filterPlant, filterDept, filterStatus, filterCriticality]);
+  }, [data, search, filterPlant, filterDept, filterStatus, filterCompTyp, filterCompCat, filterCompFreq, filterCriticality, filterPenaltyType]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleAddSubmit = (formData) => {
-    const user = JSON.parse(localStorage.getItem("user")) || {};
-    const newItem = {
-      id: `CMP-${String(data.length + 1).padStart(3, "0")}`,
-      plant: formData.plant,
-      dept: formData.department,
-      type: formData.ComplianceType,
-      category: formData.complianceCategory,
-      freq: formData.complianceFrequency,
-      criticality: formData.criticality,
-      status: "Pending",
-      dueDate: formData.date || "",
-    };
-    const updated = [...data, newItem];
-    setData(updated);
+  const handleAddSubmit = async (formData) => {
+    // const user = JSON.parse(localStorage.getItem("user")) || {};
+    // const newItem = {
+    //   id: `CMP-${String(data.length + 1).padStart(3, "0")}`,
+    //   plant: formData.plant,
+    //   dept: formData.department,
+    //   type: formData.ComplianceType,
+    //   category: formData.complianceCategory,
+    //   freq: formData.complianceFrequency,
+    //   criticality: formData.criticality,
+    //   status: "Pending",
+    //   dueDate: formData.date || "",
+    // };
+    // const updated = [...data, newItem];
+    // setData(updated);
 
     // Log activity
-    const activities = JSON.parse(localStorage.getItem(ACTIVITY_KEY)) || [];
-    activities.unshift({ text: `Added ${newItem.type} - ${newItem.plant}`, user: user.name || "Admin", time: "Just now" });
-    localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activities.slice(0, 20)));
+    // const activities = JSON.parse(localStorage.getItem(ACTIVITY_KEY)) || [];
+    // activities.unshift({ text: `Added ${newItem.type} - ${newItem.plant}`, user: user.name || "Admin", time: "Just now" });
+    // localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activities.slice(0, 20)));
 
-    setShowAddForm(false);
+    try {
+      const response = await axiosInstance.post("/api/comp/create", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      if (response.status === 201) {
+        setSaved(true);
+        setTimeout(() => {
+          setSaved(false)
+          setShowAddForm(false);
+          fetchData(); // Refresh data from server to get the new ID and any defaults
+        }, 1000);
+      } else {
+        // setTimeout(() => setSaved(false), 1000);
+        alert("Failed to add compliance. Please try again.");
+      }
+    } catch (error) {
+      console.error(error)
+    }
   };
 
   const handleDelete = (id) => {
@@ -103,7 +161,7 @@ const Compliance = () => {
     setData(prev => prev.map(d => d.id === id ? { ...d, status: newStatus } : d));
   };
 
-  const getTag = (val) => val.toLowerCase().replace(" ", "-");
+  const getTag = (val) => val?.toLowerCase().replace(" ", "-");
 
   const resetFilters = () => {
     setSearch(""); setFilterPlant(""); setFilterDept(""); setFilterStatus(""); setFilterCriticality(""); setPage(1);
@@ -112,7 +170,7 @@ const Compliance = () => {
   return (
     <div className="compliance-page">
       {showAddForm ? (
-        <AddCompliance onCancel={() => setShowAddForm(false)} onSubmit={handleAddSubmit} />
+        <AddCompliance onCancel={() => setShowAddForm(false)} onSubmit={handleAddSubmit} masterData={masterData} />
       ) : (
         <>
           <div className="header">
@@ -123,7 +181,7 @@ const Compliance = () => {
           </div>
 
           <div className="filter-box">
-            <div className="filter-row">
+            <div className="filter-row" style={{ display: 'flex', flexFlow: 'row wrap'}}>
               <input
                 placeholder="Search by ID, type, category, plant..."
                 value={search}
@@ -131,23 +189,40 @@ const Compliance = () => {
               />
               <select value={filterPlant} onChange={e => { setFilterPlant(e.target.value); setPage(1); }}>
                 <option value="">All Plants</option>
-                {plants.map(p => <option key={p}>{p}</option>)}
+                {plants?.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
               </select>
               <select value={filterDept} onChange={e => { setFilterDept(e.target.value); setPage(1); }}>
                 <option value="">All Departments</option>
-                {depts.map(d => <option key={d}>{d}</option>)}
+                {depts?.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
               </select>
               <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}>
                 <option value="">All Status</option>
-                {["Completed", "Pending", "In Progress", "Overdue"].map(s => <option key={s}>{s}</option>)}
+                {['Open', 'Pending', 'Active', 'Inactive', 'Closed'].map(s => <option key={s}>{s}</option>)}
+              </select>
+              <select value={filterCompTyp} onChange={e => { setFilterCompTyp(e.target.value); setPage(1); }}>
+                <option value="">All Compliance Types</option>
+                {complianceTypes?.map(ct => <option key={ct._id} value={ct._id}>{ct.name}</option>)}
+              </select>
+              <select value={filterCompCat} onChange={e => { setFilterCompCat(e.target.value); setPage(1); }}>
+                <option value="">All Compliance Categories</option>
+                {complianceCategories?.map(cc => <option key={cc._id} value={cc._id}>{cc.name}</option>)}
+              </select>
+              <select value={filterCompFreq} onChange={e => { setFilterCompFreq(e.target.value); setPage(1); }}>
+                <option value="">All Frequencies</option>
+                {complianceFrequencies?.map(cf => <option key={cf._id} value={cf._id}>{cf.name}</option>)}
               </select>
               <select value={filterCriticality} onChange={e => { setFilterCriticality(e.target.value); setPage(1); }}>
-                <option value="">All Criticality</option>
-                {["Critical", "High", "Medium", "Low"].map(c => <option key={c}>{c}</option>)}
+                <option value="">All Criticalities</option>
+                {criticalities?.map(cr => <option key={cr._id} value={cr._id}>{cr.name}</option>)}
+              </select>
+              <select value={filterPenaltyType} onChange={e => { setFilterPenaltyType(e.target.value); setPage(1); }}>
+                <option value="">All Penalty Types</option>
+                {penaltyTypes?.map(pt => <option key={pt._id} value={pt._id}>{pt.name}</option>)}
               </select>
             </div>
             <div className="filter-row second">
-              {(search || filterPlant || filterDept || filterStatus || filterCriticality) && (
+              {saved && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Saved! Redirecting…</span>}
+              {(search || filterPlant || filterDept || filterStatus || filterCompTyp || filterCompCat || filterCompFreq || filterCriticality || filterPenaltyType) && (
                 <button className="light-btn" onClick={resetFilters}>✕ Clear Filters</button>
               )}
               <button className="add-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
@@ -172,15 +247,16 @@ const Compliance = () => {
               <tbody>
                 {paged.length === 0 ? (
                   <tr><td colSpan={9} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No records found</td></tr>
-                ) : paged.map((item, i) => (
-                  <tr key={item.id}>
-                    <td className="link">{item.id}</td>
-                    <td>{item.plant}</td>
-                    <td>{item.dept}</td>
-                    <td>{item.type}</td>
-                    <td>{item.category}</td>
-                    <td>{item.freq}</td>
-                    <td><span className={`tag ${getTag(item.criticality)}`}>{item.criticality}</span></td>
+                ) : paged.map((item) => (
+                  <tr key={item._id}>
+                    <td className="link">{item.complianceId}</td>
+                    <td>{item?.plant?.name}</td>
+                    <td>{item?.department?.name}</td>
+                    <td>{item?.complianceType?.name}</td>
+                    <td>{item?.complianceCategorization?.name}</td>
+                    <td>{item?.complianceFrequency?.name}</td>
+                    {/* <td>{item?.criticality?.name}</td> */}
+                    <td><span className={`tag ${getTag(item?.criticality?.name)}`}>{item?.criticality?.name}</span></td>
                     <td>
                       <select
                         className={`status ${getTag(item.status)}`}
@@ -188,7 +264,7 @@ const Compliance = () => {
                         onChange={e => handleStatusChange(item.id, e.target.value)}
                         style={{ border: "none", cursor: "pointer", fontSize: "11px" }}
                       >
-                        {["Completed", "Pending", "In Progress", "Overdue"].map(s => <option key={s}>{s}</option>)}
+                        {['Open', 'Pending', 'Active', 'Inactive', 'Closed'].map(s => <option key={s}>{s}</option>)}
                       </select>
                     </td>
                     <td>

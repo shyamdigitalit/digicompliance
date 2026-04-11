@@ -255,6 +255,7 @@ export const create = async (req, res) => {
     try {
         const user = req.user;
         const compPayload = safeJSONParse(req.body);
+        // console.log(compPayload);
 
         const ids = mapIds(compPayload);
         const plantId = ids.plant || user?.acc_plnt?._id;
@@ -264,6 +265,8 @@ export const create = async (req, res) => {
         compPayload.complianceId = generateId(user, existingData?.data?.length)
 
         const files = req.files?.allDocs || [];
+
+        // console.log(files);
         const { uploaded } = await uploadFiles([].concat(files), user?._id);
 
         const approvals = await fetchApprovalDetails(String(plantId), String(departmentId), user);

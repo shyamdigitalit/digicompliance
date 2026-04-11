@@ -12,7 +12,7 @@ import authRoutes from './routes/authRoute.js';
 import routes from './routes/route.js';
 // Load environment variables from .env file
 dotenv.config({ quiet: true });
-import { complianceScheduler } from './controllers/compliance_modules/schedulerController.js';
+// import { complianceScheduler } from './controllers/compliance_modules/schedulerController.js';
 
 // Determine the number of worker processes to spawn
 const numCPUs = Math.ceil(os.cpus().length / Math.ceil(os.cpus().length / 2)); // Use half of the available CPUs
@@ -51,7 +51,7 @@ if (cluster.isPrimary) {
     await mongoConn();
 
     // START SCHEDULER
-    complianceScheduler();
+    // complianceScheduler();
 
     // START WORKERS
     for (let i = 0; i < numCPUs; i++) cluster.fork();
