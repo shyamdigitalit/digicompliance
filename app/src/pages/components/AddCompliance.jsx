@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import "../styles/AddCompliance.css";
 
 const AddCompliance = ({ onCancel, onSubmit, masterData }) => {
+
+  const { user } = useSelector((state) => state.auth);
+  const isHierarchyThree = parseInt(user?.acc_typ?.heirarchy || 0) === 3;
+
+
   const [form, setForm] = useState({
     // complianceId: "",
     plant: "",
@@ -47,22 +52,46 @@ const AddCompliance = ({ onCancel, onSubmit, masterData }) => {
     // setForm(prev => ({ ...prev, allDocs: filePreviews }));
   };
 
-  const handleSubmit = () => {
-    if (!form.plant || !form.department || !form.complianceType) {
-      alert("Please fill required fields: Plant, Department, and Compliance Type");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    if (!form.complianceType || !form.complianceCategorization || !form.complianceFrequency || !form.criticality || !form.penaltyType) {
+      alert("Required fields are missing.");
+      setIsSubmitting(false);
       return;
     }
-    const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      if (key === "allDocs") {
-        value.forEach(file => formData.append("allDocs", file));
-      }
-      else {
-        formData.append(key, value);
-      }
-    });
-    onSubmit(formData);
+
+    if (!isHierarchyThree && !user?.acc_plnt && !form.plant) {
+      alert("Plant is required for your user role.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!isHierarchyThree && !user?.acc_dept && !form.department) {
+      alert("Department is required for your user role.");
+      setIsSubmitting(false);
+      return;
+    }
   };
+
+  React.useEffect(() => {
+    if (isHierarchyThree) {
+      setForm(p => ({
+        ...p,
+        plant: user?.plant?._id || p.plant,
+        department: user?.department?._id || p.department
+      }));
+    }
+    else {
+      if (user?.acc_plnt?._id) {
+        setForm(p => ({
+          ...p,
+          plant: user?.acc_plnt?._id || p.plant
+        }));
+      }
+    }
+  }, [isHierarchyThree, user]);
 
   return (
     <div className="add-page">
@@ -80,14 +109,19 @@ const AddCompliance = ({ onCancel, onSubmit, masterData }) => {
           <div className="form-grid">
             <div className="form-group">
               <label>Plant *</label>
-              <select name="plant" value={form.plant} onChange={handleChange}>
+              <select name="plant" value={form.plant}
+                disabled={mode === "view" || isHierarchyThree || (user?.acc_plnt?._id)}
+                onChange={handleChange}
+              >
                 <option value="">Select Plant</option>
                 {PLANTS.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
               </select>
             </div>
             <div className="form-group">
               <label>Department *</label>
-              <select name="department" value={form.department} onChange={handleChange}>
+              <select name="department" value={form.department}
+                disabled={mode === "view" || isHierarchyThree}
+                onChange={handleChange}>
                 <option value="">Select Department</option>
                 {DEPARTMENTS.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
               </select>
