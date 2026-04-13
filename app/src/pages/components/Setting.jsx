@@ -41,7 +41,8 @@ const DEFAULT_STEPS = [
 
 // ── Approval Flow Sub-component ──────────────────────────────────────────────
 const ApprovalFlow = () => {
-  const [activeProcessTab, setActiveProcessTab] = useState(1);
+  const [activePlntTab, setActivePlntTab] = useState(0);
+  const [activeDeptTab, setActiveDeptTab] = useState(0);
   const [steps, setSteps] = useState(DEFAULT_STEPS);
   const [modal, setModal] = useState(null); // null | stepIndex
   const [modalName, setModalName] = useState("");
@@ -92,12 +93,23 @@ const ApprovalFlow = () => {
       <h3>Dynamic Approval Flow</h3>
 
       {/* Process tabs */}
-      <div className="approval-tabs">
-        {PROCESS_TABS.map((t, i) => (
+      <div className="approval-tabs plnt-tabs">
+        {PLANTS.map((t, i) => (
           <button
             key={t}
-            className={`approval-tab ${activeProcessTab === i ? "active" : ""}`}
-            onClick={() => setActiveProcessTab(i)}
+            className={`approval-tab ${activePlntTab === i ? "active" : ""}`}
+            onClick={() => setActivePlntTab(i)}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      <div className="approval-tabs dept-tabs">
+        {DEPTS.map((t, i) => (
+          <button
+            key={t}
+            className={`approval-tab ${activeDeptTab === i ? "active" : ""}`}
+            onClick={() => setActiveDeptTab(i)}
           >
             {t}
           </button>
