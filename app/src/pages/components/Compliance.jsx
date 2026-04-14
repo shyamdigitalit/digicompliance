@@ -51,14 +51,15 @@ const Compliance = () => {
         axiosInstance.get("/api/criticlty/fetch"),
         axiosInstance.get("/api/penlty/fetch")
       ]);
+      // console.log(plantsRes.value?.data?.data);
       setMasterData({
-        plants: plantsRes.data?.data || [],
-        departments: deptsRes.data?.data || [],
-        complianceTypes: typesRes.data?.data || [],
-        complianceCategories: categoriesRes.data?.data || [],
-        complianceFrequencies: freqsRes.data?.data || [],
-        criticalities: critsRes.data?.data || [],
-        penaltyTypes: penltsRes.data?.data || []
+        plants: plantsRes.value?.data?.data || [],
+        departments: deptsRes.value?.data?.data || [],
+        complianceTypes: typesRes.value?.data?.data || [],
+        complianceCategories: categoriesRes.value?.data?.data || [],
+        complianceFrequencies: freqsRes.value?.data?.data || [],
+        criticalities: critsRes.value?.data?.data || [],
+        penaltyTypes: penltsRes.value?.data?.data || []
       });
     } catch (error) {
       console.error(error)

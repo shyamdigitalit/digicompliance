@@ -20,8 +20,8 @@ const create = async (req, res) => {
 
         dynapprvlPayld.approvalDetails = dynapprvlPayld.approvalDetails?.filter(elm => elm?.approvers?.length > 0)?.map((elm, i) => ({
             approvalLevel: i+1,
-            apprvl_title: elm?.apprvl_title || "",
-            apprvl_tag: elm?.apprvl_tag || "",
+            approvalTitle: elm?.approvalTitle || "",
+            approvalTag: elm?.approvalTag || "",
             approvers: elm?.approvers
         }))
         // console.log(dynapprvlPayld.approvalDetails);

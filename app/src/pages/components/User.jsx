@@ -31,7 +31,7 @@ const Users = () => {
   const getAllUserData = useCallback(async () => {
     try {
       const response = await axiosInstance.get("/api/acc/fetch");
-      if (response?.status === 202) {
+      if (response?.status === 200) {
         console.log(response.data?.data?.Acc);
         setData(response.data?.data?.Acc);
       }

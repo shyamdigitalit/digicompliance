@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import "../styles/AddCompliance.css";
+import { useSelector } from "react-redux";
 
-const AddCompliance = ({ onCancel, onSubmit, masterData }) => {
+const AddCompliance = ({ onCancel, onSubmit, mode='add', masterData }) => {
 
   const { user } = useSelector((state) => state.auth);
   const isHierarchyThree = parseInt(user?.acc_typ?.heirarchy || 0) === 3;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
 
   const [form, setForm] = useState({
@@ -39,6 +41,8 @@ const AddCompliance = ({ onCancel, onSubmit, masterData }) => {
   const CRITICALITIES = masterData.criticalities || [];
   const PENALTY_TYPES = masterData.penaltyTypes || [];
 
+  console.log(PLANTS);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -72,6 +76,21 @@ const AddCompliance = ({ onCancel, onSubmit, masterData }) => {
       alert("Department is required for your user role.");
       setIsSubmitting(false);
       return;
+    }
+
+    try {
+      const formData = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((val, i) => formData.append(`${key}[${i}]`, val));
+        } else {
+          formData.append(key, value);
+        }
+      });
+
+      await onSubmit(formData);
+    } catch (error) {
+      console.error(error);
     }
   };
 

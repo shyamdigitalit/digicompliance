@@ -174,9 +174,9 @@ const read = async (req, res) => {
         }
         const { filteredData: Acc = [], totalCount = 0, hasMore = false } = await dataPagination( accModel, page, limit, population, sortingDetails );
 
-        res.status(202).json({
+        res.status(200).json({
             message: 'All Accounts data fetched successfully.',
-            statuscode: 202,
+            statuscode: 200,
             data: { Acc, totalCount, hasMore, page }
         });
     } catch (error) {
@@ -192,7 +192,7 @@ const readById = async (req, res) => {
         .populate([ 'acc_typ', 'acc_plnt', 'acc_dept', 'acc_desig', 'createdby', 'updatedby' ]);
 
         if (Acc) {
-            res.status(202).json({ message: 'Account data fetched successfully.', statuscode: 202, data: Acc });
+            res.status(200).json({ message: 'Account data fetched successfully.', statuscode: 200, data: Acc });
         }
         else {
             res.status(404).json({ message: 'Account not found!', statuscode: 404 });
@@ -248,7 +248,7 @@ const readLowrHierarchy = async (req, res) => {
 
         const accDta = await accModel.aggregate(pipeln);
         if (accDta.length > 0) {
-            res.status(202).json({ message: 'Accounts with lower hierarchy fetched successfully.', statuscode: 202, data: accDta });
+            res.status(200).json({ message: 'Accounts with lower hierarchy fetched successfully.', statuscode: 200, data: accDta });
         } else {
             res.status(404).json({ message: 'No accounts found with lower hierarchy!', statuscode: 404 });
         }
