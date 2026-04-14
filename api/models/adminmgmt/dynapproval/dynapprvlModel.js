@@ -3,17 +3,45 @@ import mongoose from "mongoose";
 const { Schema, model, Types } = mongoose
 
 const DynapprvlSchema = new Schema({
-    apprvl_code: { type: String, required: true, trim: true },
-    // apprvl_creator_base: { type: String, required: true, enum: ['User', 'Designation', 'Department', 'Category'], default: 'User' },
-    apprvl_creator_base: { type: Types.ObjectId, ref: 'Plant', required: true },
-    apprvl_func: { type: Types.ObjectId, ref: 'Department', required: true },
-    apprvr_dtl: [{
-        apprvl_lvl: { type: Number, required: true },
-        apprvr: [{ type: Types.ObjectId, ref: 'Account', required: true }]
+    approvalCode: { type: String, required: true, trim: true },
+    approvalCreatorBase: { type: Types.ObjectId, ref: 'Plant', required: true },
+    approvalFunction: { type: Types.ObjectId, ref: 'Department', required: true },
+    approvalDetails: [{
+        approvalLevel: { type: Number, required: true, trim: true },
+        approvalTitle: { type: String, trim: true },
+        approvalTag: { type: String, trim: true },
+        approvers: [{
+            approverAccount: { type: Types.ObjectId, ref: 'Account', required: true },
+            approverAbbreviation: { type: String, trim: true },
+            approverRole: { type: String, trim: true }
+        }]
     }],
     status: { type: String, required: true, enum: ['Active', 'Inactive'], default: 'Active' },
     createdby: { type: Types.ObjectId, ref: 'Account', required: true },
     updatedby: { type: Types.ObjectId, ref: 'Account' }
 }, { timestamps: true })
 
-export default model('Dynamicapproval', DynapprvlSchema)
+DynapprvlSchema.index({ approvalCreatorBase: 1, approvalFunction: 1 }, { unique: true })
+
+const dynapprvlModel = model('Dynamicapproval', DynapprvlSchema);
+export default dynapprvlModel;
+
+// older
+// import mongoose from "mongoose";
+
+// const { Schema, model, Types } = mongoose
+
+// const DynapprvlSchema = new Schema({
+//     apprvl_code: { type: String, required: true, trim: true },
+//     apprvl_creator_base: { type: Types.ObjectId, ref: 'Plant', required: true },
+//     apprvl_func: { type: Types.ObjectId, ref: 'Department', required: true },
+//     apprvr_dtl: [{
+//         apprvl_lvl: { type: Number, required: true },
+//         apprvr: [{ type: Types.ObjectId, ref: 'Account', required: true }]
+//     }],
+//     status: { type: String, required: true, enum: ['Active', 'Inactive'], default: 'Active' },
+//     createdby: { type: Types.ObjectId, ref: 'Account', required: true },
+//     updatedby: { type: Types.ObjectId, ref: 'Account' }
+// }, { timestamps: true })
+
+// export default model('Dynamicapproval', DynapprvlSchema)

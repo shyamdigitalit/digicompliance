@@ -27,48 +27,94 @@ const mapIds = payload => ({
     penaltyType: toObjectId(payload.penaltyType)
 });
 
-const checkApprover = async user => {
-    // console.log(user);
-    const accPlnt = user?.acc_plnt?._id ? toObjectId(user?.acc_plnt?._id) : null;
-    const accDept = user?.acc_dept?._id ? toObjectId(user?.acc_dept?._id) : null;
+// const checkApprover = async user => {
+//     // console.log(user);
+//     const accPlnt = user?.acc_plnt?._id ? toObjectId(user?.acc_plnt?._id) : null;
+//     const accDept = user?.acc_dept?._id ? toObjectId(user?.acc_dept?._id) : null;
+//     if (user?.acc_typ?.heirarchy === 3 && !accPlnt && !accDept) {
+//         return [];
+//     }
+
+//     const matchCriteria = {
+//         'approvalDetails.approvers.approverAccount': new Types.ObjectId(user._id),
+//         status: 'Active'
+//     };
+//     if (user?.acc_typ?.heirarchy === 3) {
+//         matchCriteria['approvalCreatorBase'] = accPlnt;
+//         matchCriteria['approvalFunction'] = accDept;
+//     }
+//     else if (user?.acc_typ?.heirarchy !== 3) {
+//         if (accPlnt) matchCriteria['approvalCreatorBase'] = accPlnt;
+//     }
+
+//     const pipeline = [
+//         { $unwind: '$approvalDetails' },
+//         { $match: matchCriteria },
+//         {
+//             $group: {
+//                 _id: '$_id',
+//                 approvalCode: { $first: '$approvalCode' },
+//                 approvalCreatorBase: { $first: '$approvalCreatorBase' },
+//                 approvalFunction: { $first: '$approvalFunction' },
+//                 status: { $first: '$status' },
+//                 approvalLevel: { $first: '$approvalDetails.approvalLevel' },
+//                 is_approver: { $first: true },
+//                 approvers: { $first: { $arrayElemAt: ['$approvalDetails.approvers.approverAccount', 0] } }
+//             }
+//         },
+//         { $sort: { createdAt: -1 } }
+//     ]
+//     const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline);
+//     const resAppvrDtl = dynapprvlRecords?.some(itm => itm.approvers.acc_uname === user.acc_uname)
+//     return { apprvlDetails: dynapprvlRecords, isApprvr: resAppvrDtl }
+// };
+
+const checkApprover = async (user) => {
+    const accPlnt = user?.acc_plnt?._id ? toObjectId(user.acc_plnt._id) : null;
+    const accDept = user?.acc_dept?._id ? toObjectId(user.acc_dept._id) : null;
+
     if (user?.acc_typ?.heirarchy === 3 && !accPlnt && !accDept) {
-        return [];
+        return { apprvlDetails: [], isApprvr: false };
     }
 
     const matchCriteria = {
-        'apprvr_dtl.apprvr': new Types.ObjectId(user._id),
+        'approvalDetails.approvers.approverAccount': toObjectId(user._id),
         status: 'Active'
     };
+
     if (user?.acc_typ?.heirarchy === 3) {
-        matchCriteria['apprvl_creator_base'] = accPlnt;
-        matchCriteria['apprvl_func'] = accDept;
-    }
-    else if (user?.acc_typ?.heirarchy !== 3) {
-        if (accPlnt) matchCriteria['apprvl_creator_base'] = accPlnt;
+        matchCriteria['approvalCreatorBase'] = accPlnt;
+        matchCriteria['approvalFunction'] = accDept;
+    } else {
+        if (accPlnt) matchCriteria['approvalCreatorBase'] = accPlnt;
     }
 
     const pipeline = [
-        { $unwind: '$apprvr_dtl' },
+        { $unwind: '$approvalDetails' },
+        { $unwind: '$approvalDetails.approvers' },
         { $match: matchCriteria },
+
         {
-            $group: {
-                _id: '$_id',
-                apprvl_code: { $first: '$apprvl_code' },
-                apprvl_creator_base: { $first: '$apprvl_creator_base' },
-                apprvl_func: { $first: '$apprvl_func' },
-                status: { $first: '$status' },
-                apprvl_lvl: { $first: '$apprvr_dtl.apprvl_lvl' },
-                is_approver: { $first: true },
-                apprvr: { $first: { $arrayElemAt: ['$apprvr_dtl.apprvr', 0] } }
+            $project: {
+                approvalCode: 1,
+                approvalCreatorBase: 1,
+                approvalFunction: 1,
+                approvalLevel: '$approvalDetails.approvalLevel',
+                approver: '$approvalDetails.approvers.approverAccount'
             }
-        },
-        { $sort: { createdAt: -1 } }
-    ]
+        }
+    ];
+
     const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline);
-    const resAppvrDtl = dynapprvlRecords?.some(itm => itm.apprvr.acc_uname === user.acc_uname)
-    return { apprvlDetails: dynapprvlRecords, isApprvr: resAppvrDtl }
+
+    return {
+        apprvlDetails: dynapprvlRecords,
+        isApprvr: dynapprvlRecords.length > 0
+    };
 };
 
+
+// CR
 const fetchComplianceDetails = async user => {
     if (user?.acc_typ?.heirarchy === 3 && !user?.acc_plnt && !user?.acc_dept) {
         return { success: false, message: 'Plant/Department missing' };
@@ -89,9 +135,10 @@ const fetchComplianceDetails = async user => {
     }
 
     const approvalMap = (approverInfo?.apprvlDetails || []).map(a => ({
-        plant: String(a.apprvl_creator_base?._id),
-        department: String(a.apprvl_func?._id),
-        apprvl_lvl: a.apprvl_lvl, acc_id: a.apprvr?._id
+        plant: String(a.approvalCreatorBase?._id),
+        department: String(a.approvalFunction?._id),
+        approvalLevel: a.approvalLevel,
+        acc_id: String(a.approvers?.approverAccount)
     }));
 
     const pipeline = [
@@ -139,11 +186,8 @@ const fetchComplianceDetails = async user => {
                 complianceFrequencyName: '$complianceFrequency.complianceFrequencyName',
                 criticalityName: '$criticality.criticalityName',
                 penaltyName: '$penaltyType.penaltyName',
-                approvalLevel: {
-                    $cond: [{ $and: [{ $ifNull: ['$approvalMatch.apprvl_lvl', false] }, { $eq: ['$currentPendingApprovalLevel', '$approvalMatch.apprvl_lvl'] }] }, '$approvalMatch.apprvl_lvl', 0]
-                }, isApprover: {
-                    $cond: [{ $and: [{ $ifNull: ['$approvalMatch.apprvl_lvl', false] }, { $eq: ['$currentPendingApprovalLevel', '$approvalMatch.apprvl_lvl'] }] }, true, false]
-                },
+                approvalLevel: { $cond: [{ $and: [{ $ifNull: ['$approvalMatch.approvalLevel', false] }, { $eq: ['$currentPendingApprovalLevel', '$approvalMatch.approvalLevel'] }] }, '$approvalMatch.approvalLevel', 0] },
+                isApprover: { $cond: [{ $and: [{ $ifNull: ['$approvalMatch.approvalLevel', false] }, { $eq: ['$currentPendingApprovalLevel', '$approvalMatch.approvalLevel'] }] }, true, false] },
                 createdAtITC: { $dateToString: { format: '%d-%m-%Y %H:%M:%S', date: '$createdAt', timezone: '+05:30' } },
                 updatedAtITC: { $dateToString: { format: '%d-%m-%Y %H:%M:%S', date: '$updatedAt', timezone: '+05:30' } }
             }
@@ -178,13 +222,13 @@ const calculateApproval = (user, maxLvl, currLvl, flag) => {
 
 const sendMailToApprover = async (plant, department, currentPendingApprovalLevel) => {
     const approvals = await fetchApprovalDetails(String(plant?._id), String(department?._id), null);
-    const currentLevelApprovers = approvals[0]?.apprvr_dtl
-    ?.find(ad => ad.apprvl_lvl === parseInt(currentPendingApprovalLevel, 10))
-    ?.apprvr?.map(a => ({ ...a, approvalLevel: parseInt(currentPendingApprovalLevel, 10) })) || [];
+    const currentLevelApprovers = approvals[0]?.approvalDetails
+    ?.find(ad => ad.approvalLevel === parseInt(currentPendingApprovalLevel, 10))
+    ?.approvers?.map(a => ({ ...a, approvalLevel: parseInt(currentPendingApprovalLevel, 10) })) || [];
 
     // console.log(currentLevelApprovers);
     if (currentLevelApprovers?.length === 0) return { success: false };
-    const recipients = currentLevelApprovers.map(a => a.acc_eml && a.acc_eml.trim()).filter(Boolean);
+    const recipients = currentLevelApprovers.map(a => a.approverAccount?.acc_eml && a.approverAccount?.acc_eml.trim()).filter(Boolean);
     // console.log('Recipients:', recipients);
     const mailResponse = await mailConfig(
         recipients,
@@ -383,7 +427,7 @@ export const approve = async (req, res) => {
         const { plant, department, currentPendingApprovalLevel } = safeJSONParse(req.body);
 
         const approvals = await fetchApprovalDetails(String(plant?._id), String(department?._id), user);
-        const result = calculateApproval(user, approvals[0]?.apprvr_dtl?.length, currentPendingApprovalLevel, flag);
+        const result = calculateApproval(user, approvals[0]?.approvalDetails?.length, currentPendingApprovalLevel, flag);
 
         const apprvData = await complianceModel.findByIdAndUpdate(
             id,

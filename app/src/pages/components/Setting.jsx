@@ -4,6 +4,7 @@ import "../styles/Setting.css";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux/slices/auth";
 import axiosInstance from "../../config/axiosInstance";
+import { generateAbbreviation } from "../../utilities/genAbbreviation";
 
 const masterList = [
   "Account Type", "plant", "department", "company", "designation", "compliancetype",
@@ -40,7 +41,7 @@ const DEFAULT_STEPS = [
 ];
 
 // ── Approval Flow Sub-component ──────────────────────────────────────────────
-const ApprovalFlow = () => {
+const ApprovalFlow = React.memo(() => {
   const [activePlntTab, setActivePlntTab] = useState(0);
   const [activeDeptTab, setActiveDeptTab] = useState(0);
   const [steps, setSteps] = useState(DEFAULT_STEPS);
@@ -48,6 +49,24 @@ const ApprovalFlow = () => {
   const [modalName, setModalName] = useState("");
   const [modalRole, setModalRole] = useState("");
   const [saved, setSaved] = useState(false);
+
+  const fetchSteps = React.useCallback(async () => {
+    // Simulate API call to fetch steps based on active tabs
+    // const response = await axiosInstance.get("/api/approval-steps", { params: { plant: PLANTS[activePlntTab], department: DEPTS[activeDeptTab] } });
+    // setSteps(response.data);
+
+    try {
+      const response = await axiosInstance.get("/api/dynapprvl/fetch", {
+        params: {
+          cbase: PLANTS[activePlntTab],
+          fnid: DEPTS[activeDeptTab]        }
+      });
+      console.log(response.data);
+      // Process and set steps based on response
+    } catch (error) {
+      console.error(error)
+    }
+  }, [activePlntTab, activeDeptTab]);
 
   const removeApprover = (si, ai) => {
     setSteps(prev =>
@@ -83,7 +102,9 @@ const ApprovalFlow = () => {
 
   const discard = () => setSteps(DEFAULT_STEPS);
 
-  const handleSave = () => {
+  const handleSave = (e) => {
+    // console.log(e);
+    console.log(steps);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -215,7 +236,7 @@ const ApprovalFlow = () => {
       )}
     </div>
   );
-};
+});
 
 // ── Main Settings Component ───────────────────────────────────────────────────
 const Settings = () => {

@@ -6,24 +6,27 @@ const create = async (req, res) => {
         const dynapprvlPayld = req.body;
         const user = req.user;
         
-        if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.apprvl_creator_base)) {
-            dynapprvlPayld.apprvl_creator_base = new mongoose.Types.ObjectId(dynapprvlPayld.apprvl_creator_base)
+        if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.approvalCreatorBase)) {
+            dynapprvlPayld.approvalCreatorBase = new mongoose.Types.ObjectId(dynapprvlPayld.approvalCreatorBase)
         }        
-        if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.apprvl_func)) {
-            dynapprvlPayld.apprvl_func = new mongoose.Types.ObjectId(dynapprvlPayld.apprvl_func)
+        if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.approvalFunction)) {
+            dynapprvlPayld.approvalFunction = new mongoose.Types.ObjectId(dynapprvlPayld.approvalFunction)
         }
         // console.log(dynapprvlPayld);
         const existingDynapprvl = await dynapprvlModel.findOne({
-            apprvl_creator_base: dynapprvlPayld.apprvl_creator_base,
-            apprvl_func: dynapprvlPayld.apprvl_func
+            approvalCreatorBase: dynapprvlPayld.approvalCreatorBase,
+            approvalFunction: dynapprvlPayld.approvalFunction
         });
 
-        dynapprvlPayld.apprvr_dtl = dynapprvlPayld.apprvr_dtl?.filter(elm => elm?.apprvr?.length > 0)?.map((elm, i) => ({
-            apprvl_lvl: i+1, apprvr: elm?.apprvr
+        dynapprvlPayld.approvalDetails = dynapprvlPayld.approvalDetails?.filter(elm => elm?.approvers?.length > 0)?.map((elm, i) => ({
+            approvalLevel: i+1,
+            apprvl_title: elm?.apprvl_title || "",
+            apprvl_tag: elm?.apprvl_tag || "",
+            approvers: elm?.approvers
         }))
-        // console.log(dynapprvlPayld.apprvr_dtl);
+        // console.log(dynapprvlPayld.approvalDetails);
         if (!existingDynapprvl) {
-            if (dynapprvlPayld.apprvr_dtl?.length === 0) return res.status(404).json({ message: "No Approver selected yet !" });
+            if (dynapprvlPayld.approvalDetails?.length === 0) return res.status(404).json({ message: "No Approver selected yet !" });
             else {
                 dynapprvlPayld.createdby = user?._id;
                 const dynapprvl = await dynapprvlModel.create(dynapprvlPayld);
@@ -38,7 +41,7 @@ const create = async (req, res) => {
             }
         }
         else {
-            if (dynapprvlPayld.apprvr_dtl?.length === 0) {
+            if (dynapprvlPayld.approvalDetails?.length === 0) {
                 const deletedDynapprvl = await dynapprvlModel.findByIdAndDelete(existingDynapprvl._id);
                 if (!deletedDynapprvl) {
                     return res.status(404).json({ message: "Failed to remove existing Dynamic Approval record" });
@@ -49,9 +52,9 @@ const create = async (req, res) => {
                 });
             }
             else {
-                delete dynapprvlPayld?.apprvl_code
-                delete dynapprvlPayld?.apprvl_creator_base
-                delete dynapprvlPayld?.apprvl_func
+                delete dynapprvlPayld?.approvalCode
+                delete dynapprvlPayld?.approvalCreatorBase
+                delete dynapprvlPayld?.approvalFunction
                 dynapprvlPayld.updatedby = user?._id
                 const updatedDynapprvl = await dynapprvlModel.findOneAndUpdate({ _id: existingDynapprvl._id }, dynapprvlPayld, { new: true });
                 if (!updatedDynapprvl) {
@@ -70,79 +73,76 @@ const create = async (req, res) => {
 }
 
 export const fetchApprovalDetails = async (cBase, funcId, user) => {
-    try {
-        // console.log(funcId);
-        const accTyp = parseInt(user?.acc_typ?.heirarchy || 0)
-        // console.log(accTyp);
+    // console.log(funcId);
+    const accTyp = parseInt(user?.acc_typ?.heirarchy || 0)
+    // console.log(accTyp);
 
-        const matchFunc = {};
-        if (cBase || accTyp>2) {
-            if (mongoose.Types.ObjectId.isValid(cBase)) {
-                matchFunc['apprvl_creator_base._id'] = new mongoose.Types.ObjectId(cBase);
-            } else {
-                matchFunc['apprvl_creator_base.plantCode'] = { $regex: `^${cBase}$`, $options: 'i' };
-            }
+    const matchFunc = {};
+    if (cBase || accTyp>2) {
+        if (mongoose.Types.ObjectId.isValid(cBase)) {
+            matchFunc['approvalCreatorBase._id'] = new mongoose.Types.ObjectId(cBase);
+        } else {
+            matchFunc['approvalCreatorBase.plantCode'] = { $regex: `^${cBase}$`, $options: 'i' };
         }
-        if (funcId || accTyp>2) {
-            if (mongoose.Types.ObjectId.isValid(funcId)) {
-                matchFunc['apprvl_func._id'] = new mongoose.Types.ObjectId(funcId);
-            } else {
-                matchFunc['apprvl_func.departmentCode'] = { $regex: `^${funcId}$`, $options: 'i' };
-            }
+    }
+    if (funcId || accTyp>2) {
+        if (mongoose.Types.ObjectId.isValid(funcId)) {
+            matchFunc['approvalFunction._id'] = new mongoose.Types.ObjectId(funcId);
+        } else {
+            matchFunc['approvalFunction.departmentCode'] = { $regex: `^${funcId}$`, $options: 'i' };
         }
+    }
 
-        const pipeline = [
-            // Populate apprvl_func (Function)
-            { $lookup: { from: 'plants', localField: 'apprvl_creator_base', foreignField: '_id', as: 'apprvl_creator_base' } },
-            { $unwind: '$apprvl_creator_base' },
-            { $lookup: { from: 'departments', localField: 'apprvl_func', foreignField: '_id', as: 'apprvl_func' } },
-            { $unwind: '$apprvl_func' },
+    const pipeline = [
+        // Populate approvalFunction (Function)
+        { $lookup: { from: 'plants', localField: 'approvalCreatorBase', foreignField: '_id', as: 'approvalCreatorBase' } },
+        { $unwind: '$approvalCreatorBase' },
+        { $lookup: { from: 'departments', localField: 'approvalFunction', foreignField: '_id', as: 'approvalFunction' } },
+        { $unwind: '$approvalFunction' },
 
-            // ✅ Dynamic filter by funcId (either ObjectId or departmentCode)
-            ...(Object.keys(matchFunc).length ? [{ $match: matchFunc }] : []),
+        // ✅ Dynamic filter by funcId (either ObjectId or departmentCode)
+        ...(Object.keys(matchFunc).length ? [{ $match: matchFunc }] : []),
 
-            // Populate createdby
-            { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
-            { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
+        // Populate createdby
+        { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
+        { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
 
-            // Populate updatedby
-            { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
-            { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
+        // Populate updatedby
+        { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
+        { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
 
-            // Step 1: Unwind apprvr_dtl
-            {
-                $unwind: { path: '$apprvr_dtl', preserveNullAndEmptyArrays: true } },
-            // Step 2: Lookup all apprvr accounts
-            { $lookup: { from: 'accounts', localField: 'apprvr_dtl.apprvr', foreignField: '_id', as: 'apprvr_dtl.apprvr' } },
-            {
-                $addFields: {
-                    createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
-                    updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
-                }
-            },
+        // Step 1: Unwind approvalDetails
+        {
+            $unwind: { path: '$approvalDetails', preserveNullAndEmptyArrays: true } },
+        // Step 2: Lookup all approvers accounts
+        { $lookup: { from: 'accounts', localField: 'approvalDetails.approvers.approverAccount', foreignField: '_id', as: 'approvalDetails.approvers.approverAccount' } },
+        {
+            $addFields: {
+                createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
+                updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
+            }
+        },
 
-            // Step 3: Group back apprvr_dtl into array
-            {
-                $group: {
-                    _id: '$_id',
-                    doc: { $first: '$$ROOT' },
-                    apprvr_dtl: {
-                        $push: {
-                            apprvl_lvl: '$apprvr_dtl.apprvl_lvl',
-                            apprvr: '$apprvr_dtl.apprvr'
-                        }
+        // Step 3: Group back approvalDetails into array
+        {
+            $group: {
+                _id: '$_id',
+                doc: { $first: '$$ROOT' },
+                approvalDetails: {
+                    $push: {
+                        approvalLevel: '$approvalDetails.approvalLevel',
+                        approvalTitle: '$approvalDetails.approvalTitle',
+                        approvalTag: '$approvalDetails.approvalTag',
+                        approvers: '$approvalDetails.approvers'
                     }
                 }
-            },
-            { $replaceRoot: { newRoot: { $mergeObjects: ['$doc', { apprvr_dtl: '$apprvr_dtl' }] } } },
-            { $sort: { updatedAt: -1 } }
-        ]
-        const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline)
-        return dynapprvlRecords
-    } catch (error) {
-        console.error('Error retrieving Dynamic Approval records:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
+            }
+        },
+        { $replaceRoot: { newRoot: { $mergeObjects: ['$doc', { approvalDetails: '$approvalDetails' }] } } },
+        { $sort: { updatedAt: -1 } }
+    ]
+    const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline)
+    return dynapprvlRecords
 }
 
 const read = async (req, res) => {
@@ -168,7 +168,7 @@ const readById = async (req, res) => {
     try {
         const dynapprvlId = req.params.id;
         const dynapprvlRecord = await dynapprvlModel.findById(dynapprvlId)
-            .populate(['apprvl_creator_base', 'apprvl_func', { path: 'apprvr_dtl', populate: 'apprvr'}, 'createdby', 'updatedby']);
+            .populate(['approvalCreatorBase', 'approvalFunction', { path: 'approvalDetails', populate: 'approvers'}, 'createdby', 'updatedby']);
         if (!dynapprvlRecord) {
             return res.status(404).json({ message: "Dynamic Approval record not found" });
         }
