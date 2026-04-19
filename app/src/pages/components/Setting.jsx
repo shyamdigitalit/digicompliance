@@ -17,6 +17,8 @@ const TIMEZONES = ["GMT +5:30 (India)", "GMT +0:00 (UTC)", "GMT -5:00 (EST)", "G
 // const PROCESS_TABS = ["ADMIN", "CPP", "ELECTRICAL", "HR", "SAFETY", "ENVIRONMENT"];
 const TAG_LABELS = ["Minimum 1 approver", "Quorum required", "Executive signature", "All must approve"];
 
+
+// ── Approval Flow Sub-component ──────────────────────────────────────────────
 let DEFAULT_STEPS = [
   // {
   //   title: "Initial Verification",
@@ -40,7 +42,6 @@ let DEFAULT_STEPS = [
   // },
 ];
 
-// ── Approval Flow Sub-component ──────────────────────────────────────────────
 const ApprovalFlow = React.memo(() => {
   const [plants, setPlants] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -53,74 +54,75 @@ const ApprovalFlow = React.memo(() => {
   const [modalRole, setModalRole] = useState("");
   const [saved, setSaved] = useState(false);
 
-  // const fetchMasters = React.useCallback(async () => {
-  //   try {
-  //     const [plantsRes, deptsRes] = await Promise.allSettled([
-  //       axiosInstance.get("/api/plants"),
-  //       axiosInstance.get("/api/departments")
-  //     ]);
-  //     setPlants(plantsRes.status === "fulfilled" ? plantsRes.value.data.map(p => p.name) : []);
-  //     setDepartments(deptsRes.status === "fulfilled" ? deptsRes.value.data.map(d => d.name) : []);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // }, []);
-  // React.useEffect(() => {
-  //   fetchMasters();
-  // }, [fetchMasters]);
-
-  const fetchSteps = React.useCallback(async () => {
-    // Simulate API call to fetch steps based on active tabs
-    // const response = await axiosInstance.get("/api/approval-steps", { params: { plant: PLANTS[activePlntTab], department: DEPTS[activeDeptTab] } });
-    // setSteps(response.data);
-
+  const fetchMasters = React.useCallback(async () => {
     try {
-      const [plantsRes, deptsRes] = await Promise.allSettled([
+      const [plantsRes, deptsRes] = await Promise.all([
         axiosInstance.get("/api/plnt/fetch"),
         axiosInstance.get("/api/dept/fetch")
       ]);
-      const plnts = plantsRes.status === "fulfilled" ? plantsRes.value.data.data : [];
-      const depts = deptsRes.status === "fulfilled" ? deptsRes.value.data.data : [];
-      setPlants(plnts);
-      setDepartments(depts);
 
-      if (plantsRes.status === "fulfilled" && deptsRes.status === "fulfilled") {
-        const cbase = plnts[activePlntTab]?._id;
-        const fnid = depts[activeDeptTab]?._id;
-        const stepsRes = await axiosInstance.get("/api/dynapprvl/fetch", { params: { cbase, fnid } });
-        if (stepsRes.status === 200) {
-          const data = stepsRes.data.data;
-          if (data && data.approvalDetails) {
-            setSteps(data.approvalDetails.map(ad => ({
-              title: ad.approvalTitle || `Step ${ad.approvalLevel}`,
-              tag: ad.approvalTag || TAG_LABELS[(ad.approvalLevel - 1) % TAG_LABELS.length],
-              approvers: ad.approvers.map(a => ({
-                initials: a.approverAbbreviation || generateAbbreviation(a.approverAccount.name),
-                name: a.approverAccount.name,
-                role: a.approverRole || "Team Member"
-              }))
-            })));
-          }
-          else {
-            setSteps([]);
-          }
-        }
-      }
-
-      // const response = await axiosInstance.get("/api/dynapprvl/fetch", {
-      //   params: {
-      //     cbase: plnts[activePlntTab],
-      //     fnid: depts[activeDeptTab]        }
-      // });
-      // console.log(response.data);
-      // Process and set steps based on response
+      setPlants(plantsRes.data.data || []);
+      setDepartments(deptsRes.data.data || []);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }, [activePlntTab, activeDeptTab]);
+  }, []);
   React.useEffect(() => {
-    fetchSteps();
-  }, [fetchSteps]);
+    fetchMasters();
+  }, [fetchMasters]);
+
+  const fetchApprovalFlow = React.useCallback(async () => {
+    try {
+      const cbase = plants[activePlntTab]?._id;
+      const fnid = departments[activeDeptTab]?._id;
+
+      if (!cbase || !fnid) return;
+
+      setSteps([]);
+
+      const res = await axiosInstance.get("/api/dynapprvl/fetch", {
+        params: { cbase, fnid }
+      });
+
+      const record = res.data.data?.[0];
+
+      if (record?.approvalDetails) {
+        setSteps(
+          record.approvalDetails.map(ad => {
+            const approverAccounts = ad.approvers?.approverAccount || [];
+
+            return {
+              title: ad.approvalTitle || `Step ${ad.approvalLevel}`,
+              tag:
+                ad.approvalTag ||
+                TAG_LABELS[(ad.approvalLevel - 1) % TAG_LABELS.length],
+
+              approvers: approverAccounts.map(acc => ({
+                id: acc._id,
+                initials: acc.acc_fname
+                  ?.split(" ")
+                  .map(w => w[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase(),
+                name: acc.acc_fname,
+                role: ad.approvers?.approverRole || "Team Member"
+              }))
+            };
+          })
+        );
+      } else {
+        setSteps([]);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [plants, departments, activePlntTab, activeDeptTab]);
+  React.useEffect(() => {
+    if (plants.length && departments.length) {
+      fetchApprovalFlow();
+    }
+  }, [fetchApprovalFlow]);
 
   const fetchAllAccounts = React.useCallback(async () => {
     try {
@@ -185,10 +187,6 @@ const ApprovalFlow = React.memo(() => {
   const discard = () => setSteps([...DEFAULT_STEPS]);
 
   const handleSave = () => {
-    // console.log(e);
-    // console.log(steps);
-    // console.log(plants[activePlntTab]);
-    // console.log(departments[activeDeptTab]);
     let dynapprvlPayld = {}
     Object.assign(dynapprvlPayld, {
       approvalCode: `PLNT${plants[activePlntTab]?.code}DEPT${departments[activeDeptTab]?.code}`,
@@ -232,7 +230,10 @@ const ApprovalFlow = React.memo(() => {
           <button
             key={t?._id}
             className={`approval-tab ${activePlntTab === i ? "active" : ""}`}
-            onClick={() => setActivePlntTab(i)}
+            onClick={() => {
+              setActivePlntTab(i);
+              setSteps([]); // reset immediately
+            }}
           >
             {t?.name}
           </button>
@@ -243,7 +244,10 @@ const ApprovalFlow = React.memo(() => {
           <button
             key={t?._id}
             className={`approval-tab ${activeDeptTab === i ? "active" : ""}`}
-            onClick={() => setActiveDeptTab(i)}
+            onClick={() => {
+              setActiveDeptTab(i);
+              setSteps([]); // reset immediately
+            }}
           >
             {t?.name}
           </button>
@@ -334,13 +338,6 @@ const ApprovalFlow = React.memo(() => {
               <option value="">Select an account</option>
               {allAccs?.map(a => <option key={a._id} value={a._id}>{a.acc_fname}</option>)}
             </select>
-            {/* <input
-              placeholder="Full name"
-              value={modalName}
-              onChange={e => setModalName(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && confirmAdd()}
-              autoFocus
-            /> */}
             <input
               placeholder="Role / title"
               value={modalRole}

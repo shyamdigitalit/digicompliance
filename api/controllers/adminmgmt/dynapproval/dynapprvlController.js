@@ -133,7 +133,11 @@ export const fetchApprovalDetails = async (cBase, funcId, user) => {
                         approvalLevel: '$approvalDetails.approvalLevel',
                         approvalTitle: '$approvalDetails.approvalTitle',
                         approvalTag: '$approvalDetails.approvalTag',
-                        approvers: '$approvalDetails.approvers'
+                        approvers: {
+                            approverAccount: '$approvalDetails.approvers.approverAccount',
+                            approverRole: '$approvalDetails.approvers.approverRole',
+                            approverAbbreviation: '$approvalDetails.approvers.approverAbbreviation'
+                        }
                     }
                 }
             }
