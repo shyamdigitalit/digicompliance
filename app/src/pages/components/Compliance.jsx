@@ -224,10 +224,8 @@ const Compliance = () => {
               {(search || filterPlant || filterDept || filterStatus || filterCompTyp || filterCompCat || filterCompFreq || filterCriticality || filterPenaltyType) && (
                 <button className="light-btn" onClick={resetFilters}>✕ Clear Filters</button>
               )}
-              {(user.acc_typ?.heirarchy>2 && user.acc_plnt && user.acc_dept)
-              || (user.acc_typ?.heirarchy<=2 && (user.acc_plnt || user.acc_dept))
-              && <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>}
-              {/* <button className="add-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button> */}
+              {(user.acc_typ?.heirarchy>2 && user.acc_plnt && user.acc_dept) && <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>}
+              {(user.acc_typ?.heirarchy<=2 && (user.acc_plnt || user.acc_dept)) && <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>}
             </div>
           </div>
 
