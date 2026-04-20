@@ -88,6 +88,7 @@ const getRoutes = [
     { path: '/acc/fetchuppr', handlers: [jwtHybrdProtect, accController.readLowrHierarchy] },
     { path: '/func/fetch', handlers: [jwtHybrdProtect, funcController.read] },
     { path: '/dynapprvl/fetch', handlers: [jwtHybrdProtect, dynapprvlController.read] },
+    { path: '/dynapprvl/acc/filter', handlers: [jwtHybrdProtect, dynapprvlController.filterAccounts] },
     { path: '/file/download/:id', handlers: [jwtHybrdProtect, fileOpController.downloadHandler] },
     { path: '/file/downloadall', handlers: [jwtHybrdProtect, fileOpController.downloadAllHandler] },
 ];

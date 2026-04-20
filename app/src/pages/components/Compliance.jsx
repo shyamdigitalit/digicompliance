@@ -3,6 +3,7 @@ import AddCompliance from "./AddCompliance";
 import "../styles/Compliance.css";
 import axiosInstance from "../../config/axiosInstance";
 import { useCallback } from "react";
+import { useSelector } from "react-redux";
 // import { useNavigate } from "react-router-dom";
 
 const COMPLIANCE_KEY = "compliance_data";
@@ -23,11 +24,8 @@ const Compliance = () => {
   });
   const [data, setData] = useState([]);
   const [saved, setSaved] = useState(false);
-  // const navigate = useNavigate();
-  // const [data, setData] = useState(() => {
-  //   try { return JSON.parse(localStorage.getItem(COMPLIANCE_KEY)) || defaultData; }
-  //   catch { return defaultData; }
-  // });
+
+  const user = useSelector(state => state.auth.user) || {};
 
   const fetchData = useCallback(async () => {
     try {
@@ -226,7 +224,10 @@ const Compliance = () => {
               {(search || filterPlant || filterDept || filterStatus || filterCompTyp || filterCompCat || filterCompFreq || filterCriticality || filterPenaltyType) && (
                 <button className="light-btn" onClick={resetFilters}>✕ Clear Filters</button>
               )}
-              <button className="add-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
+              {(user.acc_typ?.heirarchy>2 && user.acc_plnt && user.acc_dept)
+              || (user.acc_typ?.heirarchy<=2 && (user.acc_plnt || user.acc_dept))
+              && <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>}
+              {/* <button className="add-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button> */}
             </div>
           </div>
 

@@ -142,6 +142,7 @@ const Users = () => {
                   <th>Role</th>
                   <th>Plant</th>
                   <th>Department</th>
+                  <th>Heirarchy</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -154,8 +155,9 @@ const Users = () => {
                     <td>{user.acc_fname}</td>
                     <td>{user.acc_eml}</td>
                     <td><span className={getRoleClass(user.acc_typ?.typname)}>{user.acc_typ?.typname}</span></td>
-                    <td>{user.acc_plnt?.plantName}</td>
-                    <td>{user.acc_dept?.departmentName}</td>
+                    <td>{user.acc_plnt?.name}</td>
+                    <td>{user.acc_dept?.name}</td>
+                    <td>{user.acc_typ?.heirarchy}</td>
                     <td style={{ display: "flex", gap: "8px" }}>
                       <button onClick={() => handleEdit(user)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit">✏</button>
                       <button onClick={() => handleDelete(user.acc_uname)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>

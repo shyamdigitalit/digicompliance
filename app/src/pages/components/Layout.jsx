@@ -9,6 +9,7 @@ import LogoutIcon            from '@mui/icons-material/Logout';
 import SearchIcon            from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import "../styles/Dashboard.css";
+import { useSelector } from "react-redux";
 
 const navItems = [
   { path: "/dashboard",  label: "Dashboard",  icon: <DashboardOutlinedIcon /> },
@@ -24,10 +25,11 @@ const Layout = () => {
   const [search, setSearch]       = useState("");
   const [showDrop, setShowDrop]   = useState(false);
 
-  const user     = JSON.parse(localStorage.getItem("user")) || {};
-  const userName = user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
-  const role     = user.role || "Administrator";
-  const initials = userName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "U";
+  const user = useSelector(state => state.auth.user) || {};
+  const nameParts = user.acc_fname ? user.acc_fname.split(" ") : ["", ""];
+  const userName = user.acc_uname || "User";
+  const role = user.acc_typ?.typname || "Administrator";
+  const initials = `${nameParts.join(" ")?.[0] || "U"}`.toUpperCase();
 
   const isActive = (path) =>
     location.pathname.startsWith(path) ||

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import dynapprvlModel from "../../../models/adminmgmt/dynapproval/dynapprvlModel.js";
+import accModel from "../../../models/accModel.js";
 
 const create = async (req, res) => {
     try {
@@ -94,28 +95,74 @@ export const fetchApprovalDetails = async (cBase, funcId, user) => {
     }
 
     const pipeline = [
-        // Populate approvalFunction (Function)
+        // Populate plant
         { $lookup: { from: 'plants', localField: 'approvalCreatorBase', foreignField: '_id', as: 'approvalCreatorBase' } },
         { $unwind: '$approvalCreatorBase' },
+
+        // Populate department
         { $lookup: { from: 'departments', localField: 'approvalFunction', foreignField: '_id', as: 'approvalFunction' } },
         { $unwind: '$approvalFunction' },
 
-        // ✅ Dynamic filter by funcId (either ObjectId or departmentCode)
+        // Dynamic filter
         ...(Object.keys(matchFunc).length ? [{ $match: matchFunc }] : []),
 
-        // Populate createdby
+        // createdby
         { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
         { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
 
-        // Populate updatedby
+        // updatedby
         { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
         { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
 
-        // Step 1: Unwind approvalDetails
-        {
-            $unwind: { path: '$approvalDetails', preserveNullAndEmptyArrays: true } },
-        // Step 2: Lookup all approvers accounts
+        // 🔥 UNWIND approvalDetails
+        { $unwind: { path: '$approvalDetails', preserveNullAndEmptyArrays: true } },
+
+        // 🔥 UNWIND approvers
+        { $unwind: { path: '$approvalDetails.approvers', preserveNullAndEmptyArrays: true } },
+
+        // 🔥 Populate approverAccount
         { $lookup: { from: 'accounts', localField: 'approvalDetails.approvers.approverAccount', foreignField: '_id', as: 'approvalDetails.approvers.approverAccount' } },
+
+        // 🔥 Convert array → object
+        { $addFields: {
+            'approvalDetails.approvers.approverAccount': { $arrayElemAt: ['$approvalDetails.approvers.approverAccount', 0] }
+        } },
+
+        // 🔥 GROUP approvers back
+        {
+            $group: {
+                _id: {
+                    rootId: '$_id',
+                    approvalDetailsId: '$approvalDetails._id'
+                },
+                root: { $first: '$$ROOT' },
+                approvers: {
+                    $push: '$approvalDetails.approvers'
+                }
+            }
+        },
+
+        // 🔥 Rebuild approvalDetails
+        {
+            $group: {
+                _id: '$_id.rootId',
+                root: { $first: '$root' },
+                approvalDetails: {
+                    $push: {
+                        _id: '$_id.approvalDetailsId',
+                        approvalLevel: '$root.approvalDetails.approvalLevel',
+                        approvalTitle: '$root.approvalDetails.approvalTitle',
+                        approvalTag: '$root.approvalDetails.approvalTag',
+                        approvers: '$approvers'
+                    }
+                }
+            }
+        },
+
+        // 🔥 Merge back clean structure
+        { $replaceRoot: { newRoot: { $mergeObjects: [ '$root', { approvalDetails: '$approvalDetails' } ] } } },
+
+        // Optional IST fields
         {
             $addFields: {
                 createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
@@ -123,32 +170,11 @@ export const fetchApprovalDetails = async (cBase, funcId, user) => {
             }
         },
 
-        // Step 3: Group back approvalDetails into array
-        {
-            $group: {
-                _id: '$_id',
-                doc: { $first: '$$ROOT' },
-                approvalDetails: {
-                    $push: {
-                        approvalLevel: '$approvalDetails.approvalLevel',
-                        approvalTitle: '$approvalDetails.approvalTitle',
-                        approvalTag: '$approvalDetails.approvalTag',
-                        approvers: {
-                            approverAccount: '$approvalDetails.approvers.approverAccount',
-                            approverRole: '$approvalDetails.approvers.approverRole',
-                            approverAbbreviation: '$approvalDetails.approvers.approverAbbreviation'
-                        }
-                    }
-                }
-            }
-        },
-        { $replaceRoot: { newRoot: { $mergeObjects: ['$doc', { approvalDetails: '$approvalDetails' }] } } },
         { $sort: { updatedAt: -1 } }
-    ]
+    ];
     const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline)
     return dynapprvlRecords
 }
-
 const read = async (req, res) => {
     try {
         const cBase = String(req.query.cbase || '').trim();
@@ -163,6 +189,88 @@ const read = async (req, res) => {
         });
     } catch (error) {
         console.error('Error retrieving Dynamic Approval records:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const fetchAvailableAccounts = async (cBase, funcId) => {
+    const matchStage = {
+        $match: {
+            $or: [
+                // ✅ Case 1: hierarchy >= 2 with plant/department condition
+                {
+                    $and: [
+                    { "acc_typ.heirarchy": { $gt: 2 } },
+
+                    ...(cBase
+                        ? [
+                            mongoose.Types.ObjectId.isValid(cBase)
+                            ? { "acc_plnt._id": new mongoose.Types.ObjectId(cBase) }
+                            : { "acc_plnt.code": { $regex: `^${cBase}$`, $options: "i" } }
+                        ]
+                        : []),
+
+                    ...(funcId
+                        ? [
+                            {
+                            $or: [
+                                mongoose.Types.ObjectId.isValid(funcId)
+                                ? { "acc_dept._id": new mongoose.Types.ObjectId(funcId) }
+                                : { "acc_dept.code": { $regex: `^${funcId}$`, $options: "i" } },
+                                { acc_dept: null }, // ✅ allow plant-only mapping
+                            ]
+                            }
+                        ]
+                        : [])
+                    ]
+                },
+
+                // ✅ Case 2: hierarchy < 2 (no restriction)
+                {
+                    "acc_typ.heirarchy": { $lte: 2 }
+                }
+            ]
+        }
+    };
+
+    const pipeline = [
+        { $lookup: { from: 'accounttypes', localField: 'acc_typ', foreignField: '_id', as: 'acc_typ' } },
+        { $unwind: { path: '$acc_typ', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'plants', localField: 'acc_plnt', foreignField: '_id', as: 'acc_plnt' } },
+        { $unwind: { path: '$acc_plnt', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'departments', localField: 'acc_dept', foreignField: '_id', as: 'acc_dept' } },
+        { $unwind: { path: '$acc_dept', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'designations', localField: 'acc_desig', foreignField: '_id', as: 'acc_desig' } },
+        { $unwind: { path: '$acc_desig', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
+        { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
+        { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
+
+        // Dynamic filter
+        matchStage,
+
+        { $addFields: {
+            createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
+            updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
+        }}
+    ];
+
+    const accounts = await accModel.aggregate(pipeline);
+    return accounts;
+}
+const filterAccounts = async (req, res) => {
+    try {
+        const cBase = String(req.query.cbase || '').trim();
+        const funcId = String(req.query.fnid || '').trim();
+        const accounts = await fetchAvailableAccounts(cBase, funcId);
+        res.status(200).json({
+            message: 'Accounts retrieved successfully',
+            data: accounts,
+        });
+    }
+    catch (error) {
+        console.error('Error retrieving accounts:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -189,5 +297,6 @@ const readById = async (req, res) => {
 export default {
     create,
     read,
+    filterAccounts,
     readById
 };

@@ -30,7 +30,7 @@ const Login = () => {
                 if (response.status === 200) {
                     navigate("/");
                     const userData = response.data;
-                    localStorage.setItem("user", JSON.stringify(userData.data));
+                    // localStorage.setItem("user", JSON.stringify(userData.data));
                     dispatch(setCredentials(userData));
                     dispatch(snackbarReducer({ message: "Login successful!", severity: "success" }));
                 }
