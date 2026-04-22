@@ -1,13 +1,45 @@
 import React, { useState, useEffect } from "react";
 import "../styles/AddUser.css";
+import axiosInstance from "../../config/axiosInstance";
 
-const ROLES = ["Department Manager", "Plant Head", "Compliance Officer", "Quality Manager", "HR Manager", "Safety Officer", "Operations Manager", "Environment Manager"];
-const PLANTS = ["Mumbai Plant A", "Delhi Plant B", "Bangalore Plant C"];
+// const ROLES = ["Department Manager", "Plant Head", "Compliance Officer", "Quality Manager", "HR Manager", "Safety Officer", "Operations Manager", "Environment Manager"];
+// const PLANTS = ["Mumbai Plant A", "Delhi Plant B", "Bangalore Plant C"];
 
 const AddUser = ({ onCancel, onSubmit, initialData }) => {
   const [form, setForm] = useState({
     username: "", name: "", email: "", role: "", plant: "", description: ""
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [acctypes, setAcctypes] = useState([]);
+  const [plnts, setPlnts] = useState([]);
+  const [depts, setDepts] = useState([]);
+
+  const fetchMasterData = React.useCallback(async () => {
+    try {
+      const [accTypRes, plantRes, departmentRes] = await Promise.allSettled([
+        axiosInstance.get("/api/acctyp/fetch"),
+        axiosInstance.get("/api/plnt/fetch"),
+        axiosInstance.get("/api/dept/fetch")
+      ]);
+      if (accTypRes.status === "fulfilled" && accTypRes.value.status === 200) {
+        const accTyps = accTypRes.value.data?.data || [];
+        setAcctypes(accTyps);
+      }
+      if (plantRes.status === "fulfilled" && plantRes.value.status === 200) {
+        const plants = plantRes.value.data?.data || [];
+        setPlnts(plants);
+      }
+      if (departmentRes.status === "fulfilled" && departmentRes.value.status === 200) {
+        const depts = departmentRes.value.data?.data || [];
+        setDepts(depts);
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }, []);
+  React.useEffect(() => {
+    fetchMasterData();
+  }, [fetchMasterData]);
 
   useEffect(() => {
     if (initialData) setForm({ ...initialData, description: initialData.description || "" });
@@ -19,11 +51,12 @@ const AddUser = ({ onCancel, onSubmit, initialData }) => {
   };
 
   const handleSubmit = () => {
-    if (!form.username || !form.name || !form.email || !form.role || !form.plant) {
+    if (!form.acc_uname || !form.acc_fname || !form.acc_eml || !form.acc_typ) {
       alert("Please fill all required fields");
       return;
     }
-    onSubmit(form);
+    console.log(form);
+    // onSubmit(form);
   };
 
   return (
@@ -41,28 +74,47 @@ const AddUser = ({ onCancel, onSubmit, initialData }) => {
           <div className="form-grid">
             <div className="form-group">
               <label>Username *</label>
-              <input type="text" name="username" value={form.username} onChange={handleChange} disabled={!!initialData} placeholder="e.g. jsmith" />
+              <input type="text" name="acc_uname" value={form.acc_uname} onChange={handleChange} disabled={!!initialData} placeholder="e.g. jsmith" />
             </div>
             <div className="form-group">
               <label>Full Name *</label>
-              <input type="text" name="name" value={form.name} onChange={handleChange} placeholder="e.g. John Smith" />
+              <input type="text" name="acc_fname" value={form.acc_fname} onChange={handleChange} placeholder="e.g. John Smith" />
+            </div>
+            <div className="form-group">
+              <label>Password *</label>
+              <input type={showPassword ? "text" : "password"} name="acc_pass" value={form.acc_pass} onChange={handleChange} placeholder="e.g. ********" />
+              <label className="checkbox" style={{margin:'0.5rem 0 0 0.2rem'}}>
+                <input type="checkbox" onChange={() => setShowPassword(!showPassword)} />
+                Show Password
+              </label>
             </div>
             <div className="form-group">
               <label>Email Address *</label>
-              <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="e.g. john@company.com" />
+              <input type="email" name="acc_eml" value={form.acc_eml} onChange={handleChange} placeholder="e.g. john@company.com" />
+            </div>
+            <div className="form-group">
+              <label>Phone Number *</label>
+              <input type="text" name="acc_phn" value={form.acc_phn} onChange={handleChange} placeholder="e.g. 1234567890" />
             </div>
             <div className="form-group">
               <label>Role *</label>
-              <select name="role" value={form.role} onChange={handleChange}>
+              <select name="acc_typ" value={form.acc_typ} onChange={handleChange}>
                 <option value="">Select Role</option>
-                {ROLES.map(r => <option key={r}>{r}</option>)}
+                {acctypes.map(a => <option key={a?.id || a}>{a.typname}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label>Plant *</label>
-              <select name="plant" value={form.plant} onChange={handleChange}>
+              <label>Plant</label>
+              <select name="acc_plnt" value={form.acc_plnt} onChange={handleChange}>
                 <option value="">Select Plant</option>
-                {PLANTS.map(p => <option key={p}>{p}</option>)}
+                {plnts.map(p => <option key={p?.id || p}>{p.code}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Department</label>
+              <select name="acc_dept" value={form.acc_dept} onChange={handleChange}>
+                <option value="">Select Department</option>
+                {depts.map(d => <option key={d?.id || d}>{d.name}</option>)}
               </select>
             </div>
           </div>

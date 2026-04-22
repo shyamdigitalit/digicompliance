@@ -79,7 +79,7 @@ const Users = () => {
       setData(prev => prev.map(u => u.username === editingUser.username ? { ...u, ...formData } : u));
       setEditingUser(null);
     } else {
-      setData(prev => [...prev, { username: formData.username, name: formData.name, email: formData.email, role: formData.role, plant: formData.plant }]);
+      setData(prev => [...prev, { acc_uname: formData.acc_uname, name: formData.name, email: formData.email, role: formData.role, plant: formData.plant }]);
     }
     setShowAddForm(false);
   };
