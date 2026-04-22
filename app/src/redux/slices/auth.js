@@ -32,6 +32,14 @@ const auth = createSlice({
     },
 
     /* =====================
+       PROFILE UPDATE
+    ====================== */
+    updateProfile: (state, action) => {
+      const { data } = action.payload;
+      state.user = { ...state.user, ...data };
+    },    
+
+    /* =====================
        LOGOUT
     ====================== */
     logout: (state) => {
@@ -53,6 +61,7 @@ const auth = createSlice({
 export const {
   setToken,
   setCredentials,
+  updateProfile,
   logout,
   setLoading,
 } = auth.actions;

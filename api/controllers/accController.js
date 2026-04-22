@@ -287,7 +287,7 @@ const update = async (req, res) => {
                 updatedby: user?._id
             })
 
-            const Accupdt = await accModel.findByIdAndUpdate(accid, accPayload, { new: true });
+            const Accupdt = await accModel.findByIdAndUpdate(accid, accPayload, { new: true }).select('-acc_pass -acc_pass_bckup').populate([ 'acc_typ', 'acc_plnt', 'acc_dept', 'acc_desig', 'createdby', 'updatedby' ]);
 
             if (Accupdt) {
                 res.status(201).json({ message: 'Account updated successfully.', statuscode: 201, data: Accupdt });

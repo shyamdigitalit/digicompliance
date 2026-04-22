@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Setting.css";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../../redux/slices/auth";
+import { logout, updateProfile } from "../../redux/slices/auth";
 import axiosInstance from "../../config/axiosInstance";
 import { generateAbbreviation } from "../../utilities/genAbbreviation";
 import { DndContext, KeyboardSensor, PointerSensor, useDroppable, pointerWithin } from "@dnd-kit/core";
@@ -569,12 +569,12 @@ const Settings = () => {
   // console.log(storedUser);
   const nameParts = storedUser.acc_fname ? storedUser.acc_fname.split(" ") : ["", ""];
   const [profile, setProfile] = useState({
-    fullName: storedUser.acc_fname || "",
-    email: storedUser.acc_eml || "",
-    phone: storedUser.acc_phn || "",
-    company: storedUser.acc_comp || "",
-    defaultPlant: storedUser.acc_plnt?.name || "",
-    department: storedUser.acc_dept?.name || "",
+    acc_fname: storedUser.acc_fname || "",
+    acc_eml: storedUser.acc_eml || "",
+    acc_phn: storedUser.acc_phn || "",
+    acc_comp: storedUser.acc_comp || "",
+    acc_plnt: storedUser.acc_plnt?._id || null,
+    acc_dept: storedUser.acc_dept?._id || null,
   });
 
   const initials = `${nameParts.join(" ")?.[0] || "U"}`.toUpperCase();
@@ -598,14 +598,31 @@ const Settings = () => {
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
-    setProfile(prev => ({ ...prev, [name]: value }));
+    if (name === "acc_phn") {
+      // Allow only digits and limit to 10 characters
+      const cleanedValue = value.replace(/\D/g, "").slice(0, 10);
+      setProfile(prev => ({ ...prev, [name]: cleanedValue }));
+    }
+    else {
+      setProfile(prev => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleSaveProfile = () => {
-    // const updated = { ...storedUser, ...profile, name: `${profile.fullName} ${profile.lastName}` };
-    // localStorage.setItem("user", JSON.stringify(updated));
-    // setSaved(true);
-    // setTimeout(() => setSaved(false), 2500);
+  const handleSaveProfile = async () => {
+    console.log(profile);
+
+    try {
+      const response = await axiosInstance.patch(`/api/acc/update?id=${storedUser._id}`, profile);
+      console.log(response.data);
+      if (response.status === 201) {
+        // Handle successful update
+        dispatch(updateProfile({ data: response.data.data }));
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      }
+    } catch (error) {
+      console.error(error)
+    }
   };
 
   const handleLogout = async () => {
@@ -670,35 +687,35 @@ const Settings = () => {
               <div className="profile-top">
                 <div className="avatar">{initials || "JD"}</div>
                 <div>
-                  <div style={{ fontWeight: 600 }}>{profile.fullName}</div>
-                  <div style={{ fontSize: "12px", color: "#6b7280" }}>{profile.email}</div>
+                  <div style={{ fontWeight: 600 }}>{profile.acc_fname}</div>
+                  <div style={{ fontSize: "12px", color: "#6b7280" }}>{storedUser?.acc_typ?.typname}</div>
                 </div>
               </div>
               <hr />
               <div className="form-grid">
-                <div><label>Full Name</label><input name="fullName" value={profile.fullName} onChange={handleProfileChange} /></div>
+                <div><label>Full Name</label><input name="acc_fname" value={profile.acc_fname} onChange={handleProfileChange} /></div>
                 {/* <div><label>Last Name</label><input name="lastName" value={profile.lastName} onChange={handleProfileChange} /></div> */}
-                <div><label>Email Address</label><input name="email" value={profile.email} onChange={handleProfileChange} /></div>
-                <div><label>Phone Number</label><input name="phone" value={profile.phone} onChange={handleProfileChange} /></div>
-                <div><label>Company Name</label><input name="company" value={profile.company} onChange={handleProfileChange} /></div>
+                <div><label>Email Address</label><input name="acc_eml" value={profile.acc_eml} onChange={handleProfileChange} /></div>
+                <div><label>Phone Number</label><input name="acc_phn" value={profile.acc_phn} onChange={handleProfileChange} /></div>
+                <div><label>Company Name</label><input name="acc_comp" value={profile.acc_comp} onChange={handleProfileChange} /></div>
                 <div>
                   <label>Default Plant</label>
-                  <select name="defaultPlant" value={profile.defaultPlant} onChange={handleProfileChange}>
+                  <select name="acc_plnt" value={profile.acc_plnt} onChange={handleProfileChange}>
                     <option value="">Choose</option>
-                    {plants.map(p => <option key={p._id} value={p.name}>{p.name}</option>)}
+                    {plants.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label>Department</label>
-                  <select name="department" value={profile.department} onChange={handleProfileChange}>
+                  <select name="acc_dept" value={profile.acc_dept} onChange={handleProfileChange}>
                     <option value="">Choose</option>
-                    {departments.map(d => <option key={d._id} value={d.name}>{d.name}</option>)}
+                    {departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
                   </select>
                 </div>
               </div>
               <div style={{ marginTop: "20px", display: "flex", gap: "10px", alignItems: "center" }}>
                 <button className="dark-btn" onClick={handleSaveProfile}>Save Changes</button>
-                {saved && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Saved successfully</span>}
+                {saved && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Updated successfully</span>}
               </div>
             </div>
           )}
