@@ -471,7 +471,6 @@ const Settings = () => {
     }
   };
 
-<<<<<<< Updated upstream
   const handleSaveProfile = async () => {
     console.log(profile);
 
@@ -488,9 +487,6 @@ const Settings = () => {
       console.error(error)
     }
   };
-=======
-  const handleSaveProfile = () => { /* save logic */ };
->>>>>>> Stashed changes
 
   const handleLogout = async () => {
     try {
@@ -570,18 +566,11 @@ const Settings = () => {
               </div>
               <hr />
               <div className="form-grid">
-<<<<<<< Updated upstream
                 <div><label>Full Name</label><input name="acc_fname" value={profile.acc_fname} onChange={handleProfileChange} /></div>
                 {/* <div><label>Last Name</label><input name="lastName" value={profile.lastName} onChange={handleProfileChange} /></div> */}
                 <div><label>Email Address</label><input name="acc_eml" value={profile.acc_eml} onChange={handleProfileChange} /></div>
                 <div><label>Phone Number</label><input name="acc_phn" value={profile.acc_phn} onChange={handleProfileChange} /></div>
                 <div><label>Company Name</label><input name="acc_comp" value={profile.acc_comp} onChange={handleProfileChange} /></div>
-=======
-                <div><label>Full Name</label><input name="fullName" value={profile.fullName} onChange={handleProfileChange} /></div>
-                <div><label>Email Address</label><input name="email" value={profile.email} onChange={handleProfileChange} /></div>
-                <div><label>Phone Number</label><input name="phone" value={profile.phone} onChange={handleProfileChange} /></div>
-                <div><label>Company Name</label><input name="company" value={profile.company} onChange={handleProfileChange} /></div>
->>>>>>> Stashed changes
                 <div>
                   <label>Default Plant</label>
                   <select name="acc_plnt" value={profile.acc_plnt} onChange={handleProfileChange}>
