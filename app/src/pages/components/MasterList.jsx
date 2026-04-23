@@ -90,6 +90,7 @@ const MasterList = () => {
 
       {
         type === "Account Type" ? (
+          <div className="table-scroll-wrap">
           <table>
             <thead>
               <tr>
@@ -127,7 +128,9 @@ const MasterList = () => {
               ))}
             </tbody>
           </table>
+        </div>
         ) : (
+          <div className="table-scroll-wrap">
           <table>
             <thead>
               <tr>
@@ -163,6 +166,7 @@ const MasterList = () => {
               ))}
             </tbody>
           </table>
+        </div>
         )
       }      
     </div>

@@ -17,41 +17,90 @@
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 20px;
+  align-items: center;
 }
 
 .user-filters input {
   flex: 1;
+  min-width: 160px;
   padding: 8px;
 }
 
-.user-filters select,
-.light-btn {
+.user-filters select {
   padding: 8px;
   border: 1px solid #ddd;
   background: white;
   border-radius: 6px;
+  min-width: 120px;
+}
+
+.light-btn {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .dark-btn {
-  margin-left: auto;
   background: #111827;
   color: white;
   border: none;
   padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
-/* Table */
+.add-btn {
+  margin-left: auto;
+  background: #111827;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Table container — hidden inner scroll */
 .user-table {
   background: white;
   border-radius: 10px;
-  overflow: hidden;
   border: 1px solid #eee;
+  overflow: hidden;
+}
+
+/* Scrollable inner wrapper */
+.user-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb transparent;
+}
+
+.user-table-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.user-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.user-table-scroll::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.user-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
 }
 
 table {
   width: 100%;
+  min-width: 700px;
   border-collapse: collapse;
 }
 
@@ -63,6 +112,7 @@ th, td {
   padding: 12px;
   text-align: left;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 tr {
@@ -80,11 +130,12 @@ tr {
   padding: 4px 8px;
   border-radius: 6px;
   font-size: 12px;
+  white-space: nowrap;
 }
 
-.tag.blue { background: #dbeafe; color: #1e3a8a; }
+.tag.blue   { background: #dbeafe; color: #1e3a8a; }
 .tag.purple { background: #ede9fe; color: #5b21b6; }
-.tag.green { background: #dcfce7; color: #166534; }
+.tag.green  { background: #dcfce7; color: #166534; }
 .tag.orange { background: #ffedd5; color: #9a3412; }
 
 /* Edit */
@@ -97,5 +148,43 @@ tr {
 .table-footer {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-top: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .user-filters input {
+    min-width: 100%;
+  }
+
+  .user-filters {
+    gap: 8px;
+  }
+
+  .add-btn {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+  }
+
+  .table-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-header h2 {
+    font-size: 18px;
+  }
+
+  th, td {
+    padding: 10px 8px;
+    font-size: 13px;
+  }
 }

@@ -173,7 +173,7 @@ const Users = () => {
             <button className="add-btn" onClick={() => { setEditingUser(null); setShowAddForm(true); }}>+ Add User</button>
           </div>
 
-          <div className="user-table">
+          <div className="user-table"><div className="user-table-scroll">
             <table>
               <thead>
                 <tr>
@@ -209,6 +209,7 @@ const Users = () => {
             </table>
           </div>
 
+          </div>
           <div className="table-footer">
             <span>Showing {filtered?.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered?.length)} of {filtered?.length} users</span>
             <div style={{ display: "flex", gap: "6px" }}>

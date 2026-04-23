@@ -114,3 +114,60 @@ tr {
 .actions {
   cursor: pointer;
 } 
+/* ── Hidden inner scroll for document table ── */
+.doc-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb transparent;
+}
+
+.doc-table-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.doc-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.doc-table-scroll::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.doc-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+.doc-table-scroll table {
+  min-width: 600px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .document-page {
+    padding: 16px;
+  }
+
+  .doc-filters {
+    flex-wrap: wrap;
+  }
+
+  .doc-filters input,
+  .doc-filters select {
+    min-width: calc(50% - 5px);
+    flex: 1 1 calc(50% - 5px);
+  }
+}
+
+@media (max-width: 480px) {
+  .document-page {
+    padding: 12px;
+  }
+
+  .doc-filters input,
+  .doc-filters select {
+    min-width: 100%;
+  }
+}

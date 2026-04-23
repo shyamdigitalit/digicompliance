@@ -413,6 +413,7 @@ const Compliance = () => {
           </div>
 
           <div className="table-box">
+            <div className="table-box-scroll">
             <table>
               <thead>
                 <tr>
@@ -463,6 +464,8 @@ const Compliance = () => {
                 ))}
               </tbody>
             </table>
+            </div>
+
 
             <div className="table-footer">
               <span>

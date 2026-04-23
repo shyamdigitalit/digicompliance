@@ -127,6 +127,7 @@ const Documents = () => {
       </div>
 
       <div className="table-container">
+        <div className="doc-table-scroll">
         <table>
           <thead>
             <tr>
@@ -160,6 +161,7 @@ const Documents = () => {
             ))}
           </tbody>
         </table>
+        </div>
         <div className="table-footer" style={{ padding: "12px", borderTop: "1px solid #f1f5f9", fontSize: "12px", color: "#6b7280" }}>
           {filtered.length} document{filtered.length !== 1 ? "s" : ""} found
         </div>
