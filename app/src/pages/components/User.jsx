@@ -5,17 +5,6 @@ import axiosInstance from "../../config/axiosInstance";
 
 const USER_KEY = "user_data";
 
-// const defaultData = [
-//   { username: "jsmith", name: "John Smith", email: "john.smith@company.com", role: "Department Manager", plant: "Mumbai Plant A" },
-//   { username: "sjohnson", name: "Sarah Johnson", email: "sarah.johnson@company.com", role: "Plant Head", plant: "Delhi Plant B" },
-//   { username: "mchen", name: "Michael Chen", email: "michael.chen@company.com", role: "Compliance Officer", plant: "Mumbai Plant A" },
-//   { username: "edavis", name: "Emily Davis", email: "emily.davis@company.com", role: "Quality Manager", plant: "Bangalore Plant C" },
-//   { username: "rwilson", name: "Robert Wilson", email: "robert.wilson@company.com", role: "HR Manager", plant: "Delhi Plant B" },
-//   { username: "lbrown", name: "Lisa Brown", email: "lisa.brown@company.com", role: "Safety Officer", plant: "Mumbai Plant A" },
-//   { username: "dgarcia", name: "David Garcia", email: "david.garcia@company.com", role: "Operations Manager", plant: "Bangalore Plant C" },
-//   { username: "amartin", name: "Anna Martin", email: "anna.martin@company.com", role: "Environment Manager", plant: "Delhi Plant B" },
-// ];
-
 const PAGE_SIZE = 10;
 
 const Users = () => {
@@ -26,13 +15,15 @@ const Users = () => {
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [filterPlant, setFilterPlant] = useState("");
+  const [filterDepartment, setFilterDepartment] = useState("");
   const [page, setPage] = useState(1);
+  const [saved, setSaved] = useState(false);
 
   const getAllUserData = useCallback(async () => {
     try {
       const response = await axiosInstance.get("/api/acc/fetch");
       if (response?.status === 200) {
-        console.log(response.data?.data?.Acc);
+        // console.log(response.data?.data?.Acc);
         setData(response.data?.data?.Acc);
       }
       else {
@@ -51,37 +42,74 @@ const Users = () => {
     localStorage.setItem(USER_KEY, JSON.stringify(data));
   }, [data]);
 
-  const roles = useMemo(() => [...new Set(data?.map(d => d.role))], [data]);
-  const plants = useMemo(() => [...new Set(data?.map(d => d.plant))], [data]);
+  const roles = useMemo(() => [...new Set(data?.map(d => d.acc_typ?.typname || ""))].filter(Boolean), [data]);
+  const plants = useMemo(() => [...new Set(data?.map(d => d.acc_plnt?.name || ""))].filter(Boolean), [data]);
+  const departments = useMemo(() => [...new Set(data?.map(d => d.acc_dept?.name || ""))].filter(Boolean), [data]);
+  // console.log(roles);
+  // console.log(plants);
+  // console.log(departments);
+
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return data?.filter(u => {
-      const matchSearch = !q || u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
-      const matchRole = !filterRole || u.role === filterRole;
-      const matchPlant = !filterPlant || u.plant === filterPlant;
-      return matchSearch && matchRole && matchPlant;
+      const matchSearch = !q || u.acc_fname.toLowerCase().includes(q) || u.acc_uname.toLowerCase().includes(q) || u.acc_eml.toLowerCase().includes(q);
+      const matchRole = !filterRole || u.acc_typ === filterRole;
+      const matchPlant = !filterPlant || u.acc_plnt === filterPlant;
+      const matchDepartment = !filterDepartment || u.acc_dept === filterDepartment;
+      return matchSearch && matchRole && matchPlant && matchDepartment;
     });
-  }, [data, search, filterRole, filterPlant]);
+  }, [data, search, filterRole, filterPlant, filterDepartment]);
 
   const totalPages = Math.ceil(filtered?.length / PAGE_SIZE);
   const paged = filtered?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const getRoleClass = (role) => {
-    if (role?.includes("Manager")) return "tag blue";
-    if (role?.includes("Head")) return "tag purple";
-    if (role?.includes("Officer")) return "tag green";
+    if (role?.includes("Superadmin")) return "tag blue";
+    if (role?.includes("Admin")) return "tag purple";
+    if (role?.includes("General")) return "tag green";
     return "tag orange";
   };
 
-  const handleAddSubmit = (formData) => {
-    if (editingUser) {
-      setData(prev => prev.map(u => u.username === editingUser.username ? { ...u, ...formData } : u));
-      setEditingUser(null);
-    } else {
-      setData(prev => [...prev, { acc_uname: formData.acc_uname, name: formData.name, email: formData.email, role: formData.role, plant: formData.plant }]);
+  const handleAddSubmit = async (formData) => {
+    try {
+      if (editingUser) {
+        setData(prev => prev.map(u => u.acc_uname === editingUser.acc_uname ? { ...u, ...formData } : u));
+        const response = await axiosInstance.patch(`/api/acc/update?id=${editingUser._id}`, formData);
+        if (response?.status === 201) {
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false)
+            setEditingUser(null);
+            setShowAddForm(false);
+            getAllUserData();
+          }, 1000);
+          // alert("User updated successfully");
+        }
+      }
+      else {
+        setData(prev => [...prev, {
+          acc_uname: formData.acc_uname,
+          acc_fname: formData.acc_fname,
+          acc_eml: formData.acc_eml,
+          acc_typ: formData.acc_typ,
+          acc_plnt: formData.acc_plnt,
+          acc_dept: formData.acc_dept
+        }]);
+        const response = await axiosInstance.post("/api/acc/create", formData);
+        if (response?.status === 201) {
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false)
+            setShowAddForm(false);
+            getAllUserData();
+          }, 1000);
+        }
+      }
+    } catch (error) {
+      console.error(error)
     }
-    setShowAddForm(false);
+    // setShowAddForm(false);
   };
 
   const handleEdit = (user) => {
@@ -89,13 +117,20 @@ const Users = () => {
     setShowAddForm(true);
   };
 
-  const handleDelete = (username) => {
-    if (window.confirm("Delete this user?")) {
-      setData(prev => prev.filter(u => u.username !== username));
+  const handleDelete = async (id) => {
+    try {
+      if (window.confirm("Delete this user?")) {
+        const response = await axiosInstance.delete(`/api/acc/delete?id=${id}`)
+        if (response.status === 200) {
+          setData(prev => prev.filter(u => u._id !== id));
+        }
+      }
+    } catch (error) {
+      console.error(error)
     }
   };
 
-  const resetFilters = () => { setSearch(""); setFilterRole(""); setFilterPlant(""); setPage(1); };
+  const resetFilters = () => { setSearch(""); setFilterRole(""); setFilterPlant(""); setFilterDepartment(""); setPage(1); };
 
   return (
     <>
@@ -104,6 +139,8 @@ const Users = () => {
           onCancel={() => { setShowAddForm(false); setEditingUser(null); }}
           onSubmit={handleAddSubmit}
           initialData={editingUser}
+          mode={editingUser ? "edit" : "add"}
+          saved={saved}
         />
       ) : (
         <>
@@ -126,7 +163,11 @@ const Users = () => {
               <option value="">All Plants</option>
               {plants.map(p => <option key={p}>{p}</option>)}
             </select>
-            {(search || filterRole || filterPlant) && (
+            <select value={filterDepartment} onChange={e => { setFilterDepartment(e.target.value); setPage(1); }}>
+              <option value="">All Departments</option>
+              {departments.map(d => <option key={d}>{d}</option>)}
+            </select>
+            {(search || filterRole || filterPlant || filterDepartment) && (
               <button className="light-btn" onClick={resetFilters}>✕ Clear</button>
             )}
             <button className="add-btn" onClick={() => { setEditingUser(null); setShowAddForm(true); }}>+ Add User</button>
@@ -160,7 +201,7 @@ const Users = () => {
                     <td>{user.acc_typ?.heirarchy}</td>
                     <td style={{ display: "flex", gap: "8px" }}>
                       <button onClick={() => handleEdit(user)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit">✏</button>
-                      <button onClick={() => handleDelete(user.acc_uname)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                      <button onClick={() => handleDelete(user._id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
                     </td>
                   </tr>
                 ))}

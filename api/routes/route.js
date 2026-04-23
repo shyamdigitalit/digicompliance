@@ -27,13 +27,6 @@ import fileOpController from '../controllers/fileOpController.js';
 // import { getPolicyExipryMailDetails } from '../utilities/jobscheduler/jobScheduler.js';
 // import { getInstallmentRenewalMailDetails } from '../utilities/jobscheduler/jobScheduler.js';
 
-// file upload env
-const fileCounts = process.env.UPLD_COUNT ? parseInt(process.env.UPLD_COUNT) : 10;
-const fileSizeMB = process.env.UPLD_SIZE_MB ? parseInt(process.env.UPLD_SIZE_MB) : 20;
-fileUpload.limits = {
-    files: fileCounts,
-    fileSize: fileSizeMB * 1024 * 1024, // in bytes
-};
 
 // Utility function to create routes
 const createRoute = (method, path, ...handlers) => {
@@ -48,7 +41,7 @@ createRoute('get', '/chckstat', (_, res) => res.json({ message: 'Server is Onlin
 const postRoutes = [
     { path: '/send-mail', handlers: [jwtHybrdProtect, fileUpload.none(), testMail] },
     { path: '/settings/update', handlers: [jwtHybrdProtect, fileUpload.none(), settingsController.updateSettings] },
-    { path: '/comp/create', handlers: [ jwtHybrdProtect, fileUpload.fields([ { name: "allDocs", maxCount: fileCounts } ]), complianceController.create ]},
+    { path: '/comp/create', handlers: [ jwtHybrdProtect, fileUpload.fields([ { name: "allDocs" } ]), complianceController.create ]},
     { path: '/acctyp/create', handlers: [jwtHybrdProtect, fileUpload.none(), acctypController.create] },
     { path: '/dept/create', handlers: [jwtHybrdProtect, fileUpload.none(), deptController.create] },
     { path: '/desig/create', handlers: [jwtHybrdProtect, fileUpload.none(), desigController.create] },
@@ -96,7 +89,7 @@ getRoutes.forEach(route => createRoute('get', route.path, ...route.handlers));
 
 // PATCH
 const patchRoutes = [
-    { path: '/comp/update', handlers: [jwtHybrdProtect, fileUpload.fields([ { name: "allDocs", maxCount: fileCounts } ]), complianceController.update] },
+    { path: '/comp/update', handlers: [jwtHybrdProtect, fileUpload.fields([ { name: "allDocs" } ]), complianceController.update] },
     { path: '/comp/approve', handlers: [jwtHybrdProtect, fileUpload.none(), complianceController.approve] },
     { path: '/acctyp/update', handlers: [jwtHybrdProtect, fileUpload.none(), acctypController.update] },
     { path: '/dept/update/:id', handlers: [jwtHybrdProtect, fileUpload.none(), deptController.update] },

@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 import "../styles/AddCompliance.css";
 import { useSelector } from "react-redux";
+import axiosInstance from '../../config/axiosInstance';
 
-const AddCompliance = ({ onCancel, onSubmit, mode='add', masterData }) => {
+const AddCompliance = ({ onCancel, onSubmit, mode='add', initialData, saved, masterData }) => {
 
   const { user } = useSelector((state) => state.auth);
   const isHierarchyThree = parseInt(user?.acc_typ?.heirarchy || 0) === 3;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [files, setFiles] = React.useState([]);
+  const [existingFiles, setExistingFiles] = React.useState([]);
+  const [removedFileIds, setRemovedFileIds] = React.useState([]);
 
 
   const [form, setForm] = useState({
@@ -29,9 +33,8 @@ const AddCompliance = ({ onCancel, onSubmit, mode='add', masterData }) => {
     location: "",
     scheduledPeriodicity: "",
     remarks: "",
-    allDocs: []
+    // allDocs: []
   });
-  // const [saved, setSaved] = useState(null); // null = not attempted, true = success, false = failure
 
   const PLANTS = masterData.plants || [];
   const DEPARTMENTS = masterData.departments || [];
@@ -41,7 +44,101 @@ const AddCompliance = ({ onCancel, onSubmit, mode='add', masterData }) => {
   const CRITICALITIES = masterData.criticalities || [];
   const PENALTY_TYPES = masterData.penaltyTypes || [];
 
-  console.log(PLANTS);
+  React.useEffect(() => {
+    if (initialData?.allDocs?.length) {
+      setExistingFiles(initialData.allDocs);
+    }
+  }, [initialData]);
+
+  React.useEffect(() => {
+    // console.log(mode);
+    // console.log(initialData);
+    if (initialData) {
+      delete initialData.acc_pass;
+      setForm({
+        plant: initialData?.plant?._id || null,
+        department: initialData?.department?._id || null,
+        complianceType: initialData?.complianceType?._id || null,
+        complianceCategorization: initialData?.complianceCategorization?._id || null,
+        complianceFrequency: initialData?.complianceFrequency?._id || null,
+        criticality: initialData?.criticality?._id || null,
+        penaltyType: initialData?.penaltyType?._id || null,
+        dueDate: initialData?.dueDate,
+        legislation: initialData?.legislation || "",
+        complianceHeader: initialData?.complianceHeader || "",
+        complianceDescription: initialData?.complianceDescription || "",
+        complianceApplicability: initialData?.complianceApplicability || "",
+        additionalInformation: initialData?.additionalInformation || "",
+        provision: initialData?.provision || "",
+        complianceStatutoryAuthority: initialData?.complianceStatutoryAuthority || "",
+        location: initialData?.location || "",
+        scheduledPeriodicity: initialData?.scheduledPeriodicity || "",
+        remarks: initialData?.remarks || "",
+      })
+    };
+  }, [initialData])
+
+
+  // File Options
+  const handleRemoveExisting = (file) => {
+    console.log(file);
+    setExistingFiles(prev => prev.filter(f => f.filId !== file.filId));
+    setRemovedFileIds(prev => [...prev, file.filId]);
+  };
+  const handleRemoveNew = (index) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+  const sortedExistingFiles = [...existingFiles].sort((a, b) =>
+    a.filName.localeCompare(b.filName)
+  );
+  const sortedNewFiles = [...files].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+  const handleDownload = async (file) => {
+    try {
+      const res = await axiosInstance.get(`/api/file/download/${file.filId}`, { responseType: "blob" });
+
+      const blob = new Blob([res.data], {
+        type: res.headers["content-type"] || file.filContentType
+      });
+
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.filName;
+
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("❌ Download error:", err);
+    }
+  };
+
+
+  const handleView = async (file) => {
+  try {
+    const res = await axiosInstance.get(
+      `/api/file/download/${file.filId}`,
+      { responseType: "blob" }
+    );
+
+    const contentType = res.headers["content-type"];
+
+    const blob = new Blob([res.data], { type: contentType });
+
+    const url = window.URL.createObjectURL(blob);
+
+    window.open(url);
+
+  } catch (err) {
+    console.error("View error:", err);
+  }
+};
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,39 +153,52 @@ const AddCompliance = ({ onCancel, onSubmit, mode='add', masterData }) => {
     // setForm(prev => ({ ...prev, allDocs: filePreviews }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+    // if (isSubmitting) return;
+    // setIsSubmitting(true);
     if (!form.complianceType || !form.complianceCategorization || !form.complianceFrequency || !form.criticality || !form.penaltyType) {
       alert("Required fields are missing.");
-      setIsSubmitting(false);
+      // setIsSubmitting(false);
       return;
     }
 
     if (!isHierarchyThree && !user?.acc_plnt && !form.plant) {
       alert("Plant is required for your user role.");
-      setIsSubmitting(false);
+      // setIsSubmitting(false);
       return;
     }
 
     if (!isHierarchyThree && !user?.acc_dept && !form.department) {
       alert("Department is required for your user role.");
-      setIsSubmitting(false);
+      // setIsSubmitting(false);
       return;
     }
 
     try {
+      console.log(form);
+      // const formData = new FormData();
+      // Object.entries(form).forEach(([key, value]) => {
+      //   if (Array.isArray(value)) {
+      //     value.forEach((val, i) => formData.append(`${key}[${i}]`, val));
+      //   } else {
+      //     formData.append(key, value);
+      //   }
+      // });
+
       const formData = new FormData();
+
       Object.entries(form).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          value.forEach((val, i) => formData.append(`${key}[${i}]`, val));
+        if (key === "allDocs") {
+          value.forEach(file => {
+            formData.append("allDocs", file); // ✅ FIXED
+          });
         } else {
           formData.append(key, value);
         }
       });
 
-      await onSubmit(formData);
+      onSubmit(formData);
     } catch (error) {
       console.error(error);
     }
@@ -235,14 +345,91 @@ const AddCompliance = ({ onCancel, onSubmit, mode='add', masterData }) => {
         {/* FILE UPLOAD */}
         <div className="section">
           <h3>Documents</h3>
-          <div className="upload-box">
+          {/* <div className="upload-box">
             <input type="file" name="allDocs" multiple onChange={handleFiles} />
+          </div> */}
+
+          <div className="upload-box">
+            <h4>Documents</h4>
+
+            {/* Existing Files */}
+            {sortedExistingFiles.length > 0 && (
+              <ul className="file-list">
+                {sortedExistingFiles.map((file, index) => (
+                  <li key={index}>
+                    <span>📄 {file.filName}</span>
+
+                    <div className="file-actions">
+                      <button
+                        type="button"
+                        className="link-btn"
+                        onClick={() => handleView(file)}
+                      >
+                        👁 View
+                      </button>
+
+                      <button
+                        type="button"
+                        className="link-btn"
+                        onClick={() => handleDownload(file)}
+                      >
+                        ⬇ Download
+                      </button>
+
+
+                      {mode !== "view" && (
+                        <button
+                          type="button"
+                          className="danger-btn"
+                          onClick={() => handleRemoveExisting(file)}
+                        >
+                          ✖ Remove
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* Upload Section (Only for add/edit) */}
+            {mode !== "view" && (
+              <>
+                <input
+                  type="file"
+                  multiple
+                  onChange={e => setFiles(Array.from(e.target.files))}
+                />
+
+                {sortedNewFiles.length > 0 && (
+                  <ul className="file-list" style={{ marginTop: "10px" }}>
+                    {sortedNewFiles.map((file, index) => (
+                      <li key={index}>
+                        <span>📎 {file.name}</span>
+
+                        <div className="file-actions">
+                          <button
+                            type="button"
+                            className="danger-btn"
+                            onClick={() => handleRemoveNew(index)}
+                          >
+                            ✖ Remove
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
           </div>
         </div>
 
         {/* ACTIONS */}
         <div className="form-actions">
           <button className="light-btn" onClick={onCancel}>Cancel</button>
+          {(saved && mode==='add') && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Created! Redirecting…</span>}
+          {(saved && mode==='edit') && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Updated! Redirecting…</span>}
           <button className="dark-btn" onClick={handleSubmit}>Submit</button>
         </div>
       </div>

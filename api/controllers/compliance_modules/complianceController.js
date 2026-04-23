@@ -200,7 +200,7 @@ const fetchComplianceDetails = async user => {
 };
 
 const generateId = (user, lastIndex=0) =>
-    (`${user?.acc_plnt?.plantCode}${user?.acc_dept?.departmentCode}${parseInt(lastIndex || 0)+1}`);
+    (`${user?.acc_plnt?.code}${user?.acc_dept?.code}${parseInt(lastIndex || 0)+1}`);
 
 const calculateApproval = (user, maxLvl, currLvl, flag) => {
     const approved = flag !== 0;
@@ -299,7 +299,7 @@ export const create = async (req, res) => {
     try {
         const user = req.user;
         const compPayload = safeJSONParse(req.body);
-        // console.log(compPayload);
+        console.log(compPayload);
 
         const ids = mapIds(compPayload);
         const plantId = ids.plant || user?.acc_plnt?._id;
@@ -309,8 +309,8 @@ export const create = async (req, res) => {
         compPayload.complianceId = generateId(user, existingData?.data?.length)
 
         const files = req.files?.allDocs || [];
+        console.log(files);
 
-        // console.log(files);
         const { uploaded } = await uploadFiles([].concat(files), user?._id);
 
         const approvals = await fetchApprovalDetails(String(plantId), String(departmentId), user);
@@ -401,6 +401,8 @@ export const update = async (req, res) => {
 
         const files = req.files?.allDocs || [];
         const { uploaded } = await uploadFiles([].concat(files), user?._id);
+
+        // delete payload.complianceId
 
         const updated = await complianceModel.findByIdAndUpdate(
             id,

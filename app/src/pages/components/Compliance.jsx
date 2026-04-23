@@ -13,6 +13,7 @@ const PAGE_SIZE = 8;
 
 const Compliance = () => {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [masterData, setMasterData] = useState({
     plants: [],
     departments: [],
@@ -82,17 +83,17 @@ const Compliance = () => {
     localStorage.setItem(COMPLIANCE_KEY, JSON.stringify(data));
   }, [data]);
 
-  const plants = useMemo(() => [...new Set(data.map(d => d.plant))], [data]);
-  const depts = useMemo(() => [...new Set(data.map(d => d.department))], [data]);
-  const complianceTypes = useMemo(() => [...new Set(data.map(d => d.complianceType))], [data]);
-  const complianceCategories = useMemo(() => [...new Set(data.map(d => d.complianceCategorization))], [data]);
-  const complianceFrequencies = useMemo(() => [...new Set(data.map(d => d.complianceFrequency))], [data]);
-  const criticalities = useMemo(() => [...new Set(data.map(d => d.criticality))], [data]);
-  const penaltyTypes = useMemo(() => [...new Set(data.map(d => d.penaltyType))], [data]);
+  const plants = useMemo(() => [...new Set(data?.map(d => d.plant || ""))], [data]);
+  const depts = useMemo(() => [...new Set(data?.map(d => d.department || ""))], [data]);
+  const complianceTypes = useMemo(() => [...new Set(data?.map(d => d.complianceType || ""))], [data]);
+  const complianceCategories = useMemo(() => [...new Set(data?.map(d => d.complianceCategorization || ""))], [data]);
+  const complianceFrequencies = useMemo(() => [...new Set(data?.map(d => d.complianceFrequency || ""))], [data]);
+  const criticalities = useMemo(() => [...new Set(data?.map(d => d.criticality || ""))], [data]);
+  const penaltyTypes = useMemo(() => [...new Set(data?.map(d => d.penaltyType || ""))], [data]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return data.filter(item => {
+    return data?.filter(item => {
       const matchSearch = !q || item.complianceId.toLowerCase().includes(q) || item.complianceType.toLowerCase().includes(q) || item.complianceCategorization.toLowerCase().includes(q) || item.plant.toLowerCase().includes(q);
       const matchPlant = !filterPlant || item.plant === filterPlant;
       const matchDept = !filterDept || item.department === filterDept;
@@ -110,40 +111,87 @@ const Compliance = () => {
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleAddSubmit = async (formData) => {
-    // const user = JSON.parse(localStorage.getItem("user")) || {};
-    // const newItem = {
-    //   id: `CMP-${String(data.length + 1).padStart(3, "0")}`,
-    //   plant: formData.plant,
-    //   dept: formData.department,
-    //   type: formData.ComplianceType,
-    //   category: formData.complianceCategory,
-    //   freq: formData.complianceFrequency,
-    //   criticality: formData.criticality,
-    //   status: "Pending",
-    //   dueDate: formData.date || "",
-    // };
-    // const updated = [...data, newItem];
-    // setData(updated);
-
-    // Log activity
-    // const activities = JSON.parse(localStorage.getItem(ACTIVITY_KEY)) || [];
-    // activities.unshift({ text: `Added ${newItem.type} - ${newItem.plant}`, user: user.name || "Admin", time: "Just now" });
-    // localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activities.slice(0, 20)));
-
     try {
-      const response = await axiosInstance.post("/api/comp/create", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-      if (response.status === 201) {
-        setSaved(true);
-        setTimeout(() => {
-          setSaved(false)
-          setShowAddForm(false);
-          fetchData(); // Refresh data from server to get the new ID and any defaults
-        }, 1000);
-      } else {
-        // setTimeout(() => setSaved(false), 1000);
-        alert("Failed to add compliance. Please try again.");
+      if (editing) {
+        const response = await axiosInstance.patch(`/api/comp/update?id=${editing?._id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        if (response.status === 201) {
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false)
+            setShowAddForm(false);
+            fetchData();
+          }, 1000);
+        } else {
+          // setTimeout(() => setSaved(false), 1000);
+          alert("Failed to add compliance. Please try again.");
+        }
+      }
+      else {
+        const response = await axiosInstance.post("/api/comp/create", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        if (response.status === 201) {
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false)
+            setShowAddForm(false);
+            fetchData();
+          }, 1000);
+        } else {
+          // setTimeout(() => setSaved(false), 1000);
+          alert("Failed to add compliance. Please try again.");
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  };
+
+  const handleEdit = (row) => {
+    setEditing(row);
+    setShowAddForm(true);
+  };
+
+  const handleApprove = async (row) => {
+    try {
+      if (window.confirm("Approve this compliance record?")) {
+        // setData(prev => prev.filter(d => d.id !== id));
+        const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=1`, row)
+        if (response.status === 201) {
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false)
+            setShowAddForm(false);
+            fetchData();
+          }, 1000);
+        }
+        else {
+          alert(`Approval Failed`)
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  };
+
+  const handleReject = async (row) => {
+    try {
+      if (window.confirm("Reject this compliance record?")) {
+        // setData(prev => prev.filter(d => d.id !== id));
+        const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=0`, row)
+        if (response.status === 201) {
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false)
+            setShowAddForm(false);
+            fetchData();
+          }, 1000);
+        }
+        else {
+          alert(`Rejection Failed`)
+        }
       }
     } catch (error) {
       console.error(error)
@@ -152,12 +200,12 @@ const Compliance = () => {
 
   const handleDelete = (id) => {
     if (window.confirm("Delete this compliance record?")) {
-      setData(prev => prev.filter(d => d.id !== id));
+      setData(prev => prev.filter(d => d._id !== id));
     }
   };
 
   const handleStatusChange = (id, newStatus) => {
-    setData(prev => prev.map(d => d.id === id ? { ...d, status: newStatus } : d));
+    setData(prev => prev.map(d => d._id === id ? { ...d, status: newStatus } : d));
   };
 
   const getTag = (val) => val?.toLowerCase().replace(" ", "-");
@@ -169,7 +217,14 @@ const Compliance = () => {
   return (
     <div className="compliance-page">
       {showAddForm ? (
-        <AddCompliance onCancel={() => setShowAddForm(false)} onSubmit={handleAddSubmit} masterData={masterData} />
+        <AddCompliance
+        onCancel={() => setShowAddForm(false)}
+        onSubmit={handleAddSubmit}
+        initialData={editing}
+        mode={editing ? "edit" : "add"}
+        saved={saved}
+        masterData={masterData}
+        />
       ) : (
         <>
           <div className="header">
@@ -220,7 +275,6 @@ const Compliance = () => {
               </select>
             </div>
             <div className="filter-row second">
-              {saved && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Saved! Redirecting…</span>}
               {(search || filterPlant || filterDept || filterStatus || filterCompTyp || filterCompCat || filterCompFreq || filterCriticality || filterPenaltyType) && (
                 <button className="light-btn" onClick={resetFilters}>✕ Clear Filters</button>
               )}
@@ -241,6 +295,7 @@ const Compliance = () => {
                   <th>Frequency</th>
                   <th>Criticality</th>
                   <th>Status</th>
+                  <th>Approval Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -267,8 +322,12 @@ const Compliance = () => {
                         {['Open', 'Pending', 'Active', 'Inactive', 'Closed'].map(s => <option key={s}>{s}</option>)}
                       </select>
                     </td>
+                    <td>{item.approvalStatus}</td>
                     <td>
-                      <button onClick={() => handleDelete(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "16px" }} title="Delete">🗑</button>
+                      <button onClick={() => handleEdit(item)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit">✏</button>
+                      <button onClick={() => handleApprove(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#11bd2e", fontSize: "16px" }} title="Approve">✓</button>
+                      <button onClick={() => handleReject(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#bd6d11", fontSize: "16px" }} title="Reject">!</button>
+                      <button onClick={() => handleDelete(item.id)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "16px" }} title="Delete">🗑</button>
                     </td>
                   </tr>
                 ))}

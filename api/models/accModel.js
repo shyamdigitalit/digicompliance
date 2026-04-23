@@ -20,8 +20,8 @@ const AccSchema = new Schema({
     acc_addrss: { type: String, trim: true },
     acc_pan: { type: String, trim: true },
     acc_gst: { type: String, trim: true },
-    acc_img: { type: String },
-    acc_img_publicid: { type: String },
+    // acc_img: { type: String },
+    // acc_img_publicid: { type: String },
     acc_dob: { type: Date },
     acc_anniversary: { type: Date },
     acc_is_creator: { type: Boolean, required: true, enum: [true, false], default: true },
@@ -32,3 +32,23 @@ const AccSchema = new Schema({
 }, { timestamps: true });
 
 export default model('Account', AccSchema);
+
+
+// acc_uname: "",
+// acc_pass: "",
+// acc_pass_bckup: "",
+// acc_eml: "",
+// acc_phn: "",
+// acc_fname: "",
+// acc_secphn: "",
+// acc_typ: "",
+// acc_plnt: "",
+// acc_comp: "",
+// acc_dept: "",
+// acc_desig: "",
+// acc_emp_code: "",
+// acc_addrss: "",
+// acc_pan: "",
+// acc_gst: "",
+// acc_dob: "",
+// acc_anniversary: "",

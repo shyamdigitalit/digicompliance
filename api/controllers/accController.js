@@ -166,7 +166,9 @@ const read = async (req, res) => {
             { $addFields: {
                 createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
                 updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
-            }}
+            }},
+            { $project: { acc_pass: 0, acc_pass_bckup: 0 } },
+            { $sort: { updatedAt: -1 } }
         ]
         const sortingDetails = {
             fieldName: 'updatedAt',
@@ -261,7 +263,8 @@ const readLowrHierarchy = async (req, res) => {
 const update = async (req, res) => {
     const accid = new mongoose.Types.ObjectId(req.query.id) || null;
     const accPayload = req.body
-    const user = accPayload
+    // console.log(accPayload);
+    const user = req.user
     // const filepath = req.file?.path;
 
     try {
