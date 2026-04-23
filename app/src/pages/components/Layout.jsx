@@ -75,7 +75,7 @@ const Layout = () => {
           <div className="footer-box">
             <h4>Manage Compliance Data</h4>
             <p>Download your history or view our integration guides</p>
-            <button onClick={() => navigate("/document")}>Export Data</button>
+            <button onClick={() => navigate("/compliance")}>Export Data</button>
             <button onClick={() => navigate("/document")}>View Docs</button>
           </div>
         </div>

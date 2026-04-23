@@ -86,13 +86,13 @@ const Compliance = () => {
     localStorage.setItem(COMPLIANCE_KEY, JSON.stringify(data));
   }, [data]);
 
-  const plants = useMemo(() => [...new Set(data?.map(d => d.plant || ""))], [data]);
-  const depts = useMemo(() => [...new Set(data?.map(d => d.department || ""))], [data]);
-  const complianceTypes = useMemo(() => [...new Set(data?.map(d => d.complianceType || ""))], [data]);
-  const complianceCategories = useMemo(() => [...new Set(data?.map(d => d.complianceCategorization || ""))], [data]);
-  const complianceFrequencies = useMemo(() => [...new Set(data?.map(d => d.complianceFrequency || ""))], [data]);
-  const criticalities = useMemo(() => [...new Set(data?.map(d => d.criticality || ""))], [data]);
-  const penaltyTypes = useMemo(() => [...new Set(data?.map(d => d.penaltyType || ""))], [data]);
+  const plants = useMemo(() => [...new Set(data?.map(d => d.plant?.name || ""))], [data]);
+  const depts = useMemo(() => [...new Set(data?.map(d => d.department?.name || ""))], [data]);
+  const complianceTypes = useMemo(() => [...new Set(data?.map(d => d.complianceType?.name || ""))], [data]);
+  const complianceCategories = useMemo(() => [...new Set(data?.map(d => d.complianceCategorization?.name || ""))], [data]);
+  const complianceFrequencies = useMemo(() => [...new Set(data?.map(d => d.complianceFrequency?.name || ""))], [data]);
+  const criticalities = useMemo(() => [...new Set(data?.map(d => d.criticality?.name || ""))], [data]);
+  const penaltyTypes = useMemo(() => [...new Set(data?.map(d => d.penaltyType?.name || ""))], [data]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -301,6 +301,42 @@ const Compliance = () => {
     setData(prev => prev.map(d => d._id === id ? { ...d, status: newStatus } : d));
   };
 
+  const handleExport = () => {
+    let exportData
+    if (!filteredData.length) {
+      dispatch(showSnackbar({ message: 'No data available to export.', severity: 'warning' }));
+      return;
+    }
+    else {
+      dispatch(showSnackbar({ message: 'Exporting data...', severity: 'info' }));
+      exportData = filteredData?.map(({
+        _id,
+        plant,
+        department,
+        complianceType,
+        complianceCategorization,
+        complianceFrequency,
+        criticality,
+        penaltyType,
+        allDocs,
+        approvalDetails,
+        createdAt,
+        updatedAt,
+        __v,
+        ...rest
+      }) => rest);
+      console.log(exportData);
+
+      // ✅ Convert JSON → Worksheet (ALL columns automatically)
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      // ✅ Create Workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Compliance');
+      // ✅ Export file
+      XLSX.writeFile(workbook, 'Compliance_Datasheet.xlsx');
+    }
+  };
+
   const getTag = (val) => val?.toLowerCase().replace(" ", "-");
 
   const resetFilters = () => {
@@ -336,11 +372,11 @@ const Compliance = () => {
               />
               <select value={filterPlant} onChange={e => { setFilterPlant(e.target.value); setPage(1); }}>
                 <option value="">All Plants</option>
-                {plants?.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                {plants?.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
               <select value={filterDept} onChange={e => { setFilterDept(e.target.value); setPage(1); }}>
                 <option value="">All Departments</option>
-                {depts?.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
+                {depts?.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
               <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}>
                 <option value="">All Status</option>
@@ -348,23 +384,23 @@ const Compliance = () => {
               </select>
               <select value={filterCompTyp} onChange={e => { setFilterCompTyp(e.target.value); setPage(1); }}>
                 <option value="">All Compliance Types</option>
-                {complianceTypes?.map(ct => <option key={ct._id} value={ct._id}>{ct.name}</option>)}
+                {complianceTypes?.map(ct => <option key={ct} value={ct}>{ct}</option>)}
               </select>
               <select value={filterCompCat} onChange={e => { setFilterCompCat(e.target.value); setPage(1); }}>
                 <option value="">All Compliance Categories</option>
-                {complianceCategories?.map(cc => <option key={cc._id} value={cc._id}>{cc.name}</option>)}
+                {complianceCategories?.map(cc => <option key={cc} value={cc}>{cc}</option>)}
               </select>
               <select value={filterCompFreq} onChange={e => { setFilterCompFreq(e.target.value); setPage(1); }}>
                 <option value="">All Frequencies</option>
-                {complianceFrequencies?.map(cf => <option key={cf._id} value={cf._id}>{cf.name}</option>)}
+                {complianceFrequencies?.map(cf => <option key={cf} value={cf}>{cf}</option>)}
               </select>
               <select value={filterCriticality} onChange={e => { setFilterCriticality(e.target.value); setPage(1); }}>
                 <option value="">All Criticalities</option>
-                {criticalities?.map(cr => <option key={cr._id} value={cr._id}>{cr.name}</option>)}
+                {criticalities?.map(cr => <option key={cr} value={cr}>{cr}</option>)}
               </select>
               <select value={filterPenaltyType} onChange={e => { setFilterPenaltyType(e.target.value); setPage(1); }}>
                 <option value="">All Penalty Types</option>
-                {penaltyTypes?.map(pt => <option key={pt._id} value={pt._id}>{pt.name}</option>)}
+                {penaltyTypes?.map(pt => <option key={pt} value={pt}>{pt}</option>)}
               </select>
             </div>
             <div className="filter-row second">
