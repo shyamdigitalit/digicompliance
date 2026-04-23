@@ -43,7 +43,6 @@ const AddUser = ({ mode="add", onCancel, onSubmit, initialData, saved }) => {
     // console.log(mode);
     // console.log(initialData);
     if (initialData) {
-      delete initialData.acc_pass;
       setForm({
         acc_uname: initialData?.acc_uname || "",
         acc_eml: initialData?.acc_eml || "",

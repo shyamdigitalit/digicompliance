@@ -93,6 +93,12 @@
   white-space: nowrap;
 }
 
+button:disabled {
+  color: gray;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 /* TABLE container */
 .table-box {
   background: white;

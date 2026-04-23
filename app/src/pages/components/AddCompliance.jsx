@@ -54,7 +54,6 @@ const AddCompliance = ({ onCancel, onSubmit, mode='add', initialData, saved, mas
     // console.log(mode);
     // console.log(initialData);
     if (initialData) {
-      delete initialData.acc_pass;
       setForm({
         plant: initialData?.plant?._id || null,
         department: initialData?.department?._id || null,

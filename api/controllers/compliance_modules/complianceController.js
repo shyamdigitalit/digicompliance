@@ -158,6 +158,11 @@ const fetchComplianceDetails = async user => {
         { $lookup: { from: 'penalties', localField: 'penaltyType', foreignField: '_id', as: 'penaltyType' } },
         { $unwind: { path: '$penaltyType', preserveNullAndEmptyArrays: true } },
 
+        { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
+        { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
+        { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
+        { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
+
         // { $addFields: { isApprover: approverInfo.length > 0 } },
         {
             $addFields: {
@@ -179,13 +184,15 @@ const fetchComplianceDetails = async user => {
         },
         {
             $addFields: {
-                plantName: '$plant.plantName',
-                departmentName: '$department.departmentName',
-                complianceTypeName: '$complianceType.complianceTypeName',
-                complianceCategoryName: '$complianceCategorization.complianceCategoryName',
-                complianceFrequencyName: '$complianceFrequency.complianceFrequencyName',
-                criticalityName: '$criticality.criticalityName',
-                penaltyName: '$penaltyType.penaltyName',
+                // plantName: '$plant.name',
+                // departmentName: '$department.name',
+                // complianceTypeName: '$complianceType.name',
+                // complianceCategoryName: '$complianceCategorization.name',
+                // complianceFrequencyName: '$complianceFrequency.name',
+                // criticalityName: '$criticality.name',
+                // penaltyName: '$penaltyType.name',
+                // createdBy: '$createdby.acc_uname',
+                // updatedBy: '$updatedby.acc_uname',
                 approvalLevel: { $cond: [{ $and: [{ $ifNull: ['$approvalMatch.approvalLevel', false] }, { $eq: ['$currentPendingApprovalLevel', '$approvalMatch.approvalLevel'] }] }, '$approvalMatch.approvalLevel', 0] },
                 isApprover: { $cond: [{ $and: [{ $ifNull: ['$approvalMatch.approvalLevel', false] }, { $eq: ['$currentPendingApprovalLevel', '$approvalMatch.approvalLevel'] }] }, true, false] },
                 createdAtITC: { $dateToString: { format: '%d-%m-%Y %H:%M:%S', date: '$createdAt', timezone: '+05:30' } },
@@ -299,7 +306,7 @@ export const create = async (req, res) => {
     try {
         const user = req.user;
         const compPayload = safeJSONParse(req.body);
-        console.log(compPayload);
+        // console.log(compPayload);
 
         const ids = mapIds(compPayload);
         const plantId = ids.plant || user?.acc_plnt?._id;
@@ -309,7 +316,7 @@ export const create = async (req, res) => {
         compPayload.complianceId = generateId(user, existingData?.data?.length)
 
         const files = req.files?.allDocs || [];
-        console.log(files);
+        // console.log(files);
 
         const { uploaded } = await uploadFiles([].concat(files), user?._id);
 
@@ -482,15 +489,15 @@ export const statusUpdate = async (req, res) => {
 
 export const remove = async (req, res) => {
     try {
-        const comp = await complianceModel.findById(req.params.id);
+        const compId = req.query.id;
+        const comp = await complianceModel.findById(compId);
         if (!comp) return res.status(404).json({ success: false });
 
-        await deleteFiles(comp.allDocs?.map(d => d.filId));
-        comp.isDeleted = true;
-        comp.updatedby = req.user._id;
-        await comp.save();
+        const rmvDocs = await deleteFiles(comp.allDocs?.map(d => d.filId));
+        // comp.isDeleted = true;
+        const rmvComp = await complianceModel.findByIdAndDelete(compId);
 
-        res.status(200).json({ success: true });
+        res.status(200).json({ success: true, data: rmvComp });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

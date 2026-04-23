@@ -8,6 +8,7 @@ import { useSelector } from "react-redux";
 import FolderZipIcon from '@mui/icons-material/FolderZip';
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import * as XLSX from "xlsx";
 
 const COMPLIANCE_KEY = "compliance_data";
 const ACTIVITY_KEY = "activity_log";
@@ -205,6 +206,7 @@ const Compliance = () => {
           //   message: 'Backend ZIP failed, trying fallback.',
           //   severity: 'warning'
           // }));
+          console.log(err);
           alert(`Backend ZIP failed, trying fallback.`)
         }
       }
@@ -291,9 +293,24 @@ const Compliance = () => {
     }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Delete this compliance record?")) {
-      setData(prev => prev.filter(d => d._id !== id));
+  const handleDelete = async (id) => {
+    try {
+      if (window.confirm("Delete this compliance record?")) {
+        // setData(prev => prev.filter(d => d._id !== id));
+        const response = await axiosInstance.delete(`/api/comp/delete?id=${id}`)
+        if (response.status === 200) {
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false)
+            fetchData();
+          }, 1000);
+        }
+        else {
+          alert(`Deletion Failed`)
+        }
+      }
+    } catch (error) {
+      console.error(error)
     }
   };
 
@@ -302,15 +319,18 @@ const Compliance = () => {
   };
 
   const handleExport = () => {
-    let exportData
-    if (!filteredData.length) {
-      dispatch(showSnackbar({ message: 'No data available to export.', severity: 'warning' }));
+    let exportData = [];
+    if (!paged.length) {
+      // dispatch(showSnackbar({ message: 'No data available to export.', severity: 'warning' }));
+      alert('No data available to export.')
       return;
     }
     else {
-      dispatch(showSnackbar({ message: 'Exporting data...', severity: 'info' }));
-      exportData = filteredData?.map(({
+      console.log(paged);
+      alert('Exporting data...')
+      exportData = paged?.map(({
         _id,
+        complianceId,
         plant,
         department,
         complianceType,
@@ -318,13 +338,30 @@ const Compliance = () => {
         complianceFrequency,
         criticality,
         penaltyType,
+        dueDate,
         allDocs,
         approvalDetails,
         createdAt,
         updatedAt,
+        createdby,
+        updatedby,
         __v,
         ...rest
-      }) => rest);
+      }) => ({
+        // ...rest,
+        complianceId,
+        plant: plant?.name,
+        department: department?.name,
+        complianceType: complianceType?.name,
+        complianceCategorization: complianceCategorization?.name,
+        complianceFrequency: complianceFrequency?.name,
+        criticality: criticality?.name,
+        penaltyType: penaltyType?.name,
+        dueDate,
+        createdby: createdby?.acc_fname,
+        updatedby: updatedby?.acc_fname,
+        ...rest
+      }));
       console.log(exportData);
 
       // ✅ Convert JSON → Worksheet (ALL columns automatically)
@@ -409,6 +446,7 @@ const Compliance = () => {
               )}
               {(user.acc_typ?.heirarchy>2 && user.acc_plnt && user.acc_dept) && <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>}
               {(user.acc_typ?.heirarchy<=2 && (user.acc_plnt || user.acc_dept)) && <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>}
+              <button className="light-btn" onClick={handleExport}>Export</button>
             </div>
           </div>
 
@@ -456,9 +494,9 @@ const Compliance = () => {
                     <td>
                       <button onClick={() => handleEdit(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit">✏</button>
                       <button onClick={() => handleZipDownload(item.allDocs, item.complianceId)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#e525eb", fontSize: "5px" }} title="ZIP Download"><FolderZipIcon /></button>
-                      <button onClick={() => handleApprove(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#11bd2e", fontSize: "16px" }} title="Approve">✓</button>
-                      {/* <button onClick={() => handleReject(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#bd6d11", fontSize: "16px" }} title="Reject">!</button>
-                      <button onClick={() => handleDelete(item.id)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "16px" }} title="Delete">🗑</button> */}
+                      <button onClick={() => handleApprove(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#11bd2e", fontSize: "16px" }} disabled={!item.isApprover} title="Approve">✓</button>
+                      <button onClick={() => handleReject(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#bd6d11", fontSize: "16px" }} disabled={!item.isApprover} title="Reject">!</button>
+                      <button onClick={() => handleDelete(item._id)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "16px" }} title="Delete">🗑</button>
                     </td>
                   </tr>
                 ))}
