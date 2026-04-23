@@ -5,6 +5,9 @@ import axiosInstance from "../../config/axiosInstance";
 import { useCallback } from "react";
 import { useSelector } from "react-redux";
 // import { useNavigate } from "react-router-dom";
+import FolderZipIcon from '@mui/icons-material/FolderZip';
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 const COMPLIANCE_KEY = "compliance_data";
 const ACTIVITY_KEY = "activity_log";
@@ -152,6 +155,96 @@ const Compliance = () => {
   const handleEdit = (row) => {
     setEditing(row);
     setShowAddForm(true);
+  };
+
+  const handleZipDownload = async (value = [], label = "Compliance_Files") => {
+    if (!value || value.length === 0) {
+      // dispatch(showSnackbar({
+      //   message: 'No files available for download!',
+      //   severity: 'warning'
+      // }));
+      alert(`No files available for download!`)
+      return;
+    }
+
+    try {
+
+      const backendFiles = value.filter(f => f.filId);
+      const localFiles = value.filter(f => f instanceof File);
+      const urlFiles = value.filter(f => f.filUrl && !f.filId);
+
+      // Backend ZIP download
+      if (backendFiles.length > 0) {
+
+        try {
+
+          const fileIds = backendFiles.map(f => f.filId).join(',');
+
+          const response = await axiosInstance.get(
+            `/api/file/downloadall?files=${fileIds}`,
+            { responseType: 'blob' }
+          );
+
+          const blob = new Blob([response.data], {
+            type: 'application/zip'
+          });
+
+          saveAs(blob, `${label}.zip`);
+
+          // dispatch(showSnackbar({
+          //   message: 'Files downloaded successfully!',
+          //   severity: 'success'
+          // }));
+          alert(`Files downloaded successfully!`)
+
+          return;
+
+        } catch (err) {
+
+          // dispatch(showSnackbar({
+          //   message: 'Backend ZIP failed, trying fallback.',
+          //   severity: 'warning'
+          // }));
+          alert(`Backend ZIP failed, trying fallback.`)
+        }
+      }
+
+      // Fallback ZIP creation
+      const zip = new JSZip();
+
+      for (const file of localFiles) {
+        zip.file(file.name, file);
+      }
+
+      for (const file of urlFiles) {
+
+        const response = await fetch(file.filUrl);
+        const blob = await response.blob();
+
+        zip.file(file.filName || "file", blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+
+      saveAs(zipBlob, `${label}.zip`);
+
+      // dispatch(showSnackbar({
+      //   message: 'ZIP exported successfully!',
+      //   severity: 'success'
+      // }));
+      alert(`ZIP exported successfully!`)
+
+    }
+    catch (err) {
+
+      console.error(err);
+
+      // dispatch(showSnackbar({
+      //   message: 'ZIP download failed.',
+      //   severity: 'error'
+      // }));
+      alert(`ZIP download failed.`)
+    }
   };
 
   const handleApprove = async (row) => {
@@ -324,10 +417,11 @@ const Compliance = () => {
                     </td>
                     <td>{item.approvalStatus}</td>
                     <td>
-                      <button onClick={() => handleEdit(item)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit">✏</button>
+                      <button onClick={() => handleEdit(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit">✏</button>
+                      <button onClick={() => handleZipDownload(item.allDocs, item.complianceId)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#e525eb", fontSize: "5px" }} title="ZIP Download"><FolderZipIcon /></button>
                       <button onClick={() => handleApprove(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#11bd2e", fontSize: "16px" }} title="Approve">✓</button>
-                      <button onClick={() => handleReject(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#bd6d11", fontSize: "16px" }} title="Reject">!</button>
-                      <button onClick={() => handleDelete(item.id)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "16px" }} title="Delete">🗑</button>
+                      {/* <button onClick={() => handleReject(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#bd6d11", fontSize: "16px" }} title="Reject">!</button>
+                      <button onClick={() => handleDelete(item.id)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "16px" }} title="Delete">🗑</button> */}
                     </td>
                   </tr>
                 ))}
