@@ -45,21 +45,23 @@ export const uploadFile = async (buffer, originalname, mimetype) => {
 ------------------------------------------------------------------ */
 export const uploadUniqueFile = async (buffer, originalname, mimetype) => {
   if (!gfs) throw new Error("GridFS not initialized");
+  const hash = crypto.createHash("sha512").update(buffer).digest("hex");
+  const filesCollection = mongoose.connection.db.collection("fileuploads.files");
 
-  const hash = crypto.createHash("md5").update(buffer).digest("hex");
+  // ✅ STEP 1: Check duplicate BEFORE upload
+  const existingFile = await filesCollection.findOne({ "metadata.hash": hash });
+  if (existingFile) {
+    return { duplicate: true, file: existingFile };
+  }
 
+  // ✅ STEP 2: Upload only if NOT duplicate
   return new Promise((resolve, reject) => {
     const uploadStream = gfs.openUploadStream(originalname, {
-      metadata: { hash, size: buffer.length, contentType: mimetype || "application/octet-stream" },
+      metadata: { hash, size: buffer.length, contentType: mimetype || "application/octet-stream" }
     });
-
-    uploadStream.end(buffer); // ✅ CRITICAL FIX
-
+    uploadStream.end(buffer);
     uploadStream.on("finish", async () => {
-      const fileInfo = await mongoose.connection.db
-        .collection("fileuploads.files")
-        .findOne({ 'metadata.hash': uploadStream.metadata.hash });
-
+      const fileInfo = await filesCollection.findOne({ _id: uploadStream.id });
       resolve({ duplicate: false, file: fileInfo });
     });
 

@@ -114,7 +114,7 @@ const Compliance = () => {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleAddSubmit = async (formData) => {
+  const handleAddEditSubmit = async (formData) => {
     try {
       if (editing) {
         const response = await axiosInstance.patch(`/api/comp/update?id=${editing?._id}`, formData, {
@@ -385,7 +385,7 @@ const Compliance = () => {
       {showAddForm ? (
         <AddCompliance
         onCancel={() => setShowAddForm(false)}
-        onSubmit={handleAddSubmit}
+        onSubmit={handleAddEditSubmit}
         initialData={editing}
         mode={editing ? "edit" : "add"}
         saved={saved}

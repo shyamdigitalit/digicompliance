@@ -144,57 +144,99 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFiles = (e) => {
-    const files = Array.from(e.target.files);
-    setForm(prev => ({ ...prev, allDocs: files }));
-    // For preview purposes, you can create object URLs for the files
-    // const filePreviews = files.map(file => ({ name: file.name, url: URL.createObjectURL(file) }));
-    // setForm(prev => ({ ...prev, allDocs: filePreviews }));
-  };
+  // const handleFiles = (e) => {
+  //   const files = Array.from(e.target.files);
+  //   setForm(prev => ({ ...prev, allDocs: files }));
+  //   // For preview purposes, you can create object URLs for the files
+  //   // const filePreviews = files.map(file => ({ name: file.name, url: URL.createObjectURL(file) }));
+  //   // setForm(prev => ({ ...prev, allDocs: filePreviews }));
+  // };
+
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   // if (isSubmitting) return;
+  //   // setIsSubmitting(true);
+  //   if (!form.complianceType || !form.complianceCategorization || !form.complianceFrequency || !form.criticality || !form.penaltyType) {
+  //     alert("Required fields are missing.");
+  //     // setIsSubmitting(false);
+  //     return;
+  //   }
+
+  //   if (!isHierarchyThree && !user?.acc_plnt && !form.plant) {
+  //     alert("Plant is required for your user role.");
+  //     // setIsSubmitting(false);
+  //     return;
+  //   }
+
+  //   if (!isHierarchyThree && !user?.acc_dept && !form.department) {
+  //     alert("Department is required for your user role.");
+  //     // setIsSubmitting(false);
+  //     return;
+  //   }
+
+  //   try {
+  //     console.log(form);
+  //     // const formData = new FormData();
+  //     // Object.entries(form).forEach(([key, value]) => {
+  //     //   if (Array.isArray(value)) {
+  //     //     value.forEach((val, i) => formData.append(`${key}[${i}]`, val));
+  //     //   } else {
+  //     //     formData.append(key, value);
+  //     //   }
+  //     // });
+
+  //     const formData = new FormData();
+
+  //     Object.entries(form).forEach(([key, value]) => {
+  //       if (key === "allDocs") {
+  //         value.forEach(file => {
+  //           formData.append("allDocs", file); // ✅ FIXED
+  //         });
+  //       } else {
+  //         formData.append(key, value);
+  //       }
+  //     });
+
+  //     onSubmit(formData);
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // if (isSubmitting) return;
-    // setIsSubmitting(true);
+
     if (!form.complianceType || !form.complianceCategorization || !form.complianceFrequency || !form.criticality || !form.penaltyType) {
       alert("Required fields are missing.");
-      // setIsSubmitting(false);
       return;
     }
 
     if (!isHierarchyThree && !user?.acc_plnt && !form.plant) {
       alert("Plant is required for your user role.");
-      // setIsSubmitting(false);
       return;
     }
 
     if (!isHierarchyThree && !user?.acc_dept && !form.department) {
       alert("Department is required for your user role.");
-      // setIsSubmitting(false);
       return;
     }
 
     try {
-      console.log(form);
-      // const formData = new FormData();
-      // Object.entries(form).forEach(([key, value]) => {
-      //   if (Array.isArray(value)) {
-      //     value.forEach((val, i) => formData.append(`${key}[${i}]`, val));
-      //   } else {
-      //     formData.append(key, value);
-      //   }
-      // });
-
       const formData = new FormData();
 
+      // ✅ append normal fields
       Object.entries(form).forEach(([key, value]) => {
-        if (key === "allDocs") {
-          value.forEach(file => {
-            formData.append("allDocs", file); // ✅ FIXED
-          });
-        } else {
-          formData.append(key, value);
-        }
+        formData.append(key, value ?? "");
+      });
+
+      // ✅ append NEW files
+      files.forEach(file => {
+        formData.append("allDocs", file);
+      });
+
+      // ✅ append removed existing file IDs (IMPORTANT)
+      removedFileIds.forEach(id => {
+        formData.append("removedDocs[]", id);
       });
 
       onSubmit(formData);
@@ -443,7 +485,14 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
                       <div className="upload-label"><span>Click to upload</span> or drag and drop</div>
                       <div className="upload-hint">Any file type — PDF, Word, Excel, images</div>
                     </div>
-                    <input type="file" multiple style={{ display: 'none' }} onChange={e => setFiles(Array.from(e.target.files))} />
+                    <input type="file"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={e => {
+                      const newFiles = Array.from(e.target.files);
+                      setFiles(prev => [...prev, ...newFiles]);
+                    }}
+                    />
                   </label>
                 </div>
               </>

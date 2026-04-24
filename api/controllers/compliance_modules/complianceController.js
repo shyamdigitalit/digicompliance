@@ -235,7 +235,7 @@ const uploadFiles = async (files = [], userId) => {
     await Promise.allSettled(
         files.map(async f => {
             try {
-                const res = await uploadFile(f.buffer, f.originalname, f.mimetype);
+                const res = await uploadUniqueFile(f.buffer, f.originalname, f.mimetype);
                 if (res?.file) {
                     uploaded.push({
                         filId: res.file._id,
@@ -462,11 +462,6 @@ export const statusUpdate = async (req, res) => {
 export const remove = async (req, res) => {
     try {
         const compId = req.query.id;
-        const comp = await complianceModel.findById(compId);
-        if (!comp) return res.status(404).json({ success: false });
-
-        const rmvDocs = await deleteFiles(comp.allDocs?.map(d => d.filId));
-        // comp.isDeleted = true;
         const rmvComp = await complianceModel.findByIdAndDelete(compId);
 
         res.status(200).json({ success: true, data: rmvComp });
