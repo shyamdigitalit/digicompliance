@@ -179,7 +179,7 @@ const fetchComplianceDetails = async user => {
 // }
 
 const generateId = (user, lastIndex=0) =>
-    (`${user?.acc_plnt?.plantCode}${user?.acc_dept?.departmentCode}${parseInt(lastIndex || 0)+1}`)
+    (`${user?.acc_plnt?.code}${user?.acc_dept?.code}${parseInt(lastIndex || 0)+1}`)
 
 const calculateApproval = (user, maxLvl, currLvl, flag) => {
     const approved = flag !== 0;
