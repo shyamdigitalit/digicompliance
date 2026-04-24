@@ -164,19 +164,22 @@ const fetchComplianceDetails = async user => {
     return { success: true, data };
 };
 
-const generateId = (user, dataList) => {
-    // const plntCode = user?.acc_plnt?.code
-    // const deptCode = user?.acc_dept?.code
-    // // const hash = 
+// const generateId = (user, dataList) => {
+//     // const plntCode = user?.acc_plnt?.code
+//     // const deptCode = user?.acc_dept?.code
+//     // // const hash = 
 
-    // if (dataList?.length > 0) {
-    //     lasthash = dataList?.find((elm) => String(elm.complianceId).split("-")[0].slice('CMP'))
-    // }
-    // else {
-    //     hash = parseInt(dataList.length)+1
-    // }
-    return (`CMP${parseInt(dataList.length || 0)+1}-${user?.acc_plnt?.code}-${user?.acc_dept?.code}`);
-}
+//     // if (dataList?.length > 0) {
+//     //     maxHash = dataList?.find((elm) => String(elm.complianceId).split("-")[0].split('CMP')[1])
+//     // }
+//     // else {
+//     //     hash = parseInt(dataList.length)+1
+//     // }
+//     return (`CMP${parseInt(dataList.length || 0)+1}-${user?.acc_plnt?.code}-${user?.acc_dept?.code}`);
+// }
+
+const generateId = (user, lastIndex=0) =>
+    (`${user?.acc_plnt?.plantCode}${user?.acc_dept?.departmentCode}${parseInt(lastIndex || 0)+1}`)
 
 const calculateApproval = (user, maxLvl, currLvl, flag) => {
     const approved = flag !== 0;
@@ -282,7 +285,7 @@ export const create = async (req, res) => {
         const departmentId = ids.department || user?.acc_dept?._id;
 
         const existingData = await fetchComplianceDetails(user);
-        compPayload.complianceId = generateId(user, existingData)
+        compPayload.complianceId = generateId(user, existingData.length)
 
         const files = req.files?.allDocs || [];
         // console.log(files);
