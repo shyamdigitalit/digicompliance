@@ -165,17 +165,17 @@ const fetchComplianceDetails = async user => {
 };
 
 const generateId = (user, dataList) => {
-    const plntCode = user?.acc_plnt?.code
-    const deptCode = user?.acc_dept?.code
-    // const hash = 
+    // const plntCode = user?.acc_plnt?.code
+    // const deptCode = user?.acc_dept?.code
+    // // const hash = 
 
-    if (dataList?.length > 0) {
-        lasthash = dataList?.find((elm) => String(elm.complianceId).split("-")[0].slice('CMP'))
-    }
-    else {
-        hash = parseInt(dataList.length)+1
-    }
-    return (`CMP${parseInt(lastIndex || 0)+1}-${user?.acc_plnt?.code}-${user?.acc_dept?.code}`);
+    // if (dataList?.length > 0) {
+    //     lasthash = dataList?.find((elm) => String(elm.complianceId).split("-")[0].slice('CMP'))
+    // }
+    // else {
+    //     hash = parseInt(dataList.length)+1
+    // }
+    return (`CMP${parseInt(dataList.length || 0)+1}-${user?.acc_plnt?.code}-${user?.acc_dept?.code}`);
 }
 
 const calculateApproval = (user, maxLvl, currLvl, flag) => {
@@ -232,7 +232,7 @@ const uploadFiles = async (files = [], userId) => {
     await Promise.allSettled(
         files.map(async f => {
             try {
-                const res = await uploadUniqueFile(f.buffer, f.originalname, f.mimetype);
+                const res = await uploadFile(f.buffer, f.originalname, f.mimetype);
                 if (res?.file) {
                     uploaded.push({
                         filId: res.file._id,
