@@ -3,7 +3,7 @@ import "../styles/AddCompliance.css";
 import { useSelector } from "react-redux";
 import axiosInstance from '../../config/axiosInstance';
 
-const AddCompliance = ({ onCancel, onSubmit, mode='add', initialData, saved, masterData }) => {
+const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, masterData }) => {
 
   const { user } = useSelector((state) => state.auth);
   const isHierarchyThree = parseInt(user?.acc_typ?.heirarchy || 0) === 3;
@@ -119,24 +119,24 @@ const AddCompliance = ({ onCancel, onSubmit, mode='add', initialData, saved, mas
 
 
   const handleView = async (file) => {
-  try {
-    const res = await axiosInstance.get(
-      `/api/file/download/${file.filId}`,
-      { responseType: "blob" }
-    );
+    try {
+      const res = await axiosInstance.get(
+        `/api/file/download/${file.filId}`,
+        { responseType: "blob" }
+      );
 
-    const contentType = res.headers["content-type"];
+      const contentType = res.headers["content-type"];
 
-    const blob = new Blob([res.data], { type: contentType });
+      const blob = new Blob([res.data], { type: contentType });
 
-    const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(blob);
 
-    window.open(url);
+      window.open(url);
 
-  } catch (err) {
-    console.error("View error:", err);
-  }
-};
+    } catch (err) {
+      console.error("View error:", err);
+    }
+  };
 
 
   const handleChange = (e) => {
@@ -344,91 +344,115 @@ const AddCompliance = ({ onCancel, onSubmit, mode='add', initialData, saved, mas
         {/* FILE UPLOAD */}
         <div className="section">
           <h3>Documents</h3>
-          {/* <div className="upload-box">
-            <input type="file" name="allDocs" multiple onChange={handleFiles} />
-          </div> */}
-
-          <div className="upload-box">
-            <h4>Documents</h4>
+          <div className="doc-zone">
 
             {/* Existing Files */}
             {sortedExistingFiles.length > 0 && (
-              <ul className="file-list">
+              <>
+                <div className="doc-zone-header">
+                  <span className="doc-zone-title">Existing documents</span>
+                  <span className="doc-count">{sortedExistingFiles.length} file{sortedExistingFiles.length !== 1 ? 's' : ''}</span>
+                </div>
                 {sortedExistingFiles.map((file, index) => (
-                  <li key={index}>
-                    <span>📄 {file.filName}</span>
-
-                    <div className="file-actions">
-                      <button
-                        type="button"
-                        className="link-btn"
-                        onClick={() => handleView(file)}
-                      >
-                        👁 View
+                  <div className="file-row" key={index}>
+                    <div className="file-icon">
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z" />
+                        <polyline points="9,1 9,5 13,5" />
+                      </svg>
+                    </div>
+                    <div className="file-info">
+                      <span className="file-name">{file.filName}</span>
+                      <span className="file-meta">{file.filContentType}</span>
+                    </div>
+                    <div className="file-btns">
+                      <button type="button" className="icon-btn" onClick={() => handleView(file)}>
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                          <circle cx="8" cy="8" r="3" /><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z" />
+                        </svg>
+                        View
                       </button>
-
-                      <button
-                        type="button"
-                        className="link-btn"
-                        onClick={() => handleDownload(file)}
-                      >
-                        ⬇ Download
+                      <button type="button" className="icon-btn" onClick={() => handleDownload(file)}>
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M8 2v9m-4-4 4 4 4-4" /><rect x="2" y="13" width="12" height="1.5" rx="0.5" />
+                        </svg>
+                        Download
                       </button>
-
-
                       {mode !== "view" && (
-                        <button
-                          type="button"
-                          className="danger-btn"
-                          onClick={() => handleRemoveExisting(file)}
-                        >
-                          ✖ Remove
+                        <button type="button" className="icon-btn danger" onClick={() => handleRemoveExisting(file)}>
+                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                            <line x1="3" y1="3" x2="13" y2="13" /><line x1="13" y1="3" x2="3" y2="13" />
+                          </svg>
+                          Remove
                         </button>
                       )}
                     </div>
-                  </li>
+                  </div>
                 ))}
-              </ul>
-            )}
-
-            {/* Upload Section (Only for add/edit) */}
-            {mode !== "view" && (
-              <>
-                <input
-                  type="file"
-                  multiple
-                  onChange={e => setFiles(Array.from(e.target.files))}
-                />
-
-                {sortedNewFiles.length > 0 && (
-                  <ul className="file-list" style={{ marginTop: "10px" }}>
-                    {sortedNewFiles.map((file, index) => (
-                      <li key={index}>
-                        <span>📎 {file.name}</span>
-
-                        <div className="file-actions">
-                          <button
-                            type="button"
-                            className="danger-btn"
-                            onClick={() => handleRemoveNew(index)}
-                          >
-                            ✖ Remove
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </>
             )}
+
+            {/* New Uploads */}
+            {mode !== "view" && (
+              <>
+                <div className="doc-zone-header" style={{ borderTop: sortedExistingFiles.length > 0 ? '0.5px solid var(--color-border-tertiary)' : 'none' }}>
+                  {/* <span className="doc-zone-title">New uploads</span> */}
+                  {sortedNewFiles.length > 0 && (
+                    <span className="doc-count">{sortedNewFiles.length} queued</span>
+                  )}
+                </div>
+
+                {sortedNewFiles.map((file, index) => (
+                  <div className="file-row" key={index}>
+                    <div className="file-icon new">
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5L9 1z" />
+                        <polyline points="9,1 9,5 13,5" />
+                      </svg>
+                    </div>
+                    <div className="file-info">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="file-name">{file.name}</span>
+                        <span className="new-badge">new</span>
+                      </div>
+                      <span className="file-meta">{(file.size / 1024).toFixed(0)} KB</span>
+                    </div>
+                    <div className="file-btns">
+                      <button type="button" className="icon-btn danger" onClick={() => handleRemoveNew(index)}>
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                          <line x1="3" y1="3" x2="13" y2="13" /><line x1="13" y1="3" x2="3" y2="13" />
+                        </svg>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="upload-area">
+                  <label className="upload-trigger">
+                    <div className="upload-icon">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 10V3m-3 3 3-3 3 3" /><path d="M3 13h10" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="upload-label"><span>Click to upload</span> or drag and drop</div>
+                      <div className="upload-hint">Any file type — PDF, Word, Excel, images</div>
+                    </div>
+                    <input type="file" multiple style={{ display: 'none' }} onChange={e => setFiles(Array.from(e.target.files))} />
+                  </label>
+                </div>
+              </>
+            )}
+
           </div>
         </div>
 
         {/* ACTIONS */}
         <div className="form-actions">
           <button className="light-btn" onClick={onCancel}>Cancel</button>
-          {(saved && mode==='add') && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Created! Redirecting…</span>}
-          {(saved && mode==='edit') && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Updated! Redirecting…</span>}
+          {(saved && mode === 'add') && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Created! Redirecting…</span>}
+          {(saved && mode === 'edit') && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Updated! Redirecting…</span>}
           <button className="dark-btn" onClick={handleSubmit}>Submit</button>
         </div>
       </div>
