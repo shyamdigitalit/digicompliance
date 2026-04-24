@@ -15,7 +15,7 @@ mongoose.connection.once("open", () => {
 
 
 /* ------------------------------------------------------------------
-  ✅ 1. Upload with duplicate prevention
+  ✅ 1. Upload with duplicate prevention based on File Id
 ------------------------------------------------------------------ */
 export const uploadFile = async (buffer, originalname, mimetype) => {
   if (!gfs) throw new Error("GridFS not initialized");
@@ -33,6 +33,32 @@ export const uploadFile = async (buffer, originalname, mimetype) => {
       const fileInfo = await mongoose.connection.db
         .collection("fileuploads.files")
         .findOne({ _id: uploadStream.id });
+
+      resolve({ duplicate: false, file: fileInfo });
+    });
+
+    uploadStream.on("error", reject);
+  });
+};
+/* ------------------------------------------------------------------
+  ✅ 1. Upload with duplicate prevention based on File Hash
+------------------------------------------------------------------ */
+export const uploadUniqueFile = async (buffer, originalname, mimetype) => {
+  if (!gfs) throw new Error("GridFS not initialized");
+
+  const hash = crypto.createHash("md5").update(buffer).digest("hex");
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = gfs.openUploadStream(originalname, {
+      metadata: { hash, size: buffer.length, contentType: mimetype || "application/octet-stream" },
+    });
+
+    uploadStream.end(buffer); // ✅ CRITICAL FIX
+
+    uploadStream.on("finish", async () => {
+      const fileInfo = await mongoose.connection.db
+        .collection("fileuploads.files")
+        .findOne({ 'metadata.hash': uploadStream.metadata.hash });
 
       resolve({ duplicate: false, file: fileInfo });
     });

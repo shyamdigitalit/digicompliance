@@ -4,7 +4,7 @@ import moment from 'moment';
 import complianceModel from '../../models/compliance_modules/complianceModel.js';
 import dynapprvlModel from '../../models/adminmgmt/dynapproval/dynapprvlModel.js';
 
-import { uploadFile, deleteFile } from '../../utilities/fileOperations.js';
+import { uploadFile, uploadUniqueFile, deleteFile } from '../../utilities/fileOperations.js';
 import { isValidObjectId } from '../../utilities/isValidObjectId.js';
 import { safeJSONParse } from '../../utilities/safeJSONParse.js';
 import { fetchApprovalDetails } from '../adminmgmt/dynapproval/dynapprvlController.js';
@@ -26,48 +26,6 @@ const mapIds = payload => ({
     criticality: toObjectId(payload.criticality),
     penaltyType: toObjectId(payload.penaltyType)
 });
-
-// const checkApprover = async user => {
-//     // console.log(user);
-//     const accPlnt = user?.acc_plnt?._id ? toObjectId(user?.acc_plnt?._id) : null;
-//     const accDept = user?.acc_dept?._id ? toObjectId(user?.acc_dept?._id) : null;
-//     if (user?.acc_typ?.heirarchy === 3 && !accPlnt && !accDept) {
-//         return [];
-//     }
-
-//     const matchCriteria = {
-//         'approvalDetails.approvers.approverAccount': new Types.ObjectId(user._id),
-//         status: 'Active'
-//     };
-//     if (user?.acc_typ?.heirarchy === 3) {
-//         matchCriteria['approvalCreatorBase'] = accPlnt;
-//         matchCriteria['approvalFunction'] = accDept;
-//     }
-//     else if (user?.acc_typ?.heirarchy !== 3) {
-//         if (accPlnt) matchCriteria['approvalCreatorBase'] = accPlnt;
-//     }
-
-//     const pipeline = [
-//         { $unwind: '$approvalDetails' },
-//         { $match: matchCriteria },
-//         {
-//             $group: {
-//                 _id: '$_id',
-//                 approvalCode: { $first: '$approvalCode' },
-//                 approvalCreatorBase: { $first: '$approvalCreatorBase' },
-//                 approvalFunction: { $first: '$approvalFunction' },
-//                 status: { $first: '$status' },
-//                 approvalLevel: { $first: '$approvalDetails.approvalLevel' },
-//                 is_approver: { $first: true },
-//                 approvers: { $first: { $arrayElemAt: ['$approvalDetails.approvers.approverAccount', 0] } }
-//             }
-//         },
-//         { $sort: { createdAt: -1 } }
-//     ]
-//     const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline);
-//     const resAppvrDtl = dynapprvlRecords?.some(itm => itm.approvers.acc_uname === user.acc_uname)
-//     return { apprvlDetails: dynapprvlRecords, isApprvr: resAppvrDtl }
-// };
 
 const checkApprover = async (user) => {
     const accPlnt = user?.acc_plnt?._id ? toObjectId(user.acc_plnt._id) : null;
@@ -206,8 +164,19 @@ const fetchComplianceDetails = async user => {
     return { success: true, data };
 };
 
-const generateId = (user, lastIndex=0) =>
-    (`${user?.acc_plnt?.code}${user?.acc_dept?.code}${parseInt(lastIndex || 0)+1}`);
+const generateId = (user, dataList) => {
+    const plntCode = user?.acc_plnt?.code
+    const deptCode = user?.acc_dept?.code
+    // const hash = 
+
+    if (dataList?.length > 0) {
+        lasthash = dataList?.find((elm) => String(elm.complianceId).split("-")[0].slice('CMP'))
+    }
+    else {
+        hash = parseInt(dataList.length)+1
+    }
+    return (`CMP${parseInt(lastIndex || 0)+1}-${user?.acc_plnt?.code}-${user?.acc_dept?.code}`);
+}
 
 const calculateApproval = (user, maxLvl, currLvl, flag) => {
     const approved = flag !== 0;
@@ -263,7 +232,7 @@ const uploadFiles = async (files = [], userId) => {
     await Promise.allSettled(
         files.map(async f => {
             try {
-                const res = await uploadFile(f.buffer, f.originalname, f.mimetype);
+                const res = await uploadUniqueFile(f.buffer, f.originalname, f.mimetype);
                 if (res?.file) {
                     uploaded.push({
                         filId: res.file._id,
@@ -313,7 +282,7 @@ export const create = async (req, res) => {
         const departmentId = ids.department || user?.acc_dept?._id;
 
         const existingData = await fetchComplianceDetails(user);
-        compPayload.complianceId = generateId(user, existingData?.data?.length)
+        compPayload.complianceId = generateId(user, existingData)
 
         const files = req.files?.allDocs || [];
         // console.log(files);
