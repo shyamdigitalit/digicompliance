@@ -81,7 +81,7 @@ const fetchComplianceDetails = async user => {
     const accDept = user?.acc_dept?._id ? toObjectId(user?.acc_dept?._id) : null;
 
     const approverInfo = await checkApprover(user);
-    console.log(approverInfo);
+    // console.log(approverInfo);
 
     const matchCriteria = {}
     if (user?.acc_typ?.heirarchy === 3) {
@@ -164,22 +164,22 @@ const fetchComplianceDetails = async user => {
     return { success: true, data };
 };
 
-// const generateId = (user, dataList) => {
-//     // const plntCode = user?.acc_plnt?.code
-//     // const deptCode = user?.acc_dept?.code
-//     // // const hash = 
-
-//     // if (dataList?.length > 0) {
-//     //     maxHash = dataList?.find((elm) => String(elm.complianceId).split("-")[0].split('CMP')[1])
-//     // }
-//     // else {
-//     //     hash = parseInt(dataList.length)+1
-//     // }
-//     return (`CMP${parseInt(dataList.length || 0)+1}-${user?.acc_plnt?.code}-${user?.acc_dept?.code}`);
-// }
-
-const generateId = (user, lastIndex=0) =>
-    (`${user?.acc_plnt?.code}${user?.acc_dept?.code}${parseInt(lastIndex || 0)+1}`)
+const generateId = (user, dataList) => {
+    const plntCode = user?.acc_plnt?.code
+    const deptCode = user?.acc_dept?.code
+    const maxHash = dataList.reduce((acc, elm) => {
+        const hashData = parseInt(String(elm.complianceId).split("-")[0].split('CMP')[1], 10)
+        
+        if (hashData>acc) {
+            acc=hashData
+        }
+        else {
+            acc=acc
+        }
+        return acc
+    }, 0)
+    return (`CMP${parseInt(maxHash || 0)+1}-${user?.acc_plnt?.code}-${user?.acc_dept?.code}`);
+}
 
 const calculateApproval = (user, maxLvl, currLvl, flag) => {
     const approved = flag !== 0;
@@ -285,7 +285,7 @@ export const create = async (req, res) => {
         const departmentId = ids.department || user?.acc_dept?._id;
 
         const existingData = await fetchComplianceDetails(user);
-        compPayload.complianceId = generateId(user, existingData.length)
+        compPayload.complianceId = generateId(user, existingData.data)
 
         const files = req.files?.allDocs || [];
         // console.log(files);
