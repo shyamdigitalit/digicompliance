@@ -1,14 +1,15 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import "../styles/Document.css";
+import axiosInstance from "../../config/axiosInstance";
 
 const DOC_KEY = "document_data";
 
 const defaultDocuments = [
-  { id: "DOC-001", name: "Fire Safety Certificate.pdf", type: "Certificate", category: "Health & Safety", plant: "Mumbai Plant A", uploadedBy: "John Smith", date: "2026-03-25", size: "2.4 MB" },
-  { id: "DOC-002", name: "ISO 9001 Audit Report.pdf", type: "Report", category: "Quality Management", plant: "Delhi Plant B", uploadedBy: "Sarah Johnson", date: "2026-03-24", size: "5.1 MB" },
-  { id: "DOC-003", name: "Env. Compliance Checklist.xlsx", type: "Checklist", category: "Environmental", plant: "Bangalore Plant C", uploadedBy: "Michael Chen", date: "2026-03-22", size: "2.8 MB" },
-  { id: "DOC-004", name: "Labor Law Form.docx", type: "Form", category: "Statutory", plant: "Mumbai Plant A", uploadedBy: "Michael Chen", date: "2026-03-23", size: "2.8 MB" },
-  { id: "DOC-005", name: "Safety Training Records.pdf", type: "Record", category: "Health & Safety", plant: "Delhi Plant B", uploadedBy: "Robert Wilson", date: "2026-03-18", size: "3.7 MB" },
+  // { id: "DOC-001", name: "Fire Safety Certificate.pdf", type: "Certificate", category: "Health & Safety", plant: "Mumbai Plant A", uploadedBy: "John Smith", date: "2026-03-25", size: "2.4 MB" },
+  // { id: "DOC-002", name: "ISO 9001 Audit Report.pdf", type: "Report", category: "Quality Management", plant: "Delhi Plant B", uploadedBy: "Sarah Johnson", date: "2026-03-24", size: "5.1 MB" },
+  // { id: "DOC-003", name: "Env. Compliance Checklist.xlsx", type: "Checklist", category: "Environmental", plant: "Bangalore Plant C", uploadedBy: "Michael Chen", date: "2026-03-22", size: "2.8 MB" },
+  // { id: "DOC-004", name: "Labor Law Form.docx", type: "Form", category: "Statutory", plant: "Mumbai Plant A", uploadedBy: "Michael Chen", date: "2026-03-23", size: "2.8 MB" },
+  // { id: "DOC-005", name: "Safety Training Records.pdf", type: "Record", category: "Health & Safety", plant: "Delhi Plant B", uploadedBy: "Robert Wilson", date: "2026-03-18", size: "3.7 MB" },
 ];
 
 const getFileIcon = (name) => {
@@ -24,12 +25,27 @@ const Documents = () => {
     catch { return defaultDocuments; }
   });
 
+  const [fileList, setFileList] = useState([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterPlant, setFilterPlant] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef();
+
+  const fetchFiles = React.useCallback(async () => {
+    try {
+      const res = await axiosInstance.get("/api/file/fetch");
+      const files = res.data.files
+      // console.log(files);
+      setFileList(files);
+    } catch (error) {
+      console.error("Error fetching files:", error);
+    }
+  }, []);
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
 
   useEffect(() => {
     localStorage.setItem(DOC_KEY, JSON.stringify(documents));
@@ -107,7 +123,57 @@ const Documents = () => {
         </div>
       </div>
 
-      <div className="filters">
+      <div className="table-container" style={{marginBottom:'2rem'}}>
+        <div style={{padding:'2rem',fontSize:'1.5rem'}}>All Uploaded Files</div>
+        <div className="doc-table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th style={{textAlign:'center', textWrap:'nowrap'}}>Document Name</th>
+                <th style={{textAlign:'center', textWrap:'nowrap'}}>File Type</th>
+                <th>Size</th>
+                <th style={{textAlign:'center', textWrap:'nowrap'}}>Uploaded On</th>
+                <th style={{textAlign:'center', textWrap:'nowrap'}}>Uploaded By</th>
+                {/* <th style={{textAlign:'center', textWrap:'nowrap'}}>Document Type</th> */}
+                <th style={{textAlign:'center', textWrap:'nowrap'}}>Document Category</th>
+                <th style={{textAlign:'center', textWrap:'nowrap'}}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fileList.length === 0 ? (
+                <tr><td colSpan={8} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No documents found</td></tr>
+              ) : fileList.map((doc) => (
+                <tr key={doc._id}>
+                  <td className="doc-name">{getFileIcon(doc.filename)} {doc.filename}</td>
+                  <td>{doc.metadata.contentType}</td>
+                  <td>{parseFloat(doc.length/1000).toFixed(2)} KB</td>
+                  <td>{doc.date}</td>
+                  <td>{doc.uploadedBy}</td>
+                  {/* <td><span className={getTagClass(doc.type)}>{doc.type}</span></td> */}
+                  <td>{doc.category}</td>
+                  <td className="actions" style={{ display: "flex", gap: "8px" }}>
+                    <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px" }} title="Download">⬇</button>
+                    <button onClick={() => handleDelete(doc.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="table-footer" style={{ padding: "12px", borderTop: "1px solid #f1f5f9", fontSize: "12px", color: "#6b7280" }}>
+          {fileList.length} document{fileList.length !== 1 ? "s" : ""} found
+        </div>
+      </div>
+
+      {/* <div className="filters" style={{
+        width: "100%",
+        padding:'1rem',
+        margin:'0',
+        backgroundColor: "#ffffff",
+        borderTop: "1px solid #f1f5f9",
+        fontSize: "12px",
+        color: "#6b7280"
+      }}>
         <input placeholder="Search documents or uploader..." value={search} onChange={e => setSearch(e.target.value)} />
         <select value={filterType} onChange={e => setFilterType(e.target.value)}>
           <option value="">All Types</option>
@@ -124,48 +190,48 @@ const Documents = () => {
         {(search || filterType || filterCategory || filterPlant) && (
           <button className="light-btn" onClick={resetFilters}>✕ Clear</button>
         )}
-      </div>
+      </div> */}
 
-      <div className="table-container">
+      {/* <div className="table-container">
         <div className="doc-table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Document Name</th>
-              <th>Type</th>
-              <th>Category</th>
-              <th>Plant</th>
-              <th>Uploaded By</th>
-              <th>Upload Date</th>
-              <th>Size</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr><td colSpan={8} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No documents found</td></tr>
-            ) : filtered.map((doc) => (
-              <tr key={doc.id}>
-                <td className="doc-name">{getFileIcon(doc.name)} {doc.name}</td>
-                <td><span className={getTagClass(doc.type)}>{doc.type}</span></td>
-                <td>{doc.category}</td>
-                <td>{doc.plant}</td>
-                <td>{doc.uploadedBy}</td>
-                <td>{doc.date}</td>
-                <td>{doc.size}</td>
-                <td className="actions" style={{ display: "flex", gap: "8px" }}>
-                  <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px" }} title="Download">⬇</button>
-                  <button onClick={() => handleDelete(doc.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
-                </td>
+          <table>
+            <thead>
+              <tr>
+                <th>Document Name</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Plant</th>
+                <th>Uploaded By</th>
+                <th>Upload Date</th>
+                <th>Size</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr><td colSpan={8} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No documents found</td></tr>
+              ) : filtered.map((doc) => (
+                <tr key={doc.id}>
+                  <td className="doc-name">{getFileIcon(doc.name)} {doc.name}</td>
+                  <td><span className={getTagClass(doc.type)}>{doc.type}</span></td>
+                  <td>{doc.category}</td>
+                  <td>{doc.plant}</td>
+                  <td>{doc.uploadedBy}</td>
+                  <td>{doc.date}</td>
+                  <td>{doc.size}</td>
+                  <td className="actions" style={{ display: "flex", gap: "8px" }}>
+                    <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px" }} title="Download">⬇</button>
+                    <button onClick={() => handleDelete(doc.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
         <div className="table-footer" style={{ padding: "12px", borderTop: "1px solid #f1f5f9", fontSize: "12px", color: "#6b7280" }}>
           {filtered.length} document{filtered.length !== 1 ? "s" : ""} found
         </div>
-      </div>
+      </div> */}
     </>
   );
 };

@@ -1,5 +1,6 @@
 import {
   uploadFile,
+  uploadUniqueFile,
   getAllFiles,
   getFileStream,
   getZipStream,
@@ -18,7 +19,7 @@ export const uploadHandler = async (req, res) => {
 
     for (const file of req.files) {
       try {
-        const uploadedFile = await uploadFile(
+        const uploadedFile = await uploadUniqueFile(
           file.buffer,
           file.originalname,
           file.mimetype

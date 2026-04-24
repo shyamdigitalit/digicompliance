@@ -279,26 +279,46 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
           <div className="form-grid">
             <div className="form-group">
               <label>Plant *</label>
-              <select name="plant" value={
-                mode === "add" && isHierarchyThree ? user?.acc_plnt?._id || "" : form.plant
-              }
+              {/* <select name="plant" value={form.plant}
                 disabled={mode === "view" || isHierarchyThree || (user?.acc_plnt?._id)}
                 onChange={handleChange}
               >
                 <option value="">Select Plant</option>
                 {PLANTS.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-              </select>
+              </select> */}
+              {(mode === "add" && user?.acc_plnt?.name) ? (
+                <input value={user?.acc_plnt?.name} disabled />
+              ) : (
+                <select name="plant" value={form.plant}
+                  disabled={mode === "view" || isHierarchyThree || (user?.acc_plnt?._id)}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Plant</option>
+                  {PLANTS.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                </select>
+              )}
             </div>
             <div className="form-group">
               <label>Department *</label>
-              <select name="department" value={
+              {/* <select name="department" value={
                 mode === "add" && isHierarchyThree ? user?.acc_dept?._id || "" : form.department
               }
                 disabled={mode === "view" || isHierarchyThree}
                 onChange={handleChange}>
                 <option value="">Select Department</option>
                 {DEPARTMENTS.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
-              </select>
+              </select> */}
+              {(mode === "add" && user?.acc_dept?.name) ? (
+                <input value={user?.acc_dept?.name} disabled />
+              ) : (
+                <select name="department" value={form.department}
+                  disabled={mode === "view" || isHierarchyThree}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Department</option>
+                  {DEPARTMENTS.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
+                </select>
+              )}
             </div>
             <div className="form-group">
               <label>Compliance Type *</label>

@@ -16,7 +16,7 @@ const baseUrl = {
     }
 };
 
-console.log(baseUrl[env][appenv]);
+// console.log(baseUrl[env][appenv]);
 
 const axiosInstance = axios.create({
     baseURL: baseUrl[env][appenv],
