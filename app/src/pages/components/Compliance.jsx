@@ -397,9 +397,9 @@ const Compliance = () => {
                   {(user.acc_typ?.heirarchy > 2 && user.acc_plnt && user.acc_dept) && (
                     <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
                   )}
-                  {(user.acc_typ?.heirarchy <= 2 && (user.acc_plnt || user.acc_dept)) && (
+                  {/* {(user.acc_typ?.heirarchy <= 2 && (user.acc_plnt || user.acc_dept)) && (
                     <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
-                  )}
+                  )} */}
                   <button className="light-btn" onClick={handleExport}>Export</button>
                 </div>
               </div>

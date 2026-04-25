@@ -56,7 +56,7 @@ const postRoutes = [
     { path: '/acc/import', handlers: [jwtHybrdProtect, fileUpload.none(), accController.upload] },
     { path: '/func/create', handlers: [jwtHybrdProtect, fileUpload.none(), funcController.create] },
     { path: '/dynapprvl/create', handlers: [jwtHybrdProtect, fileUpload.none(), dynapprvlController.create] },
-    { path: '/file/upload', handlers: [jwtHybrdProtect, fileUpload.array('files'), fileOpController.uploadHandler] },
+    // { path: '/file/upload', handlers: [jwtHybrdProtect, fileUpload.array('files'), fileOpController.uploadHandler] },
     // { path: '/mail/send', handlers: [basicAuth, fileUpload.none(), mailtestController.send] },
 ];
 postRoutes.forEach(route => createRoute('post', route.path, ...route.handlers));
@@ -83,9 +83,9 @@ const getRoutes = [
     { path: '/func/fetch', handlers: [jwtHybrdProtect, funcController.read] },
     { path: '/dynapprvl/fetch', handlers: [jwtHybrdProtect, dynapprvlController.read] },
     { path: '/dynapprvl/acc/filter', handlers: [jwtHybrdProtect, dynapprvlController.filterAccounts] },
-    { path: '/file/fetch', handlers: [jwtHybrdProtect, fileOpController.getAllHandler] },
-    { path: '/file/download/:id', handlers: [jwtHybrdProtect, fileOpController.downloadHandler] },
-    { path: '/file/downloadall', handlers: [jwtHybrdProtect, fileOpController.downloadAllHandler] },
+    // { path: '/file/fetch', handlers: [jwtHybrdProtect, fileOpController.getAllHandler] },
+    // { path: '/file/download/:id', handlers: [jwtHybrdProtect, fileOpController.downloadHandler] },
+    // { path: '/file/downloadall', handlers: [jwtHybrdProtect, fileOpController.downloadAllHandler] },
 ];
 getRoutes.forEach(route => createRoute('get', route.path, ...route.handlers));
 
@@ -123,7 +123,7 @@ const deleteRoutes = [
     { path: '/penlty/delete', handlers: [jwtHybrdProtect, penltyController.remove] },
     { path: '/acc/delete', handlers: [jwtHybrdProtect, accController.remove] },
     { path: '/func/delete', handlers: [jwtHybrdProtect, funcController.remove] },
-    { path: '/file/delete/:fileId', handlers: [jwtHybrdProtect, fileOpController.deleteHandler] },
+    // { path: '/file/delete/:fileId', handlers: [jwtHybrdProtect, fileOpController.deleteHandler] },
 ];
 deleteRoutes.forEach(route => createRoute('delete', route.path, ...route.handlers));
 

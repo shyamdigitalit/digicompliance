@@ -4,7 +4,8 @@ import moment from 'moment';
 import complianceModel from '../../models/compliance_modules/complianceModel.js';
 import dynapprvlModel from '../../models/adminmgmt/dynapproval/dynapprvlModel.js';
 
-import { uploadFile, uploadUniqueFile, deleteFile } from '../../utilities/fileOperations.js';
+// import { uploadFile, uploadUniqueFile, deleteFile } from '../../utilities/fileOperations.js';
+import { uploadFiles, deleteFiles } from '../../utilities/fileOperations.js';
 import { isValidObjectId } from '../../utilities/isValidObjectId.js';
 import { safeJSONParse } from '../../utilities/safeJSONParse.js';
 import { fetchApprovalDetails } from '../adminmgmt/dynapproval/dynapprvlController.js';
@@ -228,39 +229,39 @@ const sendMailToApprover = async (plant, department, currentPendingApprovalLevel
    File helpers
 ====================================================== */
 
-const uploadFiles = async (files = [], userId) => {
-    const uploaded = [];
-    const duplicates = [];
+// const uploadFiles = async (files = [], userId) => {
+//     const uploaded = [];
+//     const duplicates = [];
 
-    await Promise.allSettled(
-        files.map(async f => {
-            try {
-                const res = await uploadUniqueFile(f.buffer, f.originalname, f.mimetype);
-                if (res?.file) {
-                    uploaded.push({
-                        filId: res.file._id,
-                        filName: res.file.filename,
-                        filContentType: res.file.metadata?.contentType,
-                        filContentSize: res.file.length,
-                        filUploadStatus: 'Done',
-                        fileUploadedby: userId
-                    });
-                }
-            } catch (err) {
-                if (err?.message?.includes('Duplicate')) duplicates.push(f.originalname);
-                else console.error('Upload error:', err);
-            }
-        })
-    );
+//     await Promise.allSettled(
+//         files.map(async f => {
+//             try {
+//                 const res = await uploadUniqueFile(f.buffer, f.originalname, f.mimetype);
+//                 if (res?.file) {
+//                     uploaded.push({
+//                         filId: res.file._id,
+//                         filName: res.file.filename,
+//                         filContentType: res.file.metadata?.contentType,
+//                         filContentSize: res.file.length,
+//                         filUploadStatus: 'Done',
+//                         fileUploadedby: userId
+//                     });
+//                 }
+//             } catch (err) {
+//                 if (err?.message?.includes('Duplicate')) duplicates.push(f.originalname);
+//                 else console.error('Upload error:', err);
+//             }
+//         })
+//     );
 
-    return { uploaded, duplicates };
-};
+//     return { uploaded, duplicates };
+// };
 
-const deleteFiles = async (ids = []) => {
-    await Promise.allSettled(
-        ids.map(id => deleteFile(id).catch(e => console.error('Delete error:', e)))
-    );
-};
+// const deleteFiles = async (ids = []) => {
+//     await Promise.allSettled(
+//         ids.map(id => deleteFile(id).catch(e => console.error('Delete error:', e)))
+//     );
+// };
 
 
 
@@ -290,7 +291,7 @@ export const create = async (req, res) => {
         const files = req.files?.allDocs || [];
         // console.log(files);
 
-        const { uploaded } = await uploadFiles([].concat(files), user?._id);
+        const { uploaded } = await uploadFiles([].concat(files), compPayload.complianceId);
 
         const approvals = await fetchApprovalDetails(String(plantId), String(departmentId), user);
         // console.log(approvals);
@@ -379,7 +380,7 @@ export const update = async (req, res) => {
         }
 
         const files = req.files?.allDocs || [];
-        const { uploaded } = await uploadFiles([].concat(files), user?._id);
+        const { uploaded } = await uploadFiles([].concat(files), payload.complianceId);
 
         // delete payload.complianceId
 

@@ -28,6 +28,7 @@ const ComplianceSchema = new Schema({
         filName: { type: String, trim: true, required: true },
         filContentType: { type: String, trim: true, required: true },
         filContentSize: { type: String, trim: true, required: true },
+        filPath: { type: String, trim: true, required: true },
         filUploadStatus: { type: String, required: true, enum: ['Pending', 'Done'], default: 'Done' },
         fileUploadDate: { type: String, required: true, trim: true, default: () => moment().format("DD-MM-YYYY") },
         fileUploadTime: { type: String, required: true, trim: true, default: () => moment().format("HH:mm:ss") },

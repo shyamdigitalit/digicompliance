@@ -1,141 +1,48 @@
-// fileOpUtility.js
-import mongoose from "mongoose";
-import { GridFSBucket } from "mongodb";
-import archiver from "archiver";
-import crypto from "crypto";
-import { PassThrough, Readable } from "stream";
+import { uploadFile, deleteFile } from "../configs/fileStorage.js";
 
-let gfs;
+export const uploadFiles = async (files = [], documentId) => {
+    const uploaded = [];
+    const duplicates = [];
 
-// ✅ Initialize GridFS once when Mongoose is ready
-mongoose.connection.once("open", () => {
-  gfs = new GridFSBucket(mongoose.connection.db, { bucketName: "fileuploads" });
-  console.log("✅ GridFSBucket initialized for reusable file ops");
-});
+    await Promise.allSettled(
+        files.map(async (f) => {
+        try {
+            const res = await uploadFile( f.buffer, f.originalname, f.mimetype, documentId );
 
+            if (res.duplicate) {
+                duplicates.push(f.originalname);
+            } else if (res?.file) {
+                uploaded.push({
+                    filId: res.file._id,
+                    filName: res.file.originalname,
+                    filContentType: res.file.mimetype,
+                    filContentSize: res.file.size,
+                    filPath: res.file.path,
+                    filUploadStatus: "Done",
+                });
+            }
+        } catch (err) {
+            console.error("Upload error:", err);
+        }
+        })
+    );
 
-/* ------------------------------------------------------------------
-  ✅ 1. Upload with duplicate prevention based on File Id
------------------------------------------------------------------- */
-export const uploadFile = async (buffer, originalname, mimetype) => {
-  if (!gfs) throw new Error("GridFS not initialized");
-
-  const hash = crypto.createHash("md5").update(buffer).digest("hex");
-
-  return new Promise((resolve, reject) => {
-    const uploadStream = gfs.openUploadStream(originalname, {
-      metadata: { hash, size: buffer.length, contentType: mimetype || "application/octet-stream" },
-    });
-
-    uploadStream.end(buffer); // ✅ CRITICAL FIX
-
-    uploadStream.on("finish", async () => {
-      const fileInfo = await mongoose.connection.db
-        .collection("fileuploads.files")
-        .findOne({ _id: uploadStream.id });
-
-      resolve({ duplicate: false, file: fileInfo });
-    });
-
-    uploadStream.on("error", reject);
-  });
-};
-/* ------------------------------------------------------------------
-  ✅ 1. Upload with duplicate prevention based on File Hash
------------------------------------------------------------------- */
-export const uploadUniqueFile = async (buffer, originalname, mimetype) => {
-  if (!gfs) throw new Error("GridFS not initialized");
-  const hash = crypto.createHash("sha512").update(buffer).digest("hex");
-  const filesCollection = mongoose.connection.db.collection("fileuploads.files");
-
-  // ✅ STEP 1: Check duplicate BEFORE upload
-  const existingFile = await filesCollection.findOne({ "metadata.hash": hash });
-  if (existingFile) {
-    return { duplicate: true, file: existingFile };
-  }
-
-  // ✅ STEP 2: Upload only if NOT duplicate
-  return new Promise((resolve, reject) => {
-    const uploadStream = gfs.openUploadStream(originalname, {
-      metadata: { hash, size: buffer.length, contentType: mimetype || "application/octet-stream" }
-    });
-    uploadStream.end(buffer);
-    uploadStream.on("finish", async () => {
-      const fileInfo = await filesCollection.findOne({ _id: uploadStream.id });
-      resolve({ duplicate: false, file: fileInfo });
-    });
-
-    uploadStream.on("error", reject);
-  });
+    return { uploaded, duplicates };
 };
 
+export const deleteFiles = async (ids = []) => {
+    const results = [];
 
-/* ------------------------------------------------------------------
-  ✅ 2. Get all uploaded files metadata
------------------------------------------------------------------- */
-export const getAllFiles = async () => {
-  if (!gfs) throw new Error("GridFS not initialized");
+    await Promise.allSettled(
+        ids.map(async (id) => {
+            try {
+                const res = await deleteFile(id);
+                results.push(res);
+            } catch (e) {
+                console.error("Delete error:", e);
+            }
+        })
+    );
 
-  return mongoose.connection.db
-    .collection("fileuploads.files")
-    .find()
-    .sort({ uploadDate: -1 })
-    .toArray();
-};
-
-/* ------------------------------------------------------------------
-  ✅ 3. Get single file stream
------------------------------------------------------------------- */
-export const getFileStream = async (fileId) => {
-  if (!gfs) throw new Error("GridFS not initialized");
-
-  const _id = new mongoose.Types.ObjectId(fileId);
-  const file = await mongoose.connection.db
-    .collection("fileuploads.files")
-    .findOne({ _id });
-
-  if (!file) throw new Error("File not found");
-
-  const stream = gfs.openDownloadStream(_id);
-  return { file, stream };
-};
-
-/* ------------------------------------------------------------------
-  ✅ 4. Get ZIP stream for multiple files
------------------------------------------------------------------- */
-export const getZipStream = async (fileIds) => {
-  if (!gfs) throw new Error("GridFS not initialized");
-  if (!Array.isArray(fileIds) || !fileIds.length)
-    throw new Error("No file IDs provided");
-
-  const archive = archiver("zip", { zlib: { level: 9 } });
-
-  const filePromises = fileIds.map(async (fileId) => {
-    try {
-      const _id = new mongoose.Types.ObjectId(fileId);
-      const file = await gfs.find({ _id }).next();
-      if (!file) return;
-
-      const fileStream = gfs.openDownloadStream(_id);
-      archive.append(fileStream, { name: file.filename });
-    } catch (err) {
-      console.error(`Error processing file ${fileId}:`, err);
-    }
-  });
-
-  await Promise.all(filePromises);
-  process.nextTick(() => archive.finalize());
-
-  return archive;
-};
-
-/* ------------------------------------------------------------------
-  ✅ 5. Delete file by ID
------------------------------------------------------------------- */
-export const deleteFile = async (fileId) => {
-  if (!gfs) throw new Error("GridFS not initialized");
-
-  const _id = new mongoose.Types.ObjectId(fileId);
-  await gfs.delete(_id);
-  return { message: "File deleted successfully", _id };
+    return results;
 };
