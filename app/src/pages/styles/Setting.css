@@ -801,3 +801,37 @@ tr:hover {
   color: #dc2626;
   font-size: 13px;
 }
+
+.loader-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  gap: 16px;
+}
+
+.loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.loader__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #6bdcff;
+  animation: bounce 0.6s infinite ease-in-out;
+}
+.loader__dot:nth-child(2) { animation-delay: 0.12s; }
+.loader__dot:nth-child(3) { animation-delay: 0.24s; }
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); box-shadow: 0 0 0 rgba(107, 220, 255, 0.4); }
+  50%       { transform: translateY(-10px); box-shadow: 0 8px 16px rgba(107, 220, 255, 0.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader__dot { animation: none; }
+}

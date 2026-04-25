@@ -61,6 +61,7 @@ const ApprovalFlow = React.memo(() => {
   const [modalName, setModalName] = useState({});
   const [modalRole, setModalRole] = useState("");
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const fetchMasters = React.useCallback(async () => {
     try {
@@ -79,6 +80,7 @@ const ApprovalFlow = React.memo(() => {
       const cbase = plants[activePlntTab]?._id;
       const fnid = departments[activeDeptTab]?._id;
       if (!cbase || !fnid) return;
+      setLoading(true);
       setSteps([]);
       const res = await axiosInstance.get("/api/dynapprvl/fetch", { params: { cbase, fnid } });
       const record = res.data.data?.[0];
@@ -99,6 +101,7 @@ const ApprovalFlow = React.memo(() => {
         })));
       } else { setSteps([]); }
     } catch (error) { console.error(error); }
+    finally { setLoading(false); }
   }, [plants, departments, activePlntTab, activeDeptTab]);
   React.useEffect(() => {
     if (plants.length && departments.length) fetchApprovalFlow();
@@ -211,70 +214,86 @@ const ApprovalFlow = React.memo(() => {
           <button key={t?._id} className={`approval-tab ${activeDeptTab === i ? "active" : ""}`} onClick={() => { setActiveDeptTab(i); setSteps([]); }}>{t?.name}</button>
         ))}
       </div>
-      <DndContext onDragEnd={handleDragEnd} collisionDetection={pointerWithin}>
-        <SortableContext items={steps.map(s => s.id)} strategy={verticalListSortingStrategy}>
-          <div className="approval-steps">
-            {steps.map((step, si) => (
-              <DroppableStep key={step.id} step={step}>
-                <SortableStep key={step.id || si} step={step} si={si}>
-                  <div className="approval-step-card" key={si}>
-                    <div className="level-badge">L{si + 1}</div>
-                    <div className="step-body">
-                      <div className="step-header">
-                        <input type="text" className="step-title" value={step.title} onChange={(e) => updateStepTitle(si, e.target.value)} />
-                        <select className="step-tag" value={step.tag} onChange={(e) => { const newTag = e.target.value; setSteps(prev => prev.map((s, i) => i === si ? { ...s, tag: newTag } : s)); }}>
-                          {TAG_LABELS.map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                      </div>
-                      <div className="approvers-row">
-                        {step.approvers.length === 0 && (
-                          <div className="empty-slot">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
-                            No approvers assigned...
-                          </div>
-                        )}
-                        <SortableContext items={step.approvers.map(a => a.id)} strategy={verticalListSortingStrategy}>
-                          {step.approvers.map((a, ai) => (
-                            <SortableApprover key={a.id} approver={a}>
-                              <div className="approver-chip" key={ai}>
-                                <div className={`approver-avatar avatar-${ai % 3}`}>{a.initials}</div>
-                                <div className="chip-info"><div className="chip-name">{a.name}</div><div className="chip-role">{a.role}</div></div>
-                                <button className="del-btn" onClick={(e) => { e.stopPropagation(); e.preventDefault(); removeApprover(si, ai); }} title="Remove">
-                                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1M10 8v4M6 8v4M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
-                                </button>
-                              </div>
-                            </SortableApprover>
-                          ))}
-                        </SortableContext>
-                        <button className="add-approver-btn" onClick={() => openModal(si)}>
-                          <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                          Add Approver
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </SortableStep>
-              </DroppableStep>
-            ))}
+
+      {loading ? (
+        <div className="loader-overlay" role="status" aria-label="Loading approval flow">
+          <div className="loader">
+            <span className="loader__dot"></span>
+            <span className="loader__dot"></span>
+            <span className="loader__dot"></span>
           </div>
-        </SortableContext>
-      </DndContext>
-      <div className="add-step-wrap">
-        <button className="add-step-btn" onClick={addStep}>
-          <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-          Add Step
-        </button>
-      </div>
-      <div className="approval-footer">
-        <button className="discard-btn" onClick={discard}>Discard Changes</button>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {saved && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Saved successfully</span>}
-          <button className="save-flow-btn" onClick={handleSave}>
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 2h9l3 3v9a1 1 0 01-1 1H2a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" /><path d="M5 2v4h6V2M5 9h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
-            Save Flow Configuration
-          </button>
         </div>
-      </div>
+      ) : (
+        <>
+          <DndContext onDragEnd={handleDragEnd} collisionDetection={pointerWithin}>
+            <SortableContext items={steps.map(s => s.id)} strategy={verticalListSortingStrategy}>
+              <div className="approval-steps">
+                {steps.map((step, si) => (
+                  <DroppableStep key={step.id} step={step}>
+                    <SortableStep key={step.id || si} step={step} si={si}>
+                      <div className="approval-step-card" key={si}>
+                        <div className="level-badge">L{si + 1}</div>
+                        <div className="step-body">
+                          <div className="step-header">
+                            <input type="text" className="step-title" value={step.title} onChange={(e) => updateStepTitle(si, e.target.value)} />
+                            <select className="step-tag" value={step.tag} onChange={(e) => { const newTag = e.target.value; setSteps(prev => prev.map((s, i) => i === si ? { ...s, tag: newTag } : s)); }}>
+                              {TAG_LABELS.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                          </div>
+                          <div className="approvers-row">
+                            {step.approvers.length === 0 && (
+                              <div className="empty-slot">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+                                No approvers assigned...
+                              </div>
+                            )}
+                            <SortableContext items={step.approvers.map(a => a.id)} strategy={verticalListSortingStrategy}>
+                              {step.approvers.map((a, ai) => (
+                                <SortableApprover key={a.id} approver={a}>
+                                  <div className="approver-chip" key={ai}>
+                                    <div className={`approver-avatar avatar-${ai % 3}`}>{a.initials}</div>
+                                    <div className="chip-info"><div className="chip-name">{a.name}</div><div className="chip-role">{a.role}</div></div>
+                                    <button className="del-btn" onClick={(e) => { e.stopPropagation(); e.preventDefault(); removeApprover(si, ai); }} title="Remove">
+                                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1M10 8v4M6 8v4M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
+                                    </button>
+                                  </div>
+                                </SortableApprover>
+                              ))}
+                            </SortableContext>
+                            <button className="add-approver-btn" onClick={() => openModal(si)}>
+                              <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                              Add Approver
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </SortableStep>
+                  </DroppableStep>
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+
+          <div className="add-step-wrap">
+            <button className="add-step-btn" onClick={addStep}>
+              <svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+              Add Step
+            </button>
+          </div>
+
+          <div className="approval-footer">
+            <button className="discard-btn" onClick={discard}>Discard Changes</button>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {saved && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Saved successfully</span>}
+              <button className="save-flow-btn" onClick={handleSave}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 2h9l3 3v9a1 1 0 01-1 1H2a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" /><path d="M5 2v4h6V2M5 9h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
+                Save Flow Configuration
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {modal !== null && (
         <div className="approval-modal-overlay" onClick={() => setModal(null)}>
           <div className="approval-modal" onClick={e => e.stopPropagation()}>
@@ -300,10 +319,9 @@ const ApprovalFlow = React.memo(() => {
 const SetTimer = () => {
   const [timerHH, setTimerHH] = useState("10");
   const [timerMM, setTimerMM] = useState("00");
-  const [timerStatus, setTimerStatus] = useState(null); // null | 'loading' | 'saving' | 'saved' | 'error'
+  const [timerStatus, setTimerStatus] = useState(null);
   const [timerMsg, setTimerMsg] = useState("");
 
-  // Fetch existing timer on mount
   React.useEffect(() => {
     const fetchTimer = async () => {
       setTimerStatus("loading");
@@ -316,7 +334,6 @@ const SetTimer = () => {
           setTimerMM(String(totalMins % 60).padStart(2, "0"));
         }
       } catch (error) {
-        // No existing timer — silently skip (404 is expected on first load)
         if (error?.response?.status !== 404) {
           console.warn("Timer fetch error:", error?.response?.status);
         }
@@ -330,17 +347,11 @@ const SetTimer = () => {
   const handleTimerSave = async () => {
     setTimerStatus("saving");
     setTimerMsg("");
-
     const hh = Math.max(0, Math.min(23, parseInt(timerHH, 10) || 0));
     const mm = Math.max(0, Math.min(59, parseInt(timerMM, 10) || 0));
     const totalMinutes = hh * 60 + mm;
-
     try {
-      const res = await axiosInstance.post("/api/timer/set", {
-        hours: hh,
-        minutes: mm,
-        totalMinutes,
-      });
+      const res = await axiosInstance.post("/api/timer/set", { hours: hh, minutes: mm, totalMinutes });
       if (res.status === 200 || res.status === 201) {
         setTimerStatus("saved");
         setTimerMsg("✓ Timer saved successfully");
@@ -371,38 +382,20 @@ const SetTimer = () => {
     <div className="set-timer-section">
       <h4>Set Timer</h4>
       <p>Set a timer for reminders, session limits, or scheduled actions.</p>
-
       <div className="timer-row">
         <label className="timer-label">Set Time</label>
         <div className="timer-input-wrap">
           <div className={`timer-input-box ${timerStatus === "loading" ? "timer-loading" : ""}`}>
             <div className="timer-hhmm">
-              <input
-                type="number"
-                min="0"
-                max="23"
-                value={timerHH}
-                onChange={handleHHChange}
-                disabled={timerStatus === "loading"}
-              />
+              <input type="number" min="0" max="23" value={timerHH} onChange={handleHHChange} disabled={timerStatus === "loading"} />
               <span className="timer-colon">:</span>
-              <input
-                type="number"
-                min="0"
-                max="59"
-                value={timerMM}
-                onChange={handleMMChange}
-                disabled={timerStatus === "loading"}
-              />
+              <input type="number" min="0" max="59" value={timerMM} onChange={handleMMChange} disabled={timerStatus === "loading"} />
             </div>
-            <span className="timer-clock-icon">
-              <AccessTimeIcon />
-            </span>
+            <span className="timer-clock-icon"><AccessTimeIcon /></span>
           </div>
           <span className="timer-hint">Select time in HH : MM format</span>
         </div>
       </div>
-
       <div className="timer-footer">
         <button
           className="dark-btn"
@@ -413,9 +406,7 @@ const SetTimer = () => {
           {timerStatus === "saving" ? "Saving…" : timerStatus === "loading" ? "Loading…" : "Save"}
         </button>
         {timerMsg && (
-          <span className={timerStatus === "error" ? "timer-error-msg" : "timer-saved-msg"}>
-            {timerMsg}
-          </span>
+          <span className={timerStatus === "error" ? "timer-error-msg" : "timer-saved-msg"}>{timerMsg}</span>
         )}
       </div>
     </div>
@@ -462,30 +453,22 @@ const Settings = () => {
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     if (name === "acc_phn") {
-      // Allow only digits and limit to 10 characters
       const cleanedValue = value.replace(/\D/g, "").slice(0, 10);
       setProfile(prev => ({ ...prev, [name]: cleanedValue }));
-    }
-    else {
+    } else {
       setProfile(prev => ({ ...prev, [name]: value }));
     }
   };
 
   const handleSaveProfile = async () => {
-    console.log(profile);
-
     try {
       const response = await axiosInstance.patch(`/api/acc/update?id=${storedUser._id}`, profile);
-      console.log(response.data);
       if (response.status === 201) {
-        // Handle successful update
         dispatch(updateProfile({ data: response.data.data }));
         setSaved(true);
         setTimeout(() => setSaved(false), 2500);
       }
-    } catch (error) {
-      console.error(error)
-    }
+    } catch (error) { console.error(error); }
   };
 
   const handleLogout = async () => {
@@ -512,7 +495,6 @@ const Settings = () => {
           <h2>Settings</h2>
           <p>Manage your account and system preferences</p>
         </div>
-        {/* Mobile hamburger toggle */}
         <button className="settings-mobile-toggle" onClick={() => setSidebarOpen(v => !v)} aria-label="Toggle settings menu">
           <span></span><span></span><span></span>
         </button>
@@ -567,7 +549,6 @@ const Settings = () => {
               <hr />
               <div className="form-grid">
                 <div><label>Full Name</label><input name="acc_fname" value={profile.acc_fname} onChange={handleProfileChange} /></div>
-                {/* <div><label>Last Name</label><input name="lastName" value={profile.lastName} onChange={handleProfileChange} /></div> */}
                 <div><label>Email Address</label><input name="acc_eml" value={profile.acc_eml} onChange={handleProfileChange} /></div>
                 <div><label>Phone Number</label><input name="acc_phn" value={profile.acc_phn} onChange={handleProfileChange} /></div>
                 <div><label>Company Name</label><input name="acc_comp" value={profile.acc_comp} onChange={handleProfileChange} /></div>

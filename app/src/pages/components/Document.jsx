@@ -25,7 +25,11 @@ const Documents = () => {
     catch { return defaultDocuments; }
   });
 
+<<<<<<< Updated upstream
   const [fileList, setFileList] = useState([]);
+=======
+  const [loading, setLoading] = useState(true);
+>>>>>>> Stashed changes
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
@@ -33,6 +37,7 @@ const Documents = () => {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef();
 
+<<<<<<< Updated upstream
   const fetchFiles = React.useCallback(async () => {
     try {
       const res = await axiosInstance.get("/api/file/fetch");
@@ -46,6 +51,13 @@ const Documents = () => {
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
+=======
+  // Simulate a brief load so the page feels consistent with other sections
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+>>>>>>> Stashed changes
 
   useEffect(() => {
     localStorage.setItem(DOC_KEY, JSON.stringify(documents));
@@ -108,21 +120,32 @@ const Documents = () => {
         <p>Manage compliance documents and files</p>
       </div>
 
-      <div
-        className={`upload-box${dragOver ? " drag-over" : ""}`}
-        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current.click()}
-      >
-        <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} onChange={handleFileChange} accept=".pdf,.doc,.docx,.xls,.xlsx" />
-        <div className="upload-content">
-          <div className="upload-icon">⬆</div>
-          <p>Click to upload or drag and drop</p>
-          <span>PDF, DOC, DOCX, XLS, XLSX (Max 50MB)</span>
+      {loading ? (
+        <div className="loader-overlay" role="status" aria-label="Loading documents">
+          <div className="loader">
+            <span className="loader__dot"></span>
+            <span className="loader__dot"></span>
+            <span className="loader__dot"></span>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          <div
+            className={`upload-box${dragOver ? " drag-over" : ""}`}
+            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current.click()}
+          >
+            <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} onChange={handleFileChange} accept=".pdf,.doc,.docx,.xls,.xlsx" />
+            <div className="upload-content">
+              <div className="upload-icon">⬆</div>
+              <p>Click to upload or drag and drop</p>
+              <span>PDF, DOC, DOCX, XLS, XLSX (Max 50MB)</span>
+            </div>
+          </div>
 
+<<<<<<< Updated upstream
       <div className="table-container" style={{marginBottom:'2rem'}}>
         <div style={{padding:'2rem',fontSize:'1.5rem'}}>All Uploaded Files</div>
         <div className="doc-table-scroll">
@@ -232,6 +255,73 @@ const Documents = () => {
           {filtered.length} document{filtered.length !== 1 ? "s" : ""} found
         </div>
       </div> */}
+=======
+          <div className="filters">
+            <input placeholder="Search documents or uploader..." value={search} onChange={e => setSearch(e.target.value)} />
+            <select value={filterType} onChange={e => setFilterType(e.target.value)}>
+              <option value="">All Types</option>
+              {types.map(t => <option key={t}>{t}</option>)}
+            </select>
+            <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+              <option value="">All Categories</option>
+              {categories.map(c => <option key={c}>{c}</option>)}
+            </select>
+            <select value={filterPlant} onChange={e => setFilterPlant(e.target.value)}>
+              <option value="">All Plants</option>
+              {plants.map(p => <option key={p}>{p}</option>)}
+            </select>
+            {(search || filterType || filterCategory || filterPlant) && (
+              <button className="light-btn" onClick={resetFilters}>✕ Clear</button>
+            )}
+          </div>
+
+          <div className="table-container">
+            <div className="doc-table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Document Name</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Plant</th>
+                    <th>Uploaded By</th>
+                    <th>Upload Date</th>
+                    <th>Size</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>
+                        No documents found
+                      </td>
+                    </tr>
+                  ) : filtered.map((doc) => (
+                    <tr key={doc.id}>
+                      <td className="doc-name">{getFileIcon(doc.name)} {doc.name}</td>
+                      <td><span className={getTagClass(doc.type)}>{doc.type}</span></td>
+                      <td>{doc.category}</td>
+                      <td>{doc.plant}</td>
+                      <td>{doc.uploadedBy}</td>
+                      <td>{doc.date}</td>
+                      <td>{doc.size}</td>
+                      <td className="actions" style={{ display: "flex", gap: "8px" }}>
+                        <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px" }} title="Download">⬇</button>
+                        <button onClick={() => handleDelete(doc.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="table-footer" style={{ padding: "12px", borderTop: "1px solid #f1f5f9", fontSize: "12px", color: "#6b7280" }}>
+              {filtered.length} document{filtered.length !== 1 ? "s" : ""} found
+            </div>
+          </div>
+        </>
+      )}
+>>>>>>> Stashed changes
     </>
   );
 };

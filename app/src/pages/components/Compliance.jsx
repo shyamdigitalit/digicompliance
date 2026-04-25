@@ -4,7 +4,6 @@ import "../styles/Compliance.css";
 import axiosInstance from "../../config/axiosInstance";
 import { useCallback } from "react";
 import { useSelector } from "react-redux";
-// import { useNavigate } from "react-router-dom";
 import FolderZipIcon from '@mui/icons-material/FolderZip';
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -29,20 +28,26 @@ const Compliance = () => {
   });
   const [data, setData] = useState([]);
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const user = useSelector(state => state.auth.user) || {};
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await axiosInstance.get("/api/comp/fetch");
       setData(response.data?.data || []);
     } catch (error) {
-      console.error(error)
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   }, []);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
   const fetchMasterData = useCallback(async () => {
     try {
       const [plantsRes, deptsRes, typesRes, categoriesRes, freqsRes, critsRes, penltsRes] = await Promise.allSettled([
@@ -54,7 +59,6 @@ const Compliance = () => {
         axiosInstance.get("/api/criticlty/fetch"),
         axiosInstance.get("/api/penlty/fetch")
       ]);
-      // console.log(plantsRes.value?.data?.data);
       setMasterData({
         plants: plantsRes.value?.data?.data || [],
         departments: deptsRes.value?.data?.data || [],
@@ -65,9 +69,10 @@ const Compliance = () => {
         penaltyTypes: penltsRes.value?.data?.data || []
       });
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   }, []);
+
   useEffect(() => {
     fetchMasterData();
   }, [fetchMasterData]);
@@ -123,33 +128,30 @@ const Compliance = () => {
         if (response.status === 201) {
           setSaved(true);
           setTimeout(() => {
-            setSaved(false)
+            setSaved(false);
             setShowAddForm(false);
             fetchData();
           }, 1000);
         } else {
-          // setTimeout(() => setSaved(false), 1000);
           alert("Failed to add compliance. Please try again.");
         }
-      }
-      else {
+      } else {
         const response = await axiosInstance.post("/api/comp/create", formData, {
           headers: { "Content-Type": "multipart/form-data" }
         });
         if (response.status === 201) {
           setSaved(true);
           setTimeout(() => {
-            setSaved(false)
+            setSaved(false);
             setShowAddForm(false);
             fetchData();
           }, 1000);
         } else {
-          // setTimeout(() => setSaved(false), 1000);
           alert("Failed to add compliance. Please try again.");
         }
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   };
 
@@ -160,157 +162,105 @@ const Compliance = () => {
 
   const handleZipDownload = async (value = [], label = "Compliance_Files") => {
     if (!value || value.length === 0) {
-      // dispatch(showSnackbar({
-      //   message: 'No files available for download!',
-      //   severity: 'warning'
-      // }));
-      alert(`No files available for download!`)
+      alert(`No files available for download!`);
       return;
     }
-
     try {
-
       const backendFiles = value.filter(f => f.filId);
       const localFiles = value.filter(f => f instanceof File);
       const urlFiles = value.filter(f => f.filUrl && !f.filId);
 
-      // Backend ZIP download
       if (backendFiles.length > 0) {
-
         try {
-
           const fileIds = backendFiles.map(f => f.filId).join(',');
-
           const response = await axiosInstance.get(
             `/api/file/downloadall?files=${fileIds}`,
             { responseType: 'blob' }
           );
-
-          const blob = new Blob([response.data], {
-            type: 'application/zip'
-          });
-
+          const blob = new Blob([response.data], { type: 'application/zip' });
           saveAs(blob, `${label}.zip`);
-
-          // dispatch(showSnackbar({
-          //   message: 'Files downloaded successfully!',
-          //   severity: 'success'
-          // }));
-          alert(`Files downloaded successfully!`)
-
+          alert(`Files downloaded successfully!`);
           return;
-
         } catch (err) {
-
-          // dispatch(showSnackbar({
-          //   message: 'Backend ZIP failed, trying fallback.',
-          //   severity: 'warning'
-          // }));
           console.log(err);
-          alert(`Backend ZIP failed, trying fallback.`)
+          alert(`Backend ZIP failed, trying fallback.`);
         }
       }
 
-      // Fallback ZIP creation
       const zip = new JSZip();
-
       for (const file of localFiles) {
         zip.file(file.name, file);
       }
-
       for (const file of urlFiles) {
-
         const response = await fetch(file.filUrl);
         const blob = await response.blob();
-
         zip.file(file.filName || "file", blob);
       }
-
       const zipBlob = await zip.generateAsync({ type: "blob" });
-
       saveAs(zipBlob, `${label}.zip`);
-
-      // dispatch(showSnackbar({
-      //   message: 'ZIP exported successfully!',
-      //   severity: 'success'
-      // }));
-      alert(`ZIP exported successfully!`)
-
-    }
-    catch (err) {
-
+      alert(`ZIP exported successfully!`);
+    } catch (err) {
       console.error(err);
-
-      // dispatch(showSnackbar({
-      //   message: 'ZIP download failed.',
-      //   severity: 'error'
-      // }));
-      alert(`ZIP download failed.`)
+      alert(`ZIP download failed.`);
     }
   };
 
   const handleApprove = async (row) => {
     try {
       if (window.confirm("Approve this compliance record?")) {
-        // setData(prev => prev.filter(d => d.id !== id));
-        const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=1`, row)
+        const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=1`, row);
         if (response.status === 201) {
           setSaved(true);
           setTimeout(() => {
-            setSaved(false)
+            setSaved(false);
             setShowAddForm(false);
             fetchData();
           }, 1000);
-        }
-        else {
-          alert(`Approval Failed`)
+        } else {
+          alert(`Approval Failed`);
         }
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   };
 
   const handleReject = async (row) => {
     try {
       if (window.confirm("Reject this compliance record?")) {
-        // setData(prev => prev.filter(d => d.id !== id));
-        const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=0`, row)
+        const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=0`, row);
         if (response.status === 201) {
           setSaved(true);
           setTimeout(() => {
-            setSaved(false)
+            setSaved(false);
             setShowAddForm(false);
             fetchData();
           }, 1000);
-        }
-        else {
-          alert(`Rejection Failed`)
+        } else {
+          alert(`Rejection Failed`);
         }
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   };
 
   const handleDelete = async (id) => {
     try {
       if (window.confirm("Delete this compliance record?")) {
-        // setData(prev => prev.filter(d => d._id !== id));
-        const response = await axiosInstance.delete(`/api/comp/delete?id=${id}`)
+        const response = await axiosInstance.delete(`/api/comp/delete?id=${id}`);
         if (response.status === 200) {
           setSaved(true);
           setTimeout(() => {
-            setSaved(false)
+            setSaved(false);
             fetchData();
           }, 1000);
-        }
-        else {
-          alert(`Deletion Failed`)
+        } else {
+          alert(`Deletion Failed`);
         }
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   };
 
@@ -319,59 +269,49 @@ const Compliance = () => {
   };
 
   const handleExport = () => {
-    let exportData = [];
     if (!paged.length) {
-      // dispatch(showSnackbar({ message: 'No data available to export.', severity: 'warning' }));
-      alert('No data available to export.')
+      alert('No data available to export.');
       return;
     }
-    else {
-      console.log(paged);
-      alert('Exporting data...')
-      exportData = paged?.map(({
-        _id,
-        complianceId,
-        plant,
-        department,
-        complianceType,
-        complianceCategorization,
-        complianceFrequency,
-        criticality,
-        penaltyType,
-        dueDate,
-        allDocs,
-        approvalDetails,
-        createdAt,
-        updatedAt,
-        createdby,
-        updatedby,
-        __v,
-        ...rest
-      }) => ({
-        // ...rest,
-        complianceId,
-        plant: plant?.name,
-        department: department?.name,
-        complianceType: complianceType?.name,
-        complianceCategorization: complianceCategorization?.name,
-        complianceFrequency: complianceFrequency?.name,
-        criticality: criticality?.name,
-        penaltyType: penaltyType?.name,
-        dueDate,
-        createdby: createdby?.acc_fname,
-        updatedby: updatedby?.acc_fname,
-        ...rest
-      }));
-      console.log(exportData);
+    alert('Exporting data...');
+    const exportData = paged?.map(({
+      _id,
+      complianceId,
+      plant,
+      department,
+      complianceType,
+      complianceCategorization,
+      complianceFrequency,
+      criticality,
+      penaltyType,
+      dueDate,
+      allDocs,
+      approvalDetails,
+      createdAt,
+      updatedAt,
+      createdby,
+      updatedby,
+      __v,
+      ...rest
+    }) => ({
+      complianceId,
+      plant: plant?.name,
+      department: department?.name,
+      complianceType: complianceType?.name,
+      complianceCategorization: complianceCategorization?.name,
+      complianceFrequency: complianceFrequency?.name,
+      criticality: criticality?.name,
+      penaltyType: penaltyType?.name,
+      dueDate,
+      createdby: createdby?.acc_fname,
+      updatedby: updatedby?.acc_fname,
+      ...rest
+    }));
 
-      // ✅ Convert JSON → Worksheet (ALL columns automatically)
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      // ✅ Create Workbook
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Compliance');
-      // ✅ Export file
-      XLSX.writeFile(workbook, 'Compliance_Datasheet.xlsx');
-    }
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Compliance');
+    XLSX.writeFile(workbook, 'Compliance_Datasheet.xlsx');
   };
 
   const getTag = (val) => val?.toLowerCase().replace(" ", "-");
@@ -384,12 +324,21 @@ const Compliance = () => {
     <div className="compliance-page">
       {showAddForm ? (
         <AddCompliance
+<<<<<<< Updated upstream
         onCancel={() => setShowAddForm(false)}
         onSubmit={handleAddEditSubmit}
         initialData={editing}
         mode={editing ? "edit" : "add"}
         saved={saved}
         masterData={masterData}
+=======
+          onCancel={() => setShowAddForm(false)}
+          onSubmit={handleAddSubmit}
+          initialData={editing}
+          mode={editing ? "edit" : "add"}
+          saved={saved}
+          masterData={masterData}
+>>>>>>> Stashed changes
         />
       ) : (
         <>
@@ -400,129 +349,175 @@ const Compliance = () => {
             </div>
           </div>
 
-          <div className="filter-box">
-            <div className="filter-row" style={{ display: 'flex', flexFlow: 'row wrap'}}>
-              <input
-                placeholder="Search by ID, type, category, plant..."
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1); }}
-              />
-              <select value={filterPlant} onChange={e => { setFilterPlant(e.target.value); setPage(1); }}>
-                <option value="">All Plants</option>
-                {plants?.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-              <select value={filterDept} onChange={e => { setFilterDept(e.target.value); setPage(1); }}>
-                <option value="">All Departments</option>
-                {depts?.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-              <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}>
-                <option value="">All Status</option>
-                {['Open', 'Pending', 'Active', 'Inactive', 'Closed'].map(s => <option key={s}>{s}</option>)}
-              </select>
-              <select value={filterCompTyp} onChange={e => { setFilterCompTyp(e.target.value); setPage(1); }}>
-                <option value="">All Compliance Types</option>
-                {complianceTypes?.map(ct => <option key={ct} value={ct}>{ct}</option>)}
-              </select>
-              <select value={filterCompCat} onChange={e => { setFilterCompCat(e.target.value); setPage(1); }}>
-                <option value="">All Compliance Categories</option>
-                {complianceCategories?.map(cc => <option key={cc} value={cc}>{cc}</option>)}
-              </select>
-              <select value={filterCompFreq} onChange={e => { setFilterCompFreq(e.target.value); setPage(1); }}>
-                <option value="">All Frequencies</option>
-                {complianceFrequencies?.map(cf => <option key={cf} value={cf}>{cf}</option>)}
-              </select>
-              <select value={filterCriticality} onChange={e => { setFilterCriticality(e.target.value); setPage(1); }}>
-                <option value="">All Criticalities</option>
-                {criticalities?.map(cr => <option key={cr} value={cr}>{cr}</option>)}
-              </select>
-              <select value={filterPenaltyType} onChange={e => { setFilterPenaltyType(e.target.value); setPage(1); }}>
-                <option value="">All Penalty Types</option>
-                {penaltyTypes?.map(pt => <option key={pt} value={pt}>{pt}</option>)}
-              </select>
-            </div>
-            <div className="filter-row second">
-              {(search || filterPlant || filterDept || filterStatus || filterCompTyp || filterCompCat || filterCompFreq || filterCriticality || filterPenaltyType) && (
-                <button className="light-btn" onClick={resetFilters}>✕ Clear Filters</button>
-              )}
-              {(user.acc_typ?.heirarchy>2 && user.acc_plnt && user.acc_dept) && <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>}
-              {(user.acc_typ?.heirarchy<=2 && (user.acc_plnt || user.acc_dept)) && <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>}
-              <button className="light-btn" onClick={handleExport}>Export</button>
-            </div>
-          </div>
-
-          <div className="table-box">
-            <div className="table-box-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Compliance ID</th>
-                  <th>Plant</th>
-                  <th>Department</th>
-                  <th>Compliance Type</th>
-                  <th>Category</th>
-                  <th>Frequency</th>
-                  <th>Criticality</th>
-                  <th>Status</th>
-                  <th>Approval Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged.length === 0 ? (
-                  <tr><td colSpan={9} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No records found</td></tr>
-                ) : paged.map((item) => (
-                  <tr key={item._id}>
-                    <td className="link">{item.complianceId}</td>
-                    <td>{item?.plant?.name}</td>
-                    <td>{item?.department?.name}</td>
-                    <td>{item?.complianceType?.name}</td>
-                    <td>{item?.complianceCategorization?.name}</td>
-                    <td>{item?.complianceFrequency?.name}</td>
-                    {/* <td>{item?.criticality?.name}</td> */}
-                    <td><span className={`tag ${getTag(item?.criticality?.name)}`}>{item?.criticality?.name}</span></td>
-                    <td>
-                      <select
-                        className={`status ${getTag(item.status)}`}
-                        value={item.status}
-                        onChange={e => handleStatusChange(item.id, e.target.value)}
-                        style={{ border: "none", cursor: "pointer", fontSize: "11px" }}
-                      >
-                        {['Open', 'Pending', 'Active', 'Inactive', 'Closed'].map(s => <option key={s}>{s}</option>)}
-                      </select>
-                    </td>
-                    <td>{item.approvalStatus}</td>
-                    <td>
-                      <button onClick={() => handleEdit(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit">✏</button>
-                      <button onClick={() => handleZipDownload(item.allDocs, item.complianceId)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#e525eb", fontSize: "5px" }} title="ZIP Download"><FolderZipIcon /></button>
-                      <button onClick={() => handleApprove(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#11bd2e", fontSize: "16px" }} disabled={!item.isApprover} title="Approve">✓</button>
-                      <button onClick={() => handleReject(item)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#bd6d11", fontSize: "16px" }} disabled={!item.isApprover} title="Reject">!</button>
-                      <button onClick={() => handleDelete(item._id)} style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "16px" }} title="Delete">🗑</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-
-
-            <div className="table-footer">
-              <span>
-                Showing {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} results
-              </span>
-              <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                <button className="light-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</button>
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <button
-                    key={i}
-                    className={page === i + 1 ? "dark-btn" : "light-btn"}
-                    onClick={() => setPage(i + 1)}
-                    style={{ padding: "6px 10px", minWidth: "32px" }}
-                  >{i + 1}</button>
-                ))}
-                <button className="light-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+          {loading ? (
+            <div className="loader-overlay" role="status" aria-label="Loading compliance data">
+              <div className="loader">
+                <span className="loader__dot"></span>
+                <span className="loader__dot"></span>
+                <span className="loader__dot"></span>
               </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="filter-box">
+                <div className="filter-row" style={{ display: 'flex', flexFlow: 'row wrap' }}>
+                  <input
+                    placeholder="Search by ID, type, category, plant..."
+                    value={search}
+                    onChange={e => { setSearch(e.target.value); setPage(1); }}
+                  />
+                  <select value={filterPlant} onChange={e => { setFilterPlant(e.target.value); setPage(1); }}>
+                    <option value="">All Plants</option>
+                    {plants?.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <select value={filterDept} onChange={e => { setFilterDept(e.target.value); setPage(1); }}>
+                    <option value="">All Departments</option>
+                    {depts?.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}>
+                    <option value="">All Status</option>
+                    {['Open', 'Pending', 'Active', 'Inactive', 'Closed'].map(s => <option key={s}>{s}</option>)}
+                  </select>
+                  <select value={filterCompTyp} onChange={e => { setFilterCompTyp(e.target.value); setPage(1); }}>
+                    <option value="">All Compliance Types</option>
+                    {complianceTypes?.map(ct => <option key={ct} value={ct}>{ct}</option>)}
+                  </select>
+                  <select value={filterCompCat} onChange={e => { setFilterCompCat(e.target.value); setPage(1); }}>
+                    <option value="">All Compliance Categories</option>
+                    {complianceCategories?.map(cc => <option key={cc} value={cc}>{cc}</option>)}
+                  </select>
+                  <select value={filterCompFreq} onChange={e => { setFilterCompFreq(e.target.value); setPage(1); }}>
+                    <option value="">All Frequencies</option>
+                    {complianceFrequencies?.map(cf => <option key={cf} value={cf}>{cf}</option>)}
+                  </select>
+                  <select value={filterCriticality} onChange={e => { setFilterCriticality(e.target.value); setPage(1); }}>
+                    <option value="">All Criticalities</option>
+                    {criticalities?.map(cr => <option key={cr} value={cr}>{cr}</option>)}
+                  </select>
+                  <select value={filterPenaltyType} onChange={e => { setFilterPenaltyType(e.target.value); setPage(1); }}>
+                    <option value="">All Penalty Types</option>
+                    {penaltyTypes?.map(pt => <option key={pt} value={pt}>{pt}</option>)}
+                  </select>
+                </div>
+                <div className="filter-row second">
+                  {(search || filterPlant || filterDept || filterStatus || filterCompTyp || filterCompCat || filterCompFreq || filterCriticality || filterPenaltyType) && (
+                    <button className="light-btn" onClick={resetFilters}>✕ Clear Filters</button>
+                  )}
+                  {(user.acc_typ?.heirarchy > 2 && user.acc_plnt && user.acc_dept) && (
+                    <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
+                  )}
+                  {(user.acc_typ?.heirarchy <= 2 && (user.acc_plnt || user.acc_dept)) && (
+                    <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
+                  )}
+                  <button className="light-btn" onClick={handleExport}>Export</button>
+                </div>
+              </div>
+
+              <div className="table-box">
+                <div className="table-box-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Compliance ID</th>
+                        <th>Plant</th>
+                        <th>Department</th>
+                        <th>Compliance Type</th>
+                        <th>Category</th>
+                        <th>Frequency</th>
+                        <th>Criticality</th>
+                        <th>Status</th>
+                        <th>Approval Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paged.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>
+                            No records found
+                          </td>
+                        </tr>
+                      ) : paged.map((item) => (
+                        <tr key={item._id}>
+                          <td className="link">{item.complianceId}</td>
+                          <td>{item?.plant?.name}</td>
+                          <td>{item?.department?.name}</td>
+                          <td>{item?.complianceType?.name}</td>
+                          <td>{item?.complianceCategorization?.name}</td>
+                          <td>{item?.complianceFrequency?.name}</td>
+                          <td>
+                            <span className={`tag ${getTag(item?.criticality?.name)}`}>
+                              {item?.criticality?.name}
+                            </span>
+                          </td>
+                          <td>
+                            <select
+                              className={`status ${getTag(item.status)}`}
+                              value={item.status}
+                              onChange={e => handleStatusChange(item.id, e.target.value)}
+                              style={{ border: "none", cursor: "pointer", fontSize: "11px" }}
+                            >
+                              {['Open', 'Pending', 'Active', 'Inactive', 'Closed'].map(s => (
+                                <option key={s}>{s}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td>{item.approvalStatus}</td>
+                          <td>
+                            <button
+                              onClick={() => handleEdit(item)}
+                              style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }}
+                              title="Edit"
+                            >✏</button>
+                            <button
+                              onClick={() => handleZipDownload(item.allDocs, item.complianceId)}
+                              style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#e525eb", fontSize: "5px" }}
+                              title="ZIP Download"
+                            ><FolderZipIcon /></button>
+                            <button
+                              onClick={() => handleApprove(item)}
+                              style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#11bd2e", fontSize: "16px" }}
+                              disabled={!item.isApprover}
+                              title="Approve"
+                            >✓</button>
+                            <button
+                              onClick={() => handleReject(item)}
+                              style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#bd6d11", fontSize: "16px" }}
+                              disabled={!item.isApprover}
+                              title="Reject"
+                            >!</button>
+                            <button
+                              onClick={() => handleDelete(item._id)}
+                              style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "16px" }}
+                              title="Delete"
+                            >🗑</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="table-footer">
+                  <span>
+                    Showing {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} results
+                  </span>
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                    <button className="light-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</button>
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <button
+                        key={i}
+                        className={page === i + 1 ? "dark-btn" : "light-btn"}
+                        onClick={() => setPage(i + 1)}
+                        style={{ padding: "6px 10px", minWidth: "32px" }}
+                      >{i + 1}</button>
+                    ))}
+                    <button className="light-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

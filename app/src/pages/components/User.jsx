@@ -11,6 +11,7 @@ const Users = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
@@ -20,17 +21,18 @@ const Users = () => {
   const [saved, setSaved] = useState(false);
 
   const getAllUserData = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await axiosInstance.get("/api/acc/fetch");
       if (response?.status === 200) {
-        // console.log(response.data?.data?.Acc);
         setData(response.data?.data?.Acc);
-      }
-      else {
+      } else {
         setData([]);
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -45,10 +47,6 @@ const Users = () => {
   const roles = useMemo(() => [...new Set(data?.map(d => d.acc_typ?.typname || ""))].filter(Boolean), [data]);
   const plants = useMemo(() => [...new Set(data?.map(d => d.acc_plnt?.name || ""))].filter(Boolean), [data]);
   const departments = useMemo(() => [...new Set(data?.map(d => d.acc_dept?.name || ""))].filter(Boolean), [data]);
-  // console.log(roles);
-  // console.log(plants);
-  // console.log(departments);
-
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -79,15 +77,13 @@ const Users = () => {
         if (response?.status === 201) {
           setSaved(true);
           setTimeout(() => {
-            setSaved(false)
+            setSaved(false);
             setEditingUser(null);
             setShowAddForm(false);
             getAllUserData();
           }, 1000);
-          // alert("User updated successfully");
         }
-      }
-      else {
+      } else {
         setData(prev => [...prev, {
           acc_uname: formData.acc_uname,
           acc_fname: formData.acc_fname,
@@ -100,16 +96,15 @@ const Users = () => {
         if (response?.status === 201) {
           setSaved(true);
           setTimeout(() => {
-            setSaved(false)
+            setSaved(false);
             setShowAddForm(false);
             getAllUserData();
           }, 1000);
         }
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-    // setShowAddForm(false);
   };
 
   const handleEdit = (user) => {
@@ -120,17 +115,19 @@ const Users = () => {
   const handleDelete = async (id) => {
     try {
       if (window.confirm("Delete this user?")) {
-        const response = await axiosInstance.delete(`/api/acc/delete?id=${id}`)
+        const response = await axiosInstance.delete(`/api/acc/delete?id=${id}`);
         if (response.status === 200) {
           setData(prev => prev.filter(u => u._id !== id));
         }
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   };
 
-  const resetFilters = () => { setSearch(""); setFilterRole(""); setFilterPlant(""); setFilterDepartment(""); setPage(1); };
+  const resetFilters = () => {
+    setSearch(""); setFilterRole(""); setFilterPlant(""); setFilterDepartment(""); setPage(1);
+  };
 
   return (
     <>
@@ -149,77 +146,101 @@ const Users = () => {
             <p>Manage users and their access to the compliance system</p>
           </div>
 
-          <div className="user-filters">
-            <input
-              placeholder="Search by name, username or email..."
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
-            />
-            <select value={filterRole} onChange={e => { setFilterRole(e.target.value); setPage(1); }}>
-              <option value="">All Roles</option>
-              {roles.map(r => <option key={r}>{r}</option>)}
-            </select>
-            <select value={filterPlant} onChange={e => { setFilterPlant(e.target.value); setPage(1); }}>
-              <option value="">All Plants</option>
-              {plants.map(p => <option key={p}>{p}</option>)}
-            </select>
-            <select value={filterDepartment} onChange={e => { setFilterDepartment(e.target.value); setPage(1); }}>
-              <option value="">All Departments</option>
-              {departments.map(d => <option key={d}>{d}</option>)}
-            </select>
-            {(search || filterRole || filterPlant || filterDepartment) && (
-              <button className="light-btn" onClick={resetFilters}>✕ Clear</button>
-            )}
-            <button className="add-btn" onClick={() => { setEditingUser(null); setShowAddForm(true); }}>+ Add User</button>
-          </div>
-
-          <div className="user-table"><div className="user-table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Username</th>
-                  <th>Full Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Plant</th>
-                  <th>Department</th>
-                  <th>Heirarchy</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged?.length === 0 ? (
-                  <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No users found</td></tr>
-                ) : paged?.map((user, i) => (
-                  <tr key={i}>
-                    <td className="link">{user.acc_uname}</td>
-                    <td>{user.acc_fname}</td>
-                    <td>{user.acc_eml}</td>
-                    <td><span className={getRoleClass(user.acc_typ?.typname)}>{user.acc_typ?.typname}</span></td>
-                    <td>{user.acc_plnt?.name}</td>
-                    <td>{user.acc_dept?.name}</td>
-                    <td>{user.acc_typ?.heirarchy}</td>
-                    <td style={{ display: "flex", gap: "8px" }}>
-                      <button onClick={() => handleEdit(user)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit">✏</button>
-                      <button onClick={() => handleDelete(user._id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          </div>
-          <div className="table-footer">
-            <span>Showing {filtered?.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered?.length)} of {filtered?.length} users</span>
-            <div style={{ display: "flex", gap: "6px" }}>
-              <button className="light-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</button>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button key={i} className={page === i + 1 ? "dark-btn" : "light-btn"} onClick={() => setPage(i + 1)} style={{ padding: "6px 10px", minWidth: "32px" }}>{i + 1}</button>
-              ))}
-              <button className="light-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+          {loading ? (
+            <div className="loader-overlay" role="status" aria-label="Loading users">
+              <div className="loader">
+                <span className="loader__dot"></span>
+                <span className="loader__dot"></span>
+                <span className="loader__dot"></span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="user-filters">
+                <input
+                  placeholder="Search by name, username or email..."
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setPage(1); }}
+                />
+                <select value={filterRole} onChange={e => { setFilterRole(e.target.value); setPage(1); }}>
+                  <option value="">All Roles</option>
+                  {roles.map(r => <option key={r}>{r}</option>)}
+                </select>
+                <select value={filterPlant} onChange={e => { setFilterPlant(e.target.value); setPage(1); }}>
+                  <option value="">All Plants</option>
+                  {plants.map(p => <option key={p}>{p}</option>)}
+                </select>
+                <select value={filterDepartment} onChange={e => { setFilterDepartment(e.target.value); setPage(1); }}>
+                  <option value="">All Departments</option>
+                  {departments.map(d => <option key={d}>{d}</option>)}
+                </select>
+                {(search || filterRole || filterPlant || filterDepartment) && (
+                  <button className="light-btn" onClick={resetFilters}>✕ Clear</button>
+                )}
+                <button className="add-btn" onClick={() => { setEditingUser(null); setShowAddForm(true); }}>+ Add User</button>
+              </div>
+
+              <div className="user-table">
+                <div className="user-table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Plant</th>
+                        <th>Department</th>
+                        <th>Heirarchy</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paged?.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>
+                            No users found
+                          </td>
+                        </tr>
+                      ) : paged?.map((user, i) => (
+                        <tr key={i}>
+                          <td className="link">{user.acc_uname}</td>
+                          <td>{user.acc_fname}</td>
+                          <td>{user.acc_eml}</td>
+                          <td><span className={getRoleClass(user.acc_typ?.typname)}>{user.acc_typ?.typname}</span></td>
+                          <td>{user.acc_plnt?.name}</td>
+                          <td>{user.acc_dept?.name}</td>
+                          <td>{user.acc_typ?.heirarchy}</td>
+                          <td style={{ display: "flex", gap: "8px" }}>
+                            <button onClick={() => handleEdit(user)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit">✏</button>
+                            <button onClick={() => handleDelete(user._id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="table-footer">
+                <span>
+                  Showing {filtered?.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered?.length)} of {filtered?.length} users
+                </span>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button className="light-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</button>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button
+                      key={i}
+                      className={page === i + 1 ? "dark-btn" : "light-btn"}
+                      onClick={() => setPage(i + 1)}
+                      style={{ padding: "6px 10px", minWidth: "32px" }}
+                    >{i + 1}</button>
+                  ))}
+                  <button className="light-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
     </>
