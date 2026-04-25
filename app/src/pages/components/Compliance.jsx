@@ -324,21 +324,12 @@ const Compliance = () => {
     <div className="compliance-page">
       {showAddForm ? (
         <AddCompliance
-<<<<<<< Updated upstream
         onCancel={() => setShowAddForm(false)}
         onSubmit={handleAddEditSubmit}
         initialData={editing}
         mode={editing ? "edit" : "add"}
         saved={saved}
         masterData={masterData}
-=======
-          onCancel={() => setShowAddForm(false)}
-          onSubmit={handleAddSubmit}
-          initialData={editing}
-          mode={editing ? "edit" : "add"}
-          saved={saved}
-          masterData={masterData}
->>>>>>> Stashed changes
         />
       ) : (
         <>

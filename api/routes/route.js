@@ -123,7 +123,7 @@ const deleteRoutes = [
     { path: '/penlty/delete', handlers: [jwtHybrdProtect, penltyController.remove] },
     { path: '/acc/delete', handlers: [jwtHybrdProtect, accController.remove] },
     { path: '/func/delete', handlers: [jwtHybrdProtect, funcController.remove] },
-    { path: '/file/delete/:id', handlers: [jwtHybrdProtect, fileOpController.deleteHandler] },
+    { path: '/file/delete/:fileId', handlers: [jwtHybrdProtect, fileOpController.deleteHandler] },
 ];
 deleteRoutes.forEach(route => createRoute('delete', route.path, ...route.handlers));
 

@@ -102,7 +102,7 @@ const downloadAllHandler = async (req, res) => {
 // Delete file
 const deleteHandler = async (req, res) => {
   try {
-    const result = await deleteFile(req.params.id);
+    const result = await deleteFile(req.params.fileId);
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });

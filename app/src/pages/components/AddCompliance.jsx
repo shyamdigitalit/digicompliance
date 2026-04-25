@@ -87,12 +87,16 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
   const handleRemoveNew = (index) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
-  const sortedExistingFiles = [...existingFiles].sort((a, b) =>
-    a.filName.localeCompare(b.filName)
-  );
-  const sortedNewFiles = [...files].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
+  const sortedExistingFiles = React.useMemo(() => {
+    return [...existingFiles].sort((a, b) =>
+      a.filName.localeCompare(b.filName)
+    );
+  }, [existingFiles]);
+  const sortedNewFiles = React.useMemo(() => {
+    return [...files].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [files]);
   const handleDownload = async (file) => {
     try {
       const res = await axiosInstance.get(`/api/file/download/${file.filId}`, { responseType: "blob" });
@@ -152,72 +156,24 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
   //   // setForm(prev => ({ ...prev, allDocs: filePreviews }));
   // };
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   // if (isSubmitting) return;
-  //   // setIsSubmitting(true);
-  //   if (!form.complianceType || !form.complianceCategorization || !form.complianceFrequency || !form.criticality || !form.penaltyType) {
-  //     alert("Required fields are missing.");
-  //     // setIsSubmitting(false);
-  //     return;
-  //   }
-
-  //   if (!isHierarchyThree && !user?.acc_plnt && !form.plant) {
-  //     alert("Plant is required for your user role.");
-  //     // setIsSubmitting(false);
-  //     return;
-  //   }
-
-  //   if (!isHierarchyThree && !user?.acc_dept && !form.department) {
-  //     alert("Department is required for your user role.");
-  //     // setIsSubmitting(false);
-  //     return;
-  //   }
-
-  //   try {
-  //     console.log(form);
-  //     // const formData = new FormData();
-  //     // Object.entries(form).forEach(([key, value]) => {
-  //     //   if (Array.isArray(value)) {
-  //     //     value.forEach((val, i) => formData.append(`${key}[${i}]`, val));
-  //     //   } else {
-  //     //     formData.append(key, value);
-  //     //   }
-  //     // });
-
-  //     const formData = new FormData();
-
-  //     Object.entries(form).forEach(([key, value]) => {
-  //       if (key === "allDocs") {
-  //         value.forEach(file => {
-  //           formData.append("allDocs", file); // ✅ FIXED
-  //         });
-  //       } else {
-  //         formData.append(key, value);
-  //       }
-  //     });
-
-  //     onSubmit(formData);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!form.complianceType || !form.complianceCategorization || !form.complianceFrequency || !form.criticality || !form.penaltyType) {
-      alert("Required fields are missing.");
-      return;
-    }
-
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
     if (!isHierarchyThree && !user?.acc_plnt && !form.plant) {
       alert("Plant is required for your user role.");
+      setIsSubmitting(false);
       return;
     }
-
     if (!isHierarchyThree && !user?.acc_dept && !form.department) {
       alert("Department is required for your user role.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!form.complianceType || !form.complianceCategorization || !form.complianceFrequency || !form.criticality || !form.penaltyType) {
+      alert("Required fields are missing.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -279,13 +235,6 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
           <div className="form-grid">
             <div className="form-group">
               <label>Plant *</label>
-              {/* <select name="plant" value={form.plant}
-                disabled={mode === "view" || isHierarchyThree || (user?.acc_plnt?._id)}
-                onChange={handleChange}
-              >
-                <option value="">Select Plant</option>
-                {PLANTS.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-              </select> */}
               {(mode === "add" && user?.acc_plnt?.name) ? (
                 <input value={user?.acc_plnt?.name} disabled />
               ) : (
@@ -300,14 +249,6 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
             </div>
             <div className="form-group">
               <label>Department *</label>
-              {/* <select name="department" value={
-                mode === "add" && isHierarchyThree ? user?.acc_dept?._id || "" : form.department
-              }
-                disabled={mode === "view" || isHierarchyThree}
-                onChange={handleChange}>
-                <option value="">Select Department</option>
-                {DEPARTMENTS.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
-              </select> */}
               {(mode === "add" && user?.acc_dept?.name) ? (
                 <input value={user?.acc_dept?.name} disabled />
               ) : (
