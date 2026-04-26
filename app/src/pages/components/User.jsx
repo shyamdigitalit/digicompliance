@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import "../styles/User.css";
 import AddUser from "./AddUser";
 import axiosInstance from "../../config/axiosInstance";
+import EkycDetails from "../../components/EkycDetails";
 
 const USER_KEY = "user_data";
 
@@ -221,6 +222,8 @@ const Users = () => {
                   </table>
                 </div>
               </div>
+
+              <div className="other-sec"><EkycDetails /></div>
 
               <div className="table-footer">
                 <span>

@@ -193,8 +193,8 @@ const Documents = () => {
                   ) : fileList.map((doc) => (
                     <tr key={doc._id}>
                       <td className="doc-name">{getFileIcon(doc.filename)} {doc.filename}</td>
-                      <td>{doc.metadata.contentType}</td>
-                      <td>{parseFloat(doc.length/1000).toFixed(2)} KB</td>
+                      <td>{doc.mimetype}</td>
+                      <td>{parseFloat(doc.size/1000).toFixed(2)} KB</td>
                       <td>{doc.date}</td>
                       <td>{doc.uploadedBy}</td>
                       {/* <td><span className={getTagClass(doc.type)}>{doc.type}</span></td> */}

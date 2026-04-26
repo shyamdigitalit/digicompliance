@@ -3,6 +3,7 @@ import path from "path";
 import crypto from "crypto";
 import archiver from "archiver";
 import File from "../models/fileModel.js";
+import mongoose from "mongoose";
 
 const BASE_UPLOAD_DIR = path.join(process.cwd(), "uploads");
 
@@ -12,116 +13,144 @@ const BASE_UPLOAD_DIR = path.join(process.cwd(), "uploads");
 const ensureDir = async (dirPath) => {
     await fs.promises.mkdir(dirPath, { recursive: true });
 };
-
 /* ------------------------------------------------------------------
-  ✅ 1. Upload with coil-based folder + duplicate prevention
+   Safe path check
 ------------------------------------------------------------------ */
-export const uploadFile = async (buffer, originalname, mimetype, documentId='') => {
-    if (!documentId) throw new Error("documentId is required");
+const isSafePath = (targetPath) => {
+    const resolved = path.resolve(targetPath);
+    return resolved.startsWith(BASE_UPLOAD_DIR);
+};
+/* ------------------------------------------------------------------
+   Generate unique filename if same name exists with different content
+------------------------------------------------------------------ */
+const generateUniqueFilename = async (dir, filename) => {
+    let ext = path.extname(filename);
+    let base = path.basename(filename, ext);
 
-    const hash = crypto.createHash("sha512").update(buffer).digest("hex");
+    let counter = 1;
+    let newName = filename;
+    let fullPath = path.join(dir, newName);
 
-    // 🔥 Duplicate check INSIDE SAME COIL ONLY
-    const existing = await File.findOne({ hash, documentId });
-    if (existing) {
-        return { duplicate: true, file: existing };
+    while (fs.existsSync(fullPath)) {
+        newName = `${base}_${counter}${ext}`;
+        fullPath = path.join(dir, newName);
+        counter++;
     }
 
-    // ✅ Create folder: /uploads/<documentId>/
-    const docDir = path.join(BASE_UPLOAD_DIR, documentId);
-    await ensureDir(docDir);
+    return newName;
+};
+// --------------------------------------------------------------------------------------------------------------------------------------------------
 
-    // ✅ Custom filename
-    const ext = path.extname(originalname);
-    const safeName = originalname.replace(/\s+/g, "_").replace(/[^\w.-]/g, "");
+/* ------------------------------------------------------------------
+   ✅ 1. Upload file with duplicate prevention
+------------------------------------------------------------------ */
+export const uploadFile = async (buffer, originalname, mimetype) => {
+    const hash = crypto.createHash("sha512").update(buffer).digest("hex");
 
-    const filename = `${Date.now()}_${safeName}`;
-    const filePath = path.join(docDir, filename);
+    /* --------------------------------------------------------------
+       If already exists -> return existing file reference
+    -------------------------------------------------------------- */
+    const existing = await File.findOne({ hash });
 
-    // ✅ Save file
-    await fs.promises.writeFile(filePath, buffer);
+    if (existing) return { duplicate: true, file: existing };
+    else {
+        /* --------------------------------------------------------------
+            New file upload
+        -------------------------------------------------------------- */
+        const docDir = path.join(BASE_UPLOAD_DIR);
+        await ensureDir(docDir);
 
-    // ✅ Save metadata
-    const fileDoc = await File.create({
-        filename,
-        originalname,
-        mimetype,
-        size: buffer.length,
-        path: filePath,
-        hash,
-        documentId,
-    });
+        const safeName = originalname.replace(/\s+/g, "_").replace(/[^\w.-]/g, "");
 
-    return { duplicate: false, file: fileDoc };
+        const filename = `${Date.now()}_${safeName}`;
+        const filePath = path.join(docDir, filename);
+
+        await fs.promises.writeFile(filePath, buffer);
+
+        const fileDoc = await File.create({
+            filename,
+            originalname,
+            mimetype,
+            size: buffer.length,
+            path: filePath,
+            hash
+        });
+
+        return { duplicate: false, file: fileDoc };
+    }
 };
 
 /* ------------------------------------------------------------------
-  ✅ 2. Get all uploaded files metadata
+    ✅ 2. Get all uploaded files metadata
 ------------------------------------------------------------------ */
 export const getAllFiles = async () => {
     return File.find().sort({ createdAt: -1 }).lean();
 };
 
 /* ------------------------------------------------------------------
-  ✅ 3. Get single file stream
+    ✅ 3. Get single file stream
 ------------------------------------------------------------------ */
 export const getFileStream = async (fileId) => {
+    if (!mongoose.Types.ObjectId.isValid(fileId)) {
+        throw new Error("Invalid file ID");
+    }
+
     const file = await File.findById(fileId).lean();
+
     if (!file) throw new Error("File not found");
 
-    // 🔒 Security: ensure path is inside uploads folder
-    const normalizedPath = path.normalize(file.path);
-    if (!normalizedPath.startsWith(BASE_UPLOAD_DIR)) {
+    if (!isSafePath(file.path)) {
         throw new Error("Invalid file path");
     }
 
-    // ❌ File missing on disk
-    if (!fs.existsSync(normalizedPath)) {
+    if (!fs.existsSync(file.path)) {
         throw new Error("File missing on server");
     }
 
-    const stream = fs.createReadStream(normalizedPath);
-
-    return { file, stream };
+    return { file, stream: fs.createReadStream(file.path) };
 };
 
 /* ------------------------------------------------------------------
-  ✅ 4. Get ZIP stream for multiple files
+   ✅ 4. Get ZIP stream
 ------------------------------------------------------------------ */
-export const getZipStream = async (fileIds) => {
+export const getZipStream = async (fileIds = []) => {
     if (!Array.isArray(fileIds) || !fileIds.length) {
         throw new Error("No file IDs provided");
     }
 
-    const archive = archiver("zip", { zlib: { level: 9 } });
+    const validIds = fileIds.filter((id) =>
+        mongoose.Types.ObjectId.isValid(id)
+    );
 
-    const files = await File.find({ _id: { $in: fileIds } }).lean();
+    const files = await File.find({
+        _id: { $in: validIds }
+    }).lean();
+
+    const archive = archiver("zip", {
+        zlib: { level: 9 }
+    });
 
     const usedNames = new Set();
 
-    files.forEach((file) => {
-        const filePath = path.normalize(file.path);
+    for (const file of files) {
+        if (!isSafePath(file.path)) continue;
+        if (!fs.existsSync(file.path)) continue;
 
-        if (
-            filePath.startsWith(BASE_UPLOAD_DIR) &&
-            fs.existsSync(filePath)
-        ) {
-            // 🔥 Handle duplicate filenames in ZIP
-            let name = file.originalname;
-            let counter = 1;
+        let zipName = file.originalname;
+        let counter = 1;
 
-            while (usedNames.has(name)) {
-                const ext = path.extname(file.originalname);
-                const base = path.basename(file.originalname, ext);
-                name = `${base}(${counter})${ext}`;
-                counter++;
-            }
+        while (usedNames.has(zipName)) {
+            const ext = path.extname(file.originalname);
+            const base = path.basename(file.originalname, ext);
 
-            usedNames.add(name);
-
-            archive.file(filePath, { name });
+            zipName = `${base}(${counter})${ext}`;
+            counter++;
         }
-    });
+
+        usedNames.add(zipName);
+
+        archive.file(file.path, { name: zipName });
+    }
 
     process.nextTick(() => archive.finalize());
 
@@ -129,37 +158,34 @@ export const getZipStream = async (fileIds) => {
 };
 
 /* ------------------------------------------------------------------
-  ✅ 5. Delete file by ID
+   ✅ 5. Hard delete file (ONLY if really needed)
 ------------------------------------------------------------------ */
 export const deleteFile = async (fileId) => {
+    if (!mongoose.Types.ObjectId.isValid(fileId)) {
+        throw new Error("Invalid file ID");
+    }
+
     const file = await File.findById(fileId);
-    if (!file) return;
 
-    const filePath = path.normalize(file.path);
+    if (!file) {
+        return { message: "File not found" };
+    }
 
-    // 🔒 Security check
-    if (!filePath.startsWith(BASE_UPLOAD_DIR)) {
+    if (!isSafePath(file.path)) {
         throw new Error("Invalid file path");
     }
 
-    // ✅ Delete file from disk
-    if (fs.existsSync(filePath)) {
-        await fs.promises.unlink(filePath);
+    /* --------------------------------------------------------------
+       Delete physical file
+    -------------------------------------------------------------- */
+    if (fs.existsSync(file.path)) {
+        await fs.promises.unlink(file.path);
     }
 
-    // ✅ Delete from DB
+    /* --------------------------------------------------------------
+       Delete DB record
+    -------------------------------------------------------------- */
     await File.findByIdAndDelete(fileId);
-
-    // 🔥 OPTIONAL: Remove folder if empty
-    const dir = path.dirname(filePath);
-    try {
-        const filesLeft = await fs.promises.readdir(dir);
-        if (filesLeft.length === 0) {
-            await fs.promises.rmdir(dir);
-        }
-    } catch (err) {
-        console.error("Folder cleanup error:", err);
-    }
 
     return { message: "File deleted successfully", _id: fileId };
 };

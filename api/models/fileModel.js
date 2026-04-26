@@ -9,9 +9,8 @@ const fileSchema = new Schema({
     size: Number,
     path: String,
     hash: { type: String, index: true }, // 🔥 important for duplicate detection
-    documentId: { type: String, index: true }, // 🔥 NEW FIELD Referenced with certificateId from "certificate" model
 }, { timestamps: true });
 
-fileSchema.index({ hash: 1, documentId: 1 }, { unique: true });
+fileSchema.index({ hash: 1 }, { unique: true });
 
 export default mongoose.model("File", fileSchema);
