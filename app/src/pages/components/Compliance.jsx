@@ -92,6 +92,8 @@ const Compliance = () => {
     localStorage.setItem(COMPLIANCE_KEY, JSON.stringify(data));
   }, [data]);
 
+
+  // Data Filters
   const plants = useMemo(() => [...new Set(data?.map(d => d.plant?.name || ""))], [data]);
   const depts = useMemo(() => [...new Set(data?.map(d => d.department?.name || ""))], [data]);
   const complianceTypes = useMemo(() => [...new Set(data?.map(d => d.complianceType?.name || ""))], [data]);
@@ -101,24 +103,40 @@ const Compliance = () => {
   const penaltyTypes = useMemo(() => [...new Set(data?.map(d => d.penaltyType?.name || ""))], [data]);
 
   const filtered = useMemo(() => {
+    // console.log(search);
     const q = search.toLowerCase();
     return data?.filter(item => {
       const matchSearch = !q || item.complianceId.toLowerCase().includes(q) || item.complianceType.toLowerCase().includes(q) || item.complianceCategorization.toLowerCase().includes(q) || item.plant.toLowerCase().includes(q);
-      const matchPlant = !filterPlant || item.plant === filterPlant;
-      const matchDept = !filterDept || item.department === filterDept;
+      const matchPlant = !filterPlant || item.plant.name === filterPlant;
+      const matchDept = !filterDept || item.department.name === filterDept;
       const matchStatus = !filterStatus || item.status === filterStatus;
-      const matchCompTyp = !filterCompTyp || item.complianceType === filterCompTyp;
-      const matchCompCat = !filterCompCat || item.complianceCategorization === filterCompCat;
-      const matchCompFreq = !filterCompFreq || item.complianceFrequency === filterCompFreq;
-      const matchCriticality = !filterCriticality || item.criticality === filterCriticality;
-      const matchPenaltyType = !filterPenaltyType || item.penaltyType === filterPenaltyType;
+      const matchCompTyp = !filterCompTyp || item.complianceType.name === filterCompTyp;
+      const matchCompCat = !filterCompCat || item.complianceCategorization.name === filterCompCat;
+      const matchCompFreq = !filterCompFreq || item.complianceFrequency.name === filterCompFreq;
+      const matchCriticality = !filterCriticality || item.criticality.name === filterCriticality;
+      const matchPenaltyType = !filterPenaltyType || item.penaltyType.name === filterPenaltyType;
       return matchSearch && matchPlant && matchDept && matchStatus && matchCompTyp && matchCompCat && matchCompFreq && matchCriticality && matchPenaltyType;
     });
   }, [data, search, filterPlant, filterDept, filterStatus, filterCompTyp, filterCompCat, filterCompFreq, filterCriticality, filterPenaltyType]);
 
+  const resetFilters = () => {
+    setSearch('');
+    setFilterPlant('');
+    setFilterDept('');
+    setFilterStatus('');
+    setFilterCompTyp('');
+    setFilterCompCat('');
+    setFilterCompFreq('');
+    setFilterCriticality('');
+    setFilterPenaltyType('');
+    setPage(1);
+  };
+  
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+
+  // Data Manipulation Handlers
   const handleAddEditSubmit = async (formData) => {
     try {
       if (editing) {
@@ -316,10 +334,6 @@ const Compliance = () => {
 
   const getTag = (val) => val?.toLowerCase().replace(" ", "-");
 
-  const resetFilters = () => {
-    setSearch(""); setFilterPlant(""); setFilterDept(""); setFilterStatus(""); setFilterCriticality(""); setPage(1);
-  };
-
   return (
     <div className="compliance-page">
       {showAddForm ? (
@@ -392,14 +406,13 @@ const Compliance = () => {
                 </div>
                 <div className="filter-row second">
                   {(search || filterPlant || filterDept || filterStatus || filterCompTyp || filterCompCat || filterCompFreq || filterCriticality || filterPenaltyType) && (
-                    <button className="light-btn" onClick={resetFilters}>✕ Clear Filters</button>
+                    <button className="light-btn" onClick={resetFilters}>
+                      ✕ Clear Filters
+                    </button>
                   )}
                   {(user.acc_typ?.heirarchy > 2 && user.acc_plnt && user.acc_dept) && (
                     <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
                   )}
-                  {/* {(user.acc_typ?.heirarchy <= 2 && (user.acc_plnt || user.acc_dept)) && (
-                    <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
-                  )} */}
                   <button className="light-btn" onClick={handleExport}>Export</button>
                 </div>
               </div>
