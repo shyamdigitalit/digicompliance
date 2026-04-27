@@ -4,13 +4,7 @@ import axiosInstance from "../../config/axiosInstance";
 
 const DOC_KEY = "document_data";
 
-const defaultDocuments = [
-  // { id: "DOC-001", name: "Fire Safety Certificate.pdf", type: "Certificate", category: "Health & Safety", plant: "Mumbai Plant A", uploadedBy: "John Smith", date: "2026-03-25", size: "2.4 MB" },
-  // { id: "DOC-002", name: "ISO 9001 Audit Report.pdf", type: "Report", category: "Quality Management", plant: "Delhi Plant B", uploadedBy: "Sarah Johnson", date: "2026-03-24", size: "5.1 MB" },
-  // { id: "DOC-003", name: "Env. Compliance Checklist.xlsx", type: "Checklist", category: "Environmental", plant: "Bangalore Plant C", uploadedBy: "Michael Chen", date: "2026-03-22", size: "2.8 MB" },
-  // { id: "DOC-004", name: "Labor Law Form.docx", type: "Form", category: "Statutory", plant: "Mumbai Plant A", uploadedBy: "Michael Chen", date: "2026-03-23", size: "2.8 MB" },
-  // { id: "DOC-005", name: "Safety Training Records.pdf", type: "Record", category: "Health & Safety", plant: "Delhi Plant B", uploadedBy: "Robert Wilson", date: "2026-03-18", size: "3.7 MB" },
-];
+const defaultFileList = [];
 
 const getFileIcon = (name) => {
   if (name.endsWith(".txt")) return "📝";
@@ -25,18 +19,23 @@ const getFileIcon = (name) => {
   return "📄";
 };
 
-const Documents = () => {
-  const [documents, setDocuments] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(DOC_KEY)) || defaultDocuments; }
-    catch { return defaultDocuments; }
-  });
+const UploadPreview = React.memo(({ files, onRemove }) => {
+  return (
+    <div className="upload-preview">
+      {files.map((f, idx) => (
+        <div key={idx} className="upload-preview-item">
+          <div className="filedetail-sec">{getFileIcon(f.name)} {f.name}</div>
+          <div className="fileop-sec" onClick={() => onRemove(f)}>X</div>
+        </div>
+      ))}
+    </div>
+  );
+});
 
-  const [fileList, setFileList] = useState([]);
+const Documents = () => {
+  const [files, setFiles] = useState([]);
+  const [fileList, setFileList] = useState(defaultFileList);
   const [loading, setLoading] = useState(true);
-  // const [search, setSearch] = useState("");
-  // const [filterType, setFilterType] = useState("");
-  // const [filterCategory, setFilterCategory] = useState("");
-  // const [filterPlant, setFilterPlant] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef();
 
@@ -44,7 +43,6 @@ const Documents = () => {
     try {
       const res = await axiosInstance.get("/api/file/fetch");
       const files = res.data.files
-      // console.log(files);
       setFileList(files);
     } catch (error) {
       console.error("Error fetching files:", error);
@@ -60,9 +58,9 @@ const Documents = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(DOC_KEY, JSON.stringify(documents));
-  }, [documents]);
+  // useEffect(() => {
+  //   localStorage.setItem(DOC_KEY, JSON.stringify(documents));
+  // }, [documents]);
 
   // const types = useMemo(() => [...new Set(documents.map(d => d.type))], [documents]);
   // const categories = useMemo(() => [...new Set(documents.map(d => d.category))], [documents]);
@@ -79,30 +77,41 @@ const Documents = () => {
   //   });
   // }, [documents, search, filterType, filterCategory, filterPlant]);
 
-  const user = JSON.parse(localStorage.getItem("user")) || {};
+  // const user = JSON.parse(localStorage.getItem("user")) || {};
 
   const addFiles = (files) => {
     console.log(files);
-    const today = new Date().toISOString().split("T")[0];
-    const newDocs = Array.from(files).map((file, i) => ({
-      id: `DOC-${String(documents.length + i + 1).padStart(3, "0")}`,
-      name: file.name,
-      type: "Document",
-      category: "General",
-      plant: "Mumbai Plant A",
-      uploadedBy: user.name || "Admin",
-      date: today,
-      size: file.size > 1048576 ? `${(file.size / 1048576).toFixed(1)} MB` : `${(file.size / 1024).toFixed(0)} KB`,
-    }));
-    setDocuments(prev => [...prev, ...newDocs]);
+    const newFiles = Array.from(files)
+    setFiles(prev => [...prev, ...newFiles]);
   };
+  const handleRemoveFile = (file) => {
+    setFiles(prev => prev.filter(f => f !== file));
+  }
 
   const handleFileChange = (e) => addFiles(e.target.files);
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     setDragOver(false);
     addFiles(e.dataTransfer.files);
+  };
+
+  const handleUpload = async () => {
+    // console.log(files);
+    const formData = new FormData();
+    files.forEach((file) => formData.append("files", file));
+    try {
+      const response = await axiosInstance.post("/api/file/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+      console.log(response);
+    }
+    catch (err) {
+      console.error("Upload error:", err);
+      alert("Failed to upload files. Please try again.");
+    }
   };
 
   const handleDownload = async (file) => {
@@ -156,18 +165,24 @@ const Documents = () => {
         </div>
       ) : (
         <>
-          <div
-            className={`upload-box${dragOver ? " drag-over" : ""}`}
-            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current.click()}
-          >
-            <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} onChange={handleFileChange} accept=".pdf,.doc,.docx,.xls,.xlsx" />
-            <div className="upload-content">
-              <div className="upload-icon">⬆</div>
-              <p>Click to upload or drag and drop</p>
-              <span>PDF, DOC, DOCX, XLS, XLSX (Max 50MB)</span>
+          <div className="upload-section">
+            {files.length > 0 ? <UploadPreview files={files} onRemove={handleRemoveFile} /> : null }
+            <div
+              className={`upload-box${dragOver ? " drag-over" : ""}`}
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current.click()}
+            >
+              <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} onChange={handleFileChange} accept=".pdf,.doc,.docx,.xls,.xlsx" />
+              <div className="upload-content">
+                <div className="upload-icon">⬆</div>
+                <p>Click to upload or drag and drop</p>
+                <span>PDF, DOC, DOCX, XLS, XLSX (Max 50MB)</span>
+              </div>
+            </div>
+            <div>
+              <button className="dark-btn" onClick={handleUpload}>Upload</button>
             </div>
           </div>
 
@@ -177,14 +192,11 @@ const Documents = () => {
               <table>
                 <thead>
                   <tr>
-                    <th style={{textAlign:'center', textWrap:'nowrap'}}>Document Name</th>
-                    <th style={{textAlign:'center', textWrap:'nowrap'}}>File Type</th>
-                    <th>Size</th>
-                    <th style={{textAlign:'center', textWrap:'nowrap'}}>Uploaded On</th>
-                    <th style={{textAlign:'center', textWrap:'nowrap'}}>Uploaded By</th>
-                    {/* <th style={{textAlign:'center', textWrap:'nowrap'}}>Document Type</th> */}
-                    <th style={{textAlign:'center', textWrap:'nowrap'}}>Document Category</th>
-                    <th style={{textAlign:'center', textWrap:'nowrap'}}>Actions</th>
+                    <th className="text-nowrap">Document Name</th>
+                    <th className="text-nowrap">File Type</th>
+                    <th className="text-nowrap">Size</th>
+                    <th className="text-nowrap">Uploaded On</th>
+                    <th className="text-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -195,10 +207,7 @@ const Documents = () => {
                       <td className="doc-name">{getFileIcon(doc.filename)} {doc.filename}</td>
                       <td>{doc.mimetype}</td>
                       <td>{parseFloat(doc.size/1000).toFixed(2)} KB</td>
-                      <td>{doc.date}</td>
-                      <td>{doc.uploadedBy}</td>
-                      {/* <td><span className={getTagClass(doc.type)}>{doc.type}</span></td> */}
-                      <td>{doc.category}</td>
+                      <td>{new Date(doc.createdAt).toLocaleDateString()}</td>
                       <td className="actions" style={{ display: "flex", justifyContent:'center', alignItems:'center', gap: "8px" }}>
                         <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px" }} title="Download" onClick={() => handleDownload(doc)}>⬇</button>
                         {/* <button onClick={() => handleDelete(doc.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button> */}

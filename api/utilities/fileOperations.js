@@ -24,6 +24,7 @@ export const uploadFiles = async (files = []) => {
                    - But attach existing file info to compliance data
                 -------------------------------------------------- */
                 if (res?.duplicate && res?.file) {
+                    console.log('x1');
                     duplicates.push(f.originalname);
 
                     uploaded.push({
@@ -40,6 +41,7 @@ export const uploadFiles = async (files = []) => {
                    New uploaded file
                 -------------------------------------------------- */
                 else if (res?.file) {
+                    console.log('x2');
                     uploaded.push({
                         filId: res.file._id,
                         filName: res.file.originalname,
@@ -67,7 +69,6 @@ export const uploadFiles = async (files = []) => {
 
     return { uploaded, duplicates };
 };
-
 
 
 /* ------------------------------------------------------------------

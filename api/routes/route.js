@@ -56,7 +56,7 @@ const postRoutes = [
     { path: '/acc/import', handlers: [jwtHybrdProtect, fileUpload.none(), accController.upload] },
     { path: '/func/create', handlers: [jwtHybrdProtect, fileUpload.none(), funcController.create] },
     { path: '/dynapprvl/create', handlers: [jwtHybrdProtect, fileUpload.none(), dynapprvlController.create] },
-    { path: '/file/upload', handlers: [jwtHybrdProtect, fileUpload.array('files'), fileOpController.uploadHandler] },
+    { path: '/file/upload', handlers: [jwtHybrdProtect, fileUpload.fields([ { name: 'files' } ]), fileOpController.uploadHandler] },
     // { path: '/mail/send', handlers: [basicAuth, fileUpload.none(), mailtestController.send] },
 ];
 postRoutes.forEach(route => createRoute('post', route.path, ...route.handlers));

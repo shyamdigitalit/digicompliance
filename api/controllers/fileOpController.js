@@ -14,14 +14,15 @@ import {
 ------------------------------------------------------------------ */
 export const uploadHandler = async (req, res) => {
     try {
-        if (!req.files || req.files.length === 0) {
+        if (!req.files?.files || req.files?.files?.length === 0) {
             return res.status(400).json({
                 success: false,
                 message: "No files uploaded"
             });
         }
 
-        const result = await uploadFiles(req.files);
+        const files = req.files?.files || [];
+        const result = await uploadFiles([].concat(files));
 
         return res.status(200).json({
             success: true,

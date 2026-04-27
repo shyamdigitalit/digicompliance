@@ -291,7 +291,7 @@ export const create = async (req, res) => {
         const files = req.files?.allDocs || [];
         // console.log(files);
 
-        const { uploaded } = await uploadFiles([].concat(files), compPayload.complianceId);
+        const { uploaded } = await uploadFiles([].concat(files));
 
         const approvals = await fetchApprovalDetails(String(plantId), String(departmentId), user);
         // console.log(approvals);
