@@ -11,7 +11,7 @@ const Compliance = lazy(() => import("../pages/components/Compliance"));
 const Document = lazy(() => import("../pages/components/Document"));
 const User = lazy(() => import("../pages/components/User"));
 const Setting = lazy(() => import("../pages/components/Setting"));
-const MasterList = lazy(() => import("../pages/components/tabcomponents/MasterList"));
+const MasterListPage = lazy(() => import("../pages/components/tabcomponents/MasterList"));
 const MasterForm = lazy(() => import("../pages/components/tabcomponents/MasterForm"));
 
 const router = createBrowserRouter([
@@ -26,7 +26,7 @@ const router = createBrowserRouter([
       { path: "/document", element: <ProtectedRoute> <Document /> </ProtectedRoute>, },
       { path: "/user", element: <ProtectedRoute> <User /> </ProtectedRoute>, },
       { path: "/setting", element: <ProtectedRoute> <Setting /> </ProtectedRoute>, },
-      { path: "/masters/:type", element: <ProtectedRoute> <MasterList /> </ProtectedRoute>, },
+      { path: "/masters/:type", element: <ProtectedRoute> <MasterListPage /> </ProtectedRoute>, },
       { path: "/masters/:type/add", element: <ProtectedRoute> <MasterForm /> </ProtectedRoute>, },
     ],
   },

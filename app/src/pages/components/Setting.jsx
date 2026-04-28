@@ -9,7 +9,7 @@ import axiosInstance from '../../config/axiosInstance'
 import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../../redux/slices/auth'
 import { useNavigate } from 'react-router-dom'
-import { masterList } from './tabcomponents/masterList'
+import { masterListTabs } from './tabcomponents/masterListTabs'
 
 
 const Setting = React.memo(function Setting() {
@@ -85,9 +85,9 @@ const Setting = React.memo(function Setting() {
 
           {showMasters && (
             <div className="master-submenu">
-              {masterList.map((item) => (
+              {masterListTabs.map((item) => (
                 <div key={item.key} className="settings-subitem" onClick={() => navigate(`/masters/${item.key}`)}>
-                  {item.tabName.charAt(0).toUpperCase() + item.tabName.slice(1)}
+                  {item.tabName}
                 </div>
               ))}
             </div>
@@ -103,7 +103,7 @@ const Setting = React.memo(function Setting() {
           {activeTab === "Security" && <SecurityTab />}
           {activeTab === "Notifications" && <NotificationTab />}
           {activeTab === "Approval" && <ApprovalFlow />}
-          {activeTab === "Masters" && <MasterTab masterList={masterList} />}
+          {activeTab === "Masters" && <MasterTab />}
         </div>
       </div>
     </>

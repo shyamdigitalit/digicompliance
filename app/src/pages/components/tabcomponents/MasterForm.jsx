@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../../config/axiosInstance";
+import { masterListTabs } from "./masterListTabs";
 
 // const getMasterKey = (type) => `master_${type}`;
 
@@ -10,6 +11,8 @@ const MasterForm = React.memo(function MasterForm() {
   const [form, setForm] = useState({ name: "", code: "", desc: "" });
   const [saved, setSaved] = useState(false);
 
+  const masterTab = React.useMemo(() => masterListTabs.find(m => m.key === type), [masterListTabs, type])
+
   const handleChange = React.useCallback((e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -17,7 +20,7 @@ const MasterForm = React.memo(function MasterForm() {
 
   const handleSave = React.useCallback(async () => {
     let newEntry = {}, apiType = "";
-    if (type?.key === "accounttype") {
+    if (type === "accounttype") {
       if (!form.typname.trim() || !form.heirarchy) {
         alert("Please fill in both Type and Heirarchy");
         return;
@@ -42,7 +45,7 @@ const MasterForm = React.memo(function MasterForm() {
         status: "Active"
       });
 
-      switch (type?.key) {
+      switch (type) {
         case "plant": apiType = "plnt"; break;
         case "department": apiType = "dept"; break;
         case "company": apiType = "cmpny"; break;
@@ -69,13 +72,12 @@ const MasterForm = React.memo(function MasterForm() {
     }
   }, [type, form, setSaved]);
 
-  const label = React.useMemo(() => type?.tabName.charAt(0).toUpperCase() + type?.tabName.slice(1), [type]);
-
-  if (type === "Account Type") {
+  return (<div></div>)
+  if (type === "accounttype") {
     return (
       <div className="master-card">
         <div className="master-header">
-          <h3>Add {label}</h3>
+          <h3>Add {masterTab.tabName}</h3>
           <button className="light-btn" onClick={() => navigate(-1)}>← Back</button>
         </div>
 
@@ -113,7 +115,7 @@ const MasterForm = React.memo(function MasterForm() {
     return (
       <div className="master-card">
         <div className="master-header">
-          <h3>Add {label}</h3>
+          <h3>Add {masterTab.tabName}</h3>
           <button className="light-btn" onClick={() => navigate(-1)}>← Back</button>
         </div>
 

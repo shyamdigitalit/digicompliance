@@ -1,4 +1,4 @@
-export const masterList = [
+export const masterListTabs = [
     { key: "accounttype", tabName: "Account Types" },
     { key: "plant", tabName: "Plants" },
     { key: "department", tabName: "Departments" },
