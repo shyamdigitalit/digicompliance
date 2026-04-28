@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
+import '../../styles/Setting.css'
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../../config/axiosInstance";
 import Loader from "../../../components/loader";
@@ -10,16 +11,16 @@ const MasterList = React.memo(function MasterList() {
   // console.log(masterListTabs);
   const { type } = useParams();
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
-  const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(false)
+  const [data, setData] = React.useState([]);
+  const [saved, setSaved] = React.useState(false);
+  const [loading, setLoading] = React.useState(false)
 
   // console.log(type);
   const masterTab = React.useMemo(() => masterListTabs.find(m => m.key === type), [masterListTabs, type])
   // const masterTab = masterListTabs.find(m => m.key === type)
   // console.log(masterTab);
 
-  const fetchMasterData = useCallback(async () => {
+  const fetchMasterData = React.useCallback(async () => {
     let apiType = "";
     switch (type) {
       case "accounttype": apiType = "acctyp"; break;
@@ -45,7 +46,7 @@ const MasterList = React.memo(function MasterList() {
     }
   }, [type, setData, setLoading]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchMasterData();
   }, [fetchMasterData]);
 

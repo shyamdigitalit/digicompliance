@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
+import '../../styles/Setting.css'
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../../config/axiosInstance";
 import { masterListTabs } from "./masterListTabs";
@@ -8,8 +9,8 @@ import { masterListTabs } from "./masterListTabs";
 const MasterForm = React.memo(function MasterForm() {
   const { type } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", code: "", desc: "" });
-  const [saved, setSaved] = useState(false);
+  const [form, setForm] = React.useState({ name: "", code: "", desc: "" });
+  const [saved, setSaved] = React.useState(false);
 
   const masterTab = React.useMemo(() => masterListTabs.find(m => m.key === type), [masterListTabs, type])
 
@@ -72,7 +73,6 @@ const MasterForm = React.memo(function MasterForm() {
     }
   }, [type, form, setSaved]);
 
-  return (<div></div>)
   if (type === "accounttype") {
     return (
       <div className="master-card">
@@ -84,7 +84,7 @@ const MasterForm = React.memo(function MasterForm() {
         <div className="master-form" style={{ flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <label>Type *</label>
-            <input name="typname" value={form.typname} onChange={handleChange} placeholder={`Enter ${label} name`} />
+            <input name="typname" value={form.typname} onChange={handleChange} placeholder={`Enter ${masterTab.tabName} name`} />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <label>Heirarchy *</label>
@@ -122,7 +122,7 @@ const MasterForm = React.memo(function MasterForm() {
         <div className="master-form" style={{ flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <label>Name *</label>
-            <input name="name" value={form.name} onChange={handleChange} placeholder={`Enter ${label} name`} />
+            <input name="name" value={form.name} onChange={handleChange} placeholder={`Enter ${masterTab.tabName} name`} />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <label>Code *</label>
