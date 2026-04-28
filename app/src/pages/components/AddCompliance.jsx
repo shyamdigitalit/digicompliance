@@ -1,19 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import "../styles/AddCompliance.css";
 import { useSelector } from "react-redux";
 import axiosInstance from '../../config/axiosInstance';
 
-const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, masterData }) => {
+const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mode = 'add', initialData, saved, masterData }) {
 
   const { user } = useSelector((state) => state.auth);
   const isHierarchyThree = parseInt(user?.acc_typ?.heirarchy || 0) === 3;
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [files, setFiles] = React.useState([]);
   const [existingFiles, setExistingFiles] = React.useState([]);
   const [removedFileIds, setRemovedFileIds] = React.useState([]);
 
 
-  const [form, setForm] = useState({
+  const [form, setForm] = React.useState({
     // complianceId: "",
     plant: "",
     department: "",
@@ -79,14 +79,16 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
 
 
   // File Options
-  const handleRemoveExisting = (file) => {
-    console.log(file);
+  const handleRemoveExisting = React.useCallback((file) => {
+    // console.log(file);
     setExistingFiles(prev => prev.filter(f => f.filId !== file.filId));
     setRemovedFileIds(prev => [...prev, file.filId]);
-  };
-  const handleRemoveNew = (index) => {
+  }, [setExistingFiles, setRemovedFileIds]);
+
+  const handleRemoveNew = React.useCallback((index) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  }, [setFiles]);
+
   const sortedExistingFiles = React.useMemo(() => {
     return [...existingFiles].sort((a, b) =>
       a.filName.localeCompare(b.filName)
@@ -97,7 +99,8 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
       a.name.localeCompare(b.name)
     );
   }, [files]);
-  const handleDownload = async (file) => {
+
+  const handleDownload = React.useCallback(async (file) => {
     try {
       const res = await axiosInstance.get(`/api/file/download/${file.filId}`, { responseType: "blob" });
 
@@ -119,10 +122,9 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
     } catch (err) {
       console.error("❌ Download error:", err);
     }
-  };
+  }, []);
 
-
-  const handleView = async (file) => {
+  const handleView = React.useCallback(async (file) => {
     try {
       const res = await axiosInstance.get(
         `/api/file/download/${file.filId}`,
@@ -140,13 +142,13 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
     } catch (err) {
       console.error("View error:", err);
     }
-  };
+  }, []);
 
 
-  const handleChange = (e) => {
+  const handleChange = React.useCallback((e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-  };
+  }, [setFiles]);
 
   // const handleFiles = (e) => {
   //   const files = Array.from(e.target.files);
@@ -156,7 +158,7 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
   //   // setForm(prev => ({ ...prev, allDocs: filePreviews }));
   // };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = React.useCallback((e) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -199,7 +201,7 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [isSubmitting, setIsSubmitting, form, files, removedFileIds, onSubmit]);
 
   React.useEffect(() => {
     if (isHierarchyThree) {
@@ -472,6 +474,6 @@ const AddCompliance = ({ onCancel, onSubmit, mode = 'add', initialData, saved, m
       </div>
     </div>
   );
-};
+});
 
 export default AddCompliance;

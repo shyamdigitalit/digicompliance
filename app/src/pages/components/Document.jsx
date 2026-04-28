@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React from "react";
 import "../styles/Document.css";
 import axiosInstance from "../../config/axiosInstance";
 import Loader from "../../components/loader";
@@ -33,12 +33,12 @@ const UploadPreview = React.memo(({ files, onRemove }) => {
   );
 });
 
-const Documents = () => {
-  const [files, setFiles] = useState([]);
-  const [fileList, setFileList] = useState(defaultFileList);
-  const [loading, setLoading] = useState(true);
-  const [dragOver, setDragOver] = useState(false);
-  const fileInputRef = useRef();
+const Documents = React.memo(function Documents() {
+  const [files, setFiles] = React.useState([]);
+  const [fileList, setFileList] = React.useState(defaultFileList);
+  const [loading, setLoading] = React.useState(true);
+  const [dragOver, setDragOver] = React.useState(false);
+  const fileInputRef = React.useRef();
 
   const fetchFiles = React.useCallback(async () => {
     try {
@@ -48,56 +48,36 @@ const Documents = () => {
     } catch (error) {
       console.error("Error fetching files:", error);
     }
-  }, []);
-  useEffect(() => {
+  }, [setFileList]);
+  React.useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
 
   // Simulate a brief load so the page feels consistent with other sections
-  useEffect(() => {
+  React.useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 600);
     return () => clearTimeout(timer);
-  }, []);
+  }, [setLoading]);
 
-  // useEffect(() => {
-  //   localStorage.setItem(DOC_KEY, JSON.stringify(documents));
-  // }, [documents]);
-
-  // const types = useMemo(() => [...new Set(documents.map(d => d.type))], [documents]);
-  // const categories = useMemo(() => [...new Set(documents.map(d => d.category))], [documents]);
-  // const plants = useMemo(() => [...new Set(documents.map(d => d.plant))], [documents]);
-
-  // const filtered = useMemo(() => {
-  //   const q = search.toLowerCase();
-  //   return documents.filter(doc => {
-  //     const matchSearch = !q || doc.name.toLowerCase().includes(q) || doc.uploadedBy.toLowerCase().includes(q);
-  //     const matchType = !filterType || doc.type === filterType;
-  //     const matchCat = !filterCategory || doc.category === filterCategory;
-  //     const matchPlant = !filterPlant || doc.plant === filterPlant;
-  //     return matchSearch && matchType && matchCat && matchPlant;
-  //   });
-  // }, [documents, search, filterType, filterCategory, filterPlant]);
-
-  // const user = JSON.parse(localStorage.getItem("user")) || {};
-
-  const addFiles = (files) => {
-    console.log(files);
+  const addFiles = React.useCallback((files) => {
+    // console.log(files);
     const newFiles = Array.from(files)
     setFiles(prev => [...prev, ...newFiles]);
-  };
-  const handleRemoveFile = (file) => {
+  }, [setFiles]);
+
+  const handleRemoveFile = React.useCallback((file) => {
     setFiles(prev => prev.filter(f => f !== file));
-  }
+  }, [setFiles])
 
-  const handleFileChange = (e) => addFiles(e.target.files);
+  const handleFileChange = React.useCallback((e) => addFiles(e.target.files), [addFiles]);
 
-  const handleDrop = async (e) => {
+  const handleDrop = React.useCallback(async (e) => {
     e.preventDefault();
     setDragOver(false);
     addFiles(e.dataTransfer.files);
-  };
+  }, [setDragOver, addFiles]);
 
-  const handleUpload = async () => {
+  const handleUpload = React.useCallback(async () => {
     // console.log(files);
     const formData = new FormData();
     files.forEach((file) => formData.append("files", file));
@@ -113,11 +93,11 @@ const Documents = () => {
       console.error("Upload error:", err);
       alert("Failed to upload files. Please try again.");
     }
-  };
+  }, [files]);
 
-  const handleDownload = async (file) => {
+  const handleDownload = React.useCallback(async (file) => {
     try {
-      console.log(file);
+      // console.log(file);
       const res = await axiosInstance.get(`/api/file/download/${file._id}`, { responseType: "blob" });
 
       const blob = new Blob([res.data], {
@@ -138,7 +118,7 @@ const Documents = () => {
     } catch (err) {
       console.error("❌ Download error:", err);
     }
-  };
+  }, []);
 
   // const handleDelete = (id) => {
   //   if (window.confirm("Delete this document?")) {
@@ -218,6 +198,6 @@ const Documents = () => {
       )}
     </>
   );
-};
+});
 
 export default Documents;

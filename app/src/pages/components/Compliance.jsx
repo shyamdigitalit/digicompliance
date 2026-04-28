@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React from "react";
 import AddCompliance from "./AddCompliance";
 import "../styles/Compliance.css";
 import axiosInstance from "../../config/axiosInstance";
-import { useCallback } from "react";
 import { useSelector } from "react-redux";
 import FolderZipIcon from '@mui/icons-material/FolderZip';
 import JSZip from "jszip";
@@ -15,10 +14,10 @@ const ACTIVITY_KEY = "activity_log";
 
 const PAGE_SIZE = 8;
 
-const Compliance = () => {
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [masterData, setMasterData] = useState({
+const Compliance = React.memo(function Compliance() {
+  const [showAddForm, setShowAddForm] = React.useState(false);
+  const [editing, setEditing] = React.useState(null);
+  const [masterData, setMasterData] = React.useState({
     plants: [],
     departments: [],
     complianceTypes: [],
@@ -27,13 +26,13 @@ const Compliance = () => {
     criticalities: [],
     penaltyTypes: []
   });
-  const [data, setData] = useState([]);
-  const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = React.useState([]);
+  const [saved, setSaved] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
 
   const user = useSelector(state => state.auth.user) || {};
 
-  const fetchData = useCallback(async () => {
+  const fetchData = React.useCallback(async () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get("/api/comp/fetch");
@@ -45,11 +44,11 @@ const Compliance = () => {
     }
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const fetchMasterData = useCallback(async () => {
+  const fetchMasterData = React.useCallback(async () => {
     try {
       const [plantsRes, deptsRes, typesRes, categoriesRes, freqsRes, critsRes, penltsRes] = await Promise.allSettled([
         axiosInstance.get("/api/plnt/fetch"),
@@ -74,36 +73,36 @@ const Compliance = () => {
     }
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchMasterData();
   }, [fetchMasterData]);
 
-  const [search, setSearch] = useState("");
-  const [filterPlant, setFilterPlant] = useState("");
-  const [filterDept, setFilterDept] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [filterCompTyp, setFilterCompTyp] = useState("");
-  const [filterCompCat, setFilterCompCat] = useState("");
-  const [filterCompFreq, setFilterCompFreq] = useState("");
-  const [filterCriticality, setFilterCriticality] = useState("");
-  const [filterPenaltyType, setFilterPenaltyType] = useState("");
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = React.useState("");
+  const [filterPlant, setFilterPlant] = React.useState("");
+  const [filterDept, setFilterDept] = React.useState("");
+  const [filterStatus, setFilterStatus] = React.useState("");
+  const [filterCompTyp, setFilterCompTyp] = React.useState("");
+  const [filterCompCat, setFilterCompCat] = React.useState("");
+  const [filterCompFreq, setFilterCompFreq] = React.useState("");
+  const [filterCriticality, setFilterCriticality] = React.useState("");
+  const [filterPenaltyType, setFilterPenaltyType] = React.useState("");
+  const [page, setPage] = React.useState(1);
 
-  useEffect(() => {
+  React.useEffect(() => {
     localStorage.setItem(COMPLIANCE_KEY, JSON.stringify(data));
   }, [data]);
 
 
   // Data Filters
-  const plants = useMemo(() => [...new Set(data?.map(d => d.plant?.name || ""))], [data]);
-  const depts = useMemo(() => [...new Set(data?.map(d => d.department?.name || ""))], [data]);
-  const complianceTypes = useMemo(() => [...new Set(data?.map(d => d.complianceType?.name || ""))], [data]);
-  const complianceCategories = useMemo(() => [...new Set(data?.map(d => d.complianceCategorization?.name || ""))], [data]);
-  const complianceFrequencies = useMemo(() => [...new Set(data?.map(d => d.complianceFrequency?.name || ""))], [data]);
-  const criticalities = useMemo(() => [...new Set(data?.map(d => d.criticality?.name || ""))], [data]);
-  const penaltyTypes = useMemo(() => [...new Set(data?.map(d => d.penaltyType?.name || ""))], [data]);
+  const plants = React.useMemo(() => [...new Set(data?.map(d => d.plant?.name || ""))], [data]);
+  const depts = React.useMemo(() => [...new Set(data?.map(d => d.department?.name || ""))], [data]);
+  const complianceTypes = React.useMemo(() => [...new Set(data?.map(d => d.complianceType?.name || ""))], [data]);
+  const complianceCategories = React.useMemo(() => [...new Set(data?.map(d => d.complianceCategorization?.name || ""))], [data]);
+  const complianceFrequencies = React.useMemo(() => [...new Set(data?.map(d => d.complianceFrequency?.name || ""))], [data]);
+  const criticalities = React.useMemo(() => [...new Set(data?.map(d => d.criticality?.name || ""))], [data]);
+  const penaltyTypes = React.useMemo(() => [...new Set(data?.map(d => d.penaltyType?.name || ""))], [data]);
 
-  const filtered = useMemo(() => {
+  const filtered = React.useMemo(() => {
     // console.log(search);
     const q = search.toLowerCase();
     return data?.filter(item => {
@@ -120,7 +119,7 @@ const Compliance = () => {
     });
   }, [data, search, filterPlant, filterDept, filterStatus, filterCompTyp, filterCompCat, filterCompFreq, filterCriticality, filterPenaltyType]);
 
-  const resetFilters = () => {
+  const resetFilters = React.useCallback(() => {
     setSearch('');
     setFilterPlant('');
     setFilterDept('');
@@ -131,14 +130,25 @@ const Compliance = () => {
     setFilterCriticality('');
     setFilterPenaltyType('');
     setPage(1);
-  };
+  }, [
+    setSearch,
+    setFilterPlant,
+    setFilterDept,
+    setFilterStatus,
+    setFilterCompTyp,
+    setFilterCompCat,
+    setFilterCompFreq,
+    setFilterCriticality,
+    setFilterPenaltyType,
+    setPage
+  ]);
   
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
 
   // Data Manipulation Handlers
-  const handleAddEditSubmit = async (formData) => {
+  const handleAddEditSubmit = React.useCallback(async (formData) => {
     try {
       if (editing) {
         const response = await axiosInstance.patch(`/api/comp/update?id=${editing?._id}`, formData, {
@@ -172,14 +182,14 @@ const Compliance = () => {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [editing, setSaved, setShowAddForm, fetchData]);
 
-  const handleEdit = (row) => {
+  const handleEdit = React.useCallback((row) => {
     setEditing(row);
     setShowAddForm(true);
-  };
+  }, [setEditing, setShowAddForm]);
 
-  const handleZipDownload = async (value = [], label = "Compliance_Files") => {
+  const handleZipDownload = React.useCallback(async (value = [], label = "Compliance_Files") => {
     if (!value || value.length === 0) {
       alert(`No files available for download!`);
       return;
@@ -222,9 +232,9 @@ const Compliance = () => {
       console.error(err);
       alert(`ZIP download failed.`);
     }
-  };
+  }, []);
 
-  const handleApprove = async (row) => {
+  const handleApprove = React.useCallback(async (row) => {
     try {
       if (window.confirm("Approve this compliance record?")) {
         const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=1`, row);
@@ -242,9 +252,9 @@ const Compliance = () => {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [setSaved, setShowAddForm, fetchData]);
 
-  const handleReject = async (row) => {
+  const handleReject = React.useCallback(async (row) => {
     try {
       if (window.confirm("Reject this compliance record?")) {
         const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=0`, row);
@@ -262,9 +272,9 @@ const Compliance = () => {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [setSaved, setShowAddForm, fetchData]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = React.useCallback(async (id) => {
     try {
       if (window.confirm("Delete this compliance record?")) {
         const response = await axiosInstance.delete(`/api/comp/delete?id=${id}`);
@@ -281,13 +291,13 @@ const Compliance = () => {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [setSaved, fetchData]);
 
-  const handleStatusChange = (id, newStatus) => {
+  const handleStatusChange = React.useCallback((id, newStatus) => {
     setData(prev => prev.map(d => d._id === id ? { ...d, status: newStatus } : d));
-  };
+  }, setData);
 
-  const handleExport = () => {
+  const handleExport = React.useCallback(() => {
     if (!paged.length) {
       alert('No data available to export.');
       return;
@@ -331,7 +341,7 @@ const Compliance = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Compliance');
     XLSX.writeFile(workbook, 'Compliance_Datasheet.xlsx');
-  };
+  }, [paged]);
 
   const getTag = (val) => val?.toLowerCase().replace(" ", "-");
 
@@ -519,6 +529,6 @@ const Compliance = () => {
       )}
     </div>
   );
-};
+});
 
 export default Compliance;
