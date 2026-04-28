@@ -758,6 +758,7 @@ tr:hover {
   background: transparent;
   padding: 0;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .timer-input-box input[type="number"]::-webkit-inner-spin-button,
@@ -800,15 +801,6 @@ tr:hover {
 .timer-error-msg {
   color: #dc2626;
   font-size: 13px;
-}
-
-.loader-overlay {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 320px;
-  gap: 16px;
 }
 
 .loader {

@@ -1,22 +1,24 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import "../styles/Setting.css";
-import axiosInstance from "../../config/axiosInstance";
+import axiosInstance from "../../../config/axiosInstance";
+import Loader from "../../../components/loader";
+import { masterList } from "./masterList";
 
 // const getMasterKey = (type) => `master_${type}`;
 
-const MasterList = () => {
+const MasterList = React.memo(function MasterList() {
   const { type } = useParams();
-  console.log(type);
   const navigate = useNavigate();
-
   const [data, setData] = useState([]);
   const [saved, setSaved] = useState(false);
-  
+  const [loading, setLoading] = useState(false)
+
+  const masterTab = React.useMemo(() => masterList.find(m => m.key === type), [masterList, type])
+
   const fetchMasterData = useCallback(async () => {
     let apiType = "";
     switch (type) {
-      case "Account Type": apiType = "acctyp"; break;
+      case "accounttype": apiType = "acctyp"; break;
       case "plant": apiType = "plnt"; break;
       case "department": apiType = "dept"; break;
       case "company": apiType = "cmpny"; break;
@@ -27,50 +29,61 @@ const MasterList = () => {
       case "criticality": apiType = "criticlty"; break;
       case "penaltytype": apiType = "penlty"; break;
     }
+    setLoading(true)
 
     try {
       const response = await axiosInstance.get(`/api/${apiType==="acctyp" ? "acctyp/fetchuppr" : `${apiType}/fetch`}`);
       setData(response.data?.data || []);
     } catch (error) {
       console.error(error)
+    } finally {
+      setLoading(false)
     }
-  }, [type]);
+  }, [type, setData, setLoading]);
 
   useEffect(() => {
     fetchMasterData();
   }, [fetchMasterData]);
 
-  const handleDelete = async (idx) => {
-    if (window.confirm("Delete this entry?")) {
-      let apiType = "";
-      switch (type) {
-        case "Account Type": apiType = "acctyp"; break;
-        case "plant": apiType = "plnt"; break;
-        case "department": apiType = "dept"; break;
-        case "company": apiType = "cmpny"; break;
-        case "designation": apiType = "desig"; break;
-        case "compliancetype": apiType = "comptyp"; break;
-        case "compliancecategory": apiType = "compcateg"; break;
-        case "compliancefrequency": apiType = "compfreq"; break;
-        case "criticality": apiType = "criticlty"; break;
-        case "penaltytype": apiType = "penlty"; break;
-      }
-      const response = await axiosInstance.delete(`/api/${apiType}/delete?id=${data[idx]._id}`);
-      if (response.status === 200) {
-        setSaved(true);
-        setTimeout(() => {
-          setData(prev => prev.filter((_, i) => i !== idx));
-          setSaved(false);
-        }, 1000);
-      }
+  const handleDelete = React.useCallback(async (idx) => {
+    let apiType = "";
+    switch (type) {
+      case "accounttype": apiType = "acctyp"; break;
+      case "plant": apiType = "plnt"; break;
+      case "department": apiType = "dept"; break;
+      case "company": apiType = "cmpny"; break;
+      case "designation": apiType = "desig"; break;
+      case "compliancetype": apiType = "comptyp"; break;
+      case "compliancecategory": apiType = "compcateg"; break;
+      case "compliancefrequency": apiType = "compfreq"; break;
+      case "criticality": apiType = "criticlty"; break;
+      case "penaltytype": apiType = "penlty"; break;
     }
-  };
+    setLoading(true)
+
+    try {
+      if (window.confirm("Delete this entry?")) {
+        const response = await axiosInstance.delete(`/api/${apiType}/delete?id=${data[idx]._id}`);
+        if (response.status === 200) {
+          setSaved(true);
+          setTimeout(() => {
+            setData(prev => prev.filter((_, i) => i !== idx));
+            setSaved(false);
+          }, 1000);
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }, [type, setData, setSaved]);
 
   const handleToggleStatus = (idx) => {
     setData(prev => prev.map((item, i) => i === idx ? { ...item, status: item.status === "Active" ? "Inactive" : "Active" } : item));
   };
 
-  const label = type.charAt(0).toUpperCase() + type.slice(1);
+  const label = masterTab.tabName.charAt(0).toUpperCase() + masterTab.tabName.slice(1);
 
   return (
     <div className="master-card">
@@ -88,8 +101,8 @@ const MasterList = () => {
         </div>
       </div>
 
-      {
-        type === "Account Type" ? (
+      { loading ? <Loader /> : (
+        masterTab.key === "accounttype" ? (
           <div className="table-scroll-wrap">
           <table>
             <thead>
@@ -168,9 +181,9 @@ const MasterList = () => {
           </table>
         </div>
         )
-      }      
+      )}
     </div>
   );
-};
+})
 
 export default MasterList;

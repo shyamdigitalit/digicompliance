@@ -8,6 +8,7 @@ import FolderZipIcon from '@mui/icons-material/FolderZip';
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
+import Loader from "../../components/loader";
 
 const COMPLIANCE_KEY = "compliance_data";
 const ACTIVITY_KEY = "activity_log";
@@ -354,15 +355,7 @@ const Compliance = () => {
             </div>
           </div>
 
-          {loading ? (
-            <div className="loader-overlay" role="status" aria-label="Loading compliance data">
-              <div className="loader">
-                <span className="loader__dot"></span>
-                <span className="loader__dot"></span>
-                <span className="loader__dot"></span>
-              </div>
-            </div>
-          ) : (
+          {loading ? <Loader /> : (
             <>
               <div className="filter-box">
                 <div className="filter-row" style={{ display: 'flex', flexFlow: 'row wrap' }}>

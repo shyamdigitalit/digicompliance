@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import "../styles/User.css";
 import AddUser from "./AddUser";
 import axiosInstance from "../../config/axiosInstance";
-import EkycDetails from "../../components/EkycDetails";
+import Loader from "../../components/loader";
 
 const USER_KEY = "user_data";
 
@@ -12,7 +12,7 @@ const Users = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
@@ -147,15 +147,7 @@ const Users = () => {
             <p>Manage users and their access to the compliance system</p>
           </div>
 
-          {loading ? (
-            <div className="loader-overlay" role="status" aria-label="Loading users">
-              <div className="loader">
-                <span className="loader__dot"></span>
-                <span className="loader__dot"></span>
-                <span className="loader__dot"></span>
-              </div>
-            </div>
-          ) : (
+          {loading ? <Loader /> : (
             <>
               <div className="user-filters">
                 <input
@@ -222,8 +214,6 @@ const Users = () => {
                   </table>
                 </div>
               </div>
-
-              <div className="other-sec"><EkycDetails /></div>
 
               <div className="table-footer">
                 <span>

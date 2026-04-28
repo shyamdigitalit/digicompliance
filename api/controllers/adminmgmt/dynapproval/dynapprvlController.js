@@ -27,7 +27,9 @@ const create = async (req, res) => {
         }))
         // console.log(dynapprvlPayld.approvalDetails);
         if (!existingDynapprvl) {
-            if (dynapprvlPayld.approvalDetails?.length === 0) return res.status(404).json({ message: "No Approver selected yet !" });
+            if (dynapprvlPayld.approvalDetails?.length === 0) {
+                res.status(404).json({ message: "No Approver selected yet !" });
+            }
             else {
                 dynapprvlPayld.createdby = user?._id;
                 const dynapprvl = await dynapprvlModel.create(dynapprvlPayld);
@@ -114,53 +116,83 @@ export const fetchApprovalDetails = async (cBase, funcId, user) => {
         { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
         { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
 
-        // 🔥 UNWIND approvalDetails
-        { $unwind: { path: '$approvalDetails', preserveNullAndEmptyArrays: true } },
+        // approvalDetails unwind
+        { $unwind: { path: "$approvalDetails", preserveNullAndEmptyArrays: true } },
 
-        // 🔥 UNWIND approvers
-        { $unwind: { path: '$approvalDetails.approvers', preserveNullAndEmptyArrays: true } },
+        // approvers unwind
+        { $unwind: { path: "$approvalDetails.approvers", preserveNullAndEmptyArrays: true } },
 
-        // 🔥 Populate approverAccount
-        { $lookup: { from: 'accounts', localField: 'approvalDetails.approvers.approverAccount', foreignField: '_id', as: 'approvalDetails.approvers.approverAccount' } },
+        // Populate approver account
+        { $lookup: { from: "accounts", localField: "approvalDetails.approvers.approverAccount", foreignField: "_id", as: "approvalDetails.approvers.approverAccount" } },
 
-        // 🔥 Convert array → object
-        { $addFields: {
-            'approvalDetails.approvers.approverAccount': { $arrayElemAt: ['$approvalDetails.approvers.approverAccount', 0] }
-        } },
+        // Convert approverAccount array to object
+        {
+            $addFields: {
+                "approvalDetails.approvers.approverAccount": { $arrayElemAt: [ "$approvalDetails.approvers.approverAccount", 0 ] }
+            }
+        },
 
-        // 🔥 GROUP approvers back
+        // Group approvers back per approval step
         {
             $group: {
                 _id: {
-                    rootId: '$_id',
-                    approvalDetailsId: '$approvalDetails._id'
+                    rootId: "$_id",
+                    approvalDetailsId: "$approvalDetails._id",
                 },
-                root: { $first: '$$ROOT' },
-                approvers: {
-                    $push: '$approvalDetails.approvers'
-                }
+                root: { $first: "$$ROOT" },
+                approvers: { $push: "$approvalDetails.approvers" },
             }
         },
 
-        // 🔥 Rebuild approvalDetails
+        // Rebuild approvalDetails
         {
             $group: {
-                _id: '$_id.rootId',
-                root: { $first: '$root' },
+                _id: "$_id.rootId",
+                root: { $first: "$root" },
                 approvalDetails: {
                     $push: {
-                        _id: '$_id.approvalDetailsId',
-                        approvalLevel: '$root.approvalDetails.approvalLevel',
-                        approvalTitle: '$root.approvalDetails.approvalTitle',
-                        approvalTag: '$root.approvalDetails.approvalTag',
-                        approvers: '$approvers'
-                    }
-                }
-            }
+                        _id: "$_id.approvalDetailsId",
+                        approvalLevel: "$root.approvalDetails.approvalLevel",
+                        approvalTitle: "$root.approvalDetails.approvalTitle",
+                        approvalTag: "$root.approvalDetails.approvalTag",
+                        approvers: "$approvers",
+                    },
+                },
+            },
         },
 
-        // 🔥 Merge back clean structure
-        { $replaceRoot: { newRoot: { $mergeObjects: [ '$root', { approvalDetails: '$approvalDetails' } ] } } },
+        // FINAL PERMANENT SORT (approvalDetails array)
+        {
+            $addFields: {
+                approvalDetails: {
+                    $map: {
+                        input: {
+                            $sortArray: {
+                                input: "$approvalDetails",
+                                sortBy: { approvalLevel: 1 },
+                            },
+                        },
+                        as: "item",
+                        in: {
+                            $mergeObjects: [
+                                "$$item",
+                                {
+                                    approvers: {
+                                        $sortArray: {
+                                            input: "$$item.approvers",
+                                            sortBy: { _id: 1 },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
+        },
+
+        // Merge root back
+        { $replaceRoot: { newRoot: { $mergeObjects: [ "$root", { approvalDetails: "$approvalDetails" } ] } } },
 
         // Optional IST fields
         {

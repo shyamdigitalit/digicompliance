@@ -11,8 +11,8 @@ const Compliance = lazy(() => import("../pages/components/Compliance"));
 const Document = lazy(() => import("../pages/components/Document"));
 const User = lazy(() => import("../pages/components/User"));
 const Setting = lazy(() => import("../pages/components/Setting"));
-const MasterList = lazy(() => import("../pages/components/MasterList"));
-const MasterForm = lazy(() => import("../pages/components/MasterForm"));
+const MasterList = lazy(() => import("../pages/components/tabcomponents/MasterList"));
+const MasterForm = lazy(() => import("../pages/components/tabcomponents/MasterForm"));
 
 const router = createBrowserRouter([
   {

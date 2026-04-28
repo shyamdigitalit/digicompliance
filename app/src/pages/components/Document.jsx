@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import "../styles/Document.css";
 import axiosInstance from "../../config/axiosInstance";
+import Loader from "../../components/loader";
 
 const DOC_KEY = "document_data";
 
@@ -155,15 +156,7 @@ const Documents = () => {
         <p>Manage compliance documents and files</p>
       </div>
 
-      {loading ? (
-        <div className="loader-overlay" role="status" aria-label="Loading documents">
-          <div className="loader">
-            <span className="loader__dot"></span>
-            <span className="loader__dot"></span>
-            <span className="loader__dot"></span>
-          </div>
-        </div>
-      ) : (
+      {loading ? <Loader /> : (
         <>
           <div className="upload-section">
             {files.length > 0 ? <UploadPreview files={files} onRemove={handleRemoveFile} /> : null }

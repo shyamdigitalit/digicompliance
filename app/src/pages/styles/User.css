@@ -189,15 +189,6 @@ tr {
   }
 }
 
-.loader-overlay {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 320px;
-  gap: 16px;
-}
-
 .loader {
   display: inline-flex;
   align-items: center;

@@ -1,24 +1,23 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import "../styles/Setting.css";
-import axiosInstance from "../../config/axiosInstance";
+import axiosInstance from "../../../config/axiosInstance";
 
 // const getMasterKey = (type) => `master_${type}`;
 
-const MasterForm = () => {
+const MasterForm = React.memo(function MasterForm() {
   const { type } = useParams();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", code: "", desc: "" });
   const [saved, setSaved] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = React.useCallback((e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-  };
+  }, [setForm]);
 
-  const handleSave = async () => {
+  const handleSave = React.useCallback(async () => {
     let newEntry = {}, apiType = "";
-    if (type === "Account Type") {
+    if (type?.key === "accounttype") {
       if (!form.typname.trim() || !form.heirarchy) {
         alert("Please fill in both Type and Heirarchy");
         return;
@@ -43,7 +42,7 @@ const MasterForm = () => {
         status: "Active"
       });
 
-      switch (type) {
+      switch (type?.key) {
         case "plant": apiType = "plnt"; break;
         case "department": apiType = "dept"; break;
         case "company": apiType = "cmpny"; break;
@@ -63,15 +62,14 @@ const MasterForm = () => {
         setTimeout(() => navigate(-1), 1000);
       } else {
         setTimeout(() => setSaved(false), 1000);
-        // alert("Failed to save entry. Please try again.");
         return;
       }
     } catch (error) {
       console.error(error)
     }
-  };
+  }, [type, form, setSaved]);
 
-  const label = type.charAt(0).toUpperCase() + type.slice(1);
+  const label = React.useMemo(() => type?.tabName.charAt(0).toUpperCase() + type?.tabName.slice(1), [type]);
 
   if (type === "Account Type") {
     return (
@@ -142,6 +140,6 @@ const MasterForm = () => {
       </div>
     );
   }
-};
+});
 
 export default MasterForm;
