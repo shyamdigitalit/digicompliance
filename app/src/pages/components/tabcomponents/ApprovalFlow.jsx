@@ -76,7 +76,7 @@ const ApprovalFlow = React.memo(function ApprovalFlow() {
             setLoading(true);
             setSteps([]);
             const res = await axiosInstance.get("/api/dynapprvl/fetch", { params: { cbase, fnid } });
-            const record = res.data.data?.[0];
+            const record = res.data.data;
             if (record?.approvalDetails) {
                 setSteps(record.approvalDetails.map(ad => ({
                     id: ad._id || `step-${crypto.randomUUID()}`,
@@ -299,13 +299,13 @@ const ApprovalFlow = React.memo(function ApprovalFlow() {
             <div className="approval-modal" onClick={e => e.stopPropagation()}>
                 <h4>Add approver to step {modal + 1}</h4>
                 <select onChange={e => setModalName(e.target.value)} value={modalName}>
-                <option value="">Select an account</option>
-                {allAccs?.filter(a => !getUsedAccountIds(steps).includes(a._id)).map(a => (<option key={a._id} value={a._id}>{a.acc_fname}</option>))}
+                    <option value="">Select an account</option>
+                    {allAccs?.filter(a => !getUsedAccountIds(steps).includes(a._id)).map(a => (<option key={a._id} value={a._id}>{a.acc_fname}</option>))}
                 </select>
                 <input placeholder="Role / title" value={modalRole} onChange={e => setModalRole(e.target.value)} onKeyDown={e => e.key === "Enter" && confirmAdd()} />
                 <div className="modal-btns">
-                <button className="light-btn" onClick={() => setModal(null)}>Cancel</button>
-                <button className="save-flow-btn" onClick={confirmAdd}>Add</button>
+                    <button className="light-btn" onClick={() => setModal(null)}>Cancel</button>
+                    <button className="save-flow-btn" onClick={confirmAdd}>Add</button>
                 </div>
             </div>
             </div>

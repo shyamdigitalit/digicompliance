@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import "../styles/AddUser.css";
 import axiosInstance from "../../config/axiosInstance";
 
 
-const AddUser = ({ mode="add", onCancel, onSubmit, initialData, saved }) => {
-  const [form, setForm] = useState({
+const AddUser = React.memo(function AddUser({ mode="add", onCancel, onSubmit, initialData, saved }) {
+  const [form, setForm] = React.useState({
     username: "", name: "", email: "", role: "", plant: "", description: ""
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [acctypes, setAcctypes] = useState([]);
-  const [plnts, setPlnts] = useState([]);
-  const [depts, setDepts] = useState([]);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [acctypes, setAcctypes] = React.useState([]);
+  const [plnts, setPlnts] = React.useState([]);
+  const [depts, setDepts] = React.useState([]);
 
   const fetchMasterData = React.useCallback(async () => {
     try {
@@ -39,7 +39,7 @@ const AddUser = ({ mode="add", onCancel, onSubmit, initialData, saved }) => {
     fetchMasterData();
   }, [fetchMasterData]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // console.log(mode);
     // console.log(initialData);
     if (initialData) {
@@ -166,6 +166,6 @@ const AddUser = ({ mode="add", onCancel, onSubmit, initialData, saved }) => {
       </div>
     </div>
   );
-};
+});
 
 export default AddUser;

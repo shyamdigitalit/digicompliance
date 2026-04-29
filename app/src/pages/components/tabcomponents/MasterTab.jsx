@@ -13,7 +13,7 @@ const MasterTab = React.memo(function MasterTab({ masterTabs = [] }) {
       <div style={{ marginTop: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
       {masterListTabs.map(item => (
         <button key={item?.key} className="light-btn" style={{ textAlign: "left", padding: "12px 14px" }} onClick={() => navigate(`/masters/${item?.key}`)}>
-        {/* {item?.tabName.charAt(0).toUpperCase() + item?.tabName.slice(1)} → */}{item?.tabName}
+        {item?.tabName} →
         </button>
       ))}
       </div>

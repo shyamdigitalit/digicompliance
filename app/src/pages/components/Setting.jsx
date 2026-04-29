@@ -1,15 +1,17 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import '../styles/Setting.css'
 import ProfileTab from './tabcomponents/ProfileTab'
 import SecurityTab from './tabcomponents/SecurityTab'
 import NotificationTab from './tabcomponents/NotificationTab'
-import ApprovalFlow from './tabcomponents/ApprovalFlow'
+// import ApprovalFlow from './tabcomponents/ApprovalFlow'
+const ApprovalFlow = React.lazy(() => import('./tabcomponents/ApprovalFlow'))
 import MasterTab from './tabcomponents/MasterTab'
 import axiosInstance from '../../config/axiosInstance'
 import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../../redux/slices/auth'
 import { useNavigate } from 'react-router-dom'
 import { masterListTabs } from './tabcomponents/masterListTabs'
+import Loader from '../../components/loader'
 
 
 const Setting = React.memo(function Setting() {
@@ -22,6 +24,7 @@ const Setting = React.memo(function Setting() {
   const [saved, setSaved] = React.useState(false);
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false)
+  const [isPending, startTransition] = React.useTransition()
 
   const storedUser = useSelector(state => state.auth.user) || {};
   const nameParts = React.useMemo(() => storedUser.acc_fname ? storedUser.acc_fname.split(" ") : ["", ""], [storedUser]);
@@ -35,11 +38,19 @@ const Setting = React.memo(function Setting() {
   });
   const initials = React.useMemo(() => `${nameParts.join(" ")?.[0] || "U"}`.toUpperCase(), [nameParts]);
 
+  const handleSidebar = React.useCallback(() => setSidebarOpen(v => !v), [])
+
   const handleTabChange = React.useCallback((tab) => {
-    setActiveTab(tab);
+    startTransition(() => { setActiveTab(tab)})
     setShowMasters(false);
     setSidebarOpen(false);
-  }, [setActiveTab, setShowMasters, setSidebarOpen]);
+  }, []);
+
+  const handleExpand = React.useCallback(() => {
+    startTransition(() => { setActiveTab("Masters")})
+    setShowMasters(v => !v);
+    setSidebarOpen(false);
+  }, [])
 
   const handleLogout = React.useCallback(async () => {
     try {
@@ -59,7 +70,7 @@ const Setting = React.memo(function Setting() {
           <h2>Settings</h2>
           <p>Manage your account and system preferences</p>
         </div>
-        <button className="settings-mobile-toggle" onClick={() => setSidebarOpen(v => !v)} aria-label="Toggle settings menu">
+        <button className="settings-mobile-toggle" onClick={handleSidebar} aria-label="Toggle settings menu">
           <span></span><span></span><span></span>
         </button>
       </div>
@@ -78,7 +89,7 @@ const Setting = React.memo(function Setting() {
 
           <div
             className={`settings-item ${activeTab === "Masters" ? "active" : ""}`}
-            onClick={() => { setActiveTab("Masters"); setShowMasters(v => !v); setSidebarOpen(false); }}
+            onClick={handleExpand}
           >
             Masters {showMasters ? "▴" : "▾"}
           </div>
@@ -102,7 +113,7 @@ const Setting = React.memo(function Setting() {
           {activeTab === "Profile" && <ProfileTab />}
           {activeTab === "Security" && <SecurityTab />}
           {activeTab === "Notifications" && <NotificationTab />}
-          {activeTab === "Approval" && <ApprovalFlow />}
+          <Suspense fallback={<Loader />}>{activeTab === "Approval" && <ApprovalFlow />}</Suspense>
           {activeTab === "Masters" && <MasterTab />}
         </div>
       </div>

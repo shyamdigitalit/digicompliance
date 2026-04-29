@@ -17,7 +17,7 @@ const create = async (req, res) => {
         const existingDynapprvl = await dynapprvlModel.findOne({
             approvalCreatorBase: dynapprvlPayld.approvalCreatorBase,
             approvalFunction: dynapprvlPayld.approvalFunction
-        });
+        }).lean();
 
         dynapprvlPayld.approvalDetails = dynapprvlPayld.approvalDetails?.filter(elm => elm?.approvers?.length > 0)?.map((elm, i) => ({
             approvalLevel: i+1,
@@ -45,7 +45,7 @@ const create = async (req, res) => {
         }
         else {
             if (dynapprvlPayld.approvalDetails?.length === 0) {
-                const deletedDynapprvl = await dynapprvlModel.findByIdAndDelete(existingDynapprvl._id);
+                const deletedDynapprvl = await dynapprvlModel.findByIdAndDelete(existingDynapprvl._id).lean();
                 if (!deletedDynapprvl) {
                     return res.status(404).json({ message: "Failed to remove existing Dynamic Approval record" });
                 }
@@ -59,7 +59,7 @@ const create = async (req, res) => {
                 delete dynapprvlPayld?.approvalCreatorBase
                 delete dynapprvlPayld?.approvalFunction
                 dynapprvlPayld.updatedby = user?._id
-                const updatedDynapprvl = await dynapprvlModel.findOneAndUpdate({ _id: existingDynapprvl._id }, dynapprvlPayld, { new: true });
+                const updatedDynapprvl = await dynapprvlModel.findOneAndUpdate({ _id: existingDynapprvl._id }, dynapprvlPayld, { new: true }).lean();
                 if (!updatedDynapprvl) {
                     return res.status(404).json({ message: "Failed to update existing Dynamic Approval record" });
                 }
@@ -75,137 +75,156 @@ const create = async (req, res) => {
     }
 }
 
+// export const fetchApprovalDetails = async (cBase, funcId, user) => {
+//     // console.log(funcId);
+//     const accTyp = parseInt(user?.acc_typ?.heirarchy || 0)
+//     // console.log(accTyp);
+
+//     const matchFunc = {};
+//     if (cBase || accTyp>2) {
+//         if (mongoose.Types.ObjectId.isValid(cBase)) {
+//             matchFunc['approvalCreatorBase._id'] = new mongoose.Types.ObjectId(cBase);
+//         } else {
+//             matchFunc['approvalCreatorBase.plantCode'] = { $regex: `^${cBase}$`, $options: 'i' };
+//         }
+//     }
+//     if (funcId || accTyp>2) {
+//         if (mongoose.Types.ObjectId.isValid(funcId)) {
+//             matchFunc['approvalFunction._id'] = new mongoose.Types.ObjectId(funcId);
+//         } else {
+//             matchFunc['approvalFunction.departmentCode'] = { $regex: `^${funcId}$`, $options: 'i' };
+//         }
+//     }
+
+//     const pipeline = [
+//         // Populate plant
+//         { $lookup: { from: 'plants', localField: 'approvalCreatorBase', foreignField: '_id', as: 'approvalCreatorBase' } },
+//         { $unwind: '$approvalCreatorBase' },
+
+//         // Populate department
+//         { $lookup: { from: 'departments', localField: 'approvalFunction', foreignField: '_id', as: 'approvalFunction' } },
+//         { $unwind: '$approvalFunction' },
+
+//         // Dynamic filter
+//         ...(Object.keys(matchFunc).length ? [{ $match: matchFunc }] : []),
+
+//         // createdby
+//         { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
+//         { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
+
+//         // updatedby
+//         { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
+//         { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
+
+//         // approvalDetails unwind
+//         { $unwind: { path: "$approvalDetails", preserveNullAndEmptyArrays: true } },
+
+//         // approvers unwind
+//         { $unwind: { path: "$approvalDetails.approvers", preserveNullAndEmptyArrays: true } },
+
+//         // Populate approver account
+//         { $lookup: { from: "accounts", localField: "approvalDetails.approvers.approverAccount", foreignField: "_id", as: "approvalDetails.approvers.approverAccount" } },
+
+//         // Convert approverAccount array to object
+//         {
+//             $addFields: {
+//                 "approvalDetails.approvers.approverAccount": { $arrayElemAt: [ "$approvalDetails.approvers.approverAccount", 0 ] }
+//             }
+//         },
+
+//         // Group approvers back per approval step
+//         {
+//             $group: {
+//                 _id: {
+//                     rootId: "$_id",
+//                     approvalDetailsId: "$approvalDetails._id",
+//                 },
+//                 root: { $first: "$$ROOT" },
+//                 approvers: { $push: "$approvalDetails.approvers" },
+//             }
+//         },
+
+//         // Rebuild approvalDetails
+//         {
+//             $group: {
+//                 _id: "$_id.rootId",
+//                 root: { $first: "$root" },
+//                 approvalDetails: {
+//                     $push: {
+//                         _id: "$_id.approvalDetailsId",
+//                         approvalLevel: "$root.approvalDetails.approvalLevel",
+//                         approvalTitle: "$root.approvalDetails.approvalTitle",
+//                         approvalTag: "$root.approvalDetails.approvalTag",
+//                         approvers: "$approvers",
+//                     },
+//                 },
+//             },
+//         },
+
+//         // FINAL PERMANENT SORT (approvalDetails array)
+//         {
+//             $addFields: {
+//                 approvalDetails: {
+//                     $map: {
+//                         input: {
+//                             $sortArray: {
+//                                 input: "$approvalDetails",
+//                                 sortBy: { approvalLevel: 1 },
+//                             },
+//                         },
+//                         as: "item",
+//                         in: {
+//                             $mergeObjects: [
+//                                 "$$item",
+//                                 {
+//                                     approvers: {
+//                                         $sortArray: {
+//                                             input: "$$item.approvers",
+//                                             sortBy: { _id: 1 },
+//                                         },
+//                                     },
+//                                 },
+//                             ],
+//                         },
+//                     },
+//                 },
+//             },
+//         },
+
+//         // Merge root back
+//         { $replaceRoot: { newRoot: { $mergeObjects: [ "$root", { approvalDetails: "$approvalDetails" } ] } } },
+
+//         // Optional IST fields
+//         {
+//             $addFields: {
+//                 createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
+//                 updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
+//             }
+//         },
+
+//         { $sort: { updatedAt: -1 } }
+//     ];
+//     const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline)
+//     return dynapprvlRecords[0]
+// }
 export const fetchApprovalDetails = async (cBase, funcId, user) => {
-    // console.log(funcId);
-    const accTyp = parseInt(user?.acc_typ?.heirarchy || 0)
-    // console.log(accTyp);
-
-    const matchFunc = {};
-    if (cBase || accTyp>2) {
-        if (mongoose.Types.ObjectId.isValid(cBase)) {
-            matchFunc['approvalCreatorBase._id'] = new mongoose.Types.ObjectId(cBase);
-        } else {
-            matchFunc['approvalCreatorBase.plantCode'] = { $regex: `^${cBase}$`, $options: 'i' };
-        }
-    }
-    if (funcId || accTyp>2) {
-        if (mongoose.Types.ObjectId.isValid(funcId)) {
-            matchFunc['approvalFunction._id'] = new mongoose.Types.ObjectId(funcId);
-        } else {
-            matchFunc['approvalFunction.departmentCode'] = { $regex: `^${funcId}$`, $options: 'i' };
-        }
-    }
-
-    const pipeline = [
-        // Populate plant
-        { $lookup: { from: 'plants', localField: 'approvalCreatorBase', foreignField: '_id', as: 'approvalCreatorBase' } },
-        { $unwind: '$approvalCreatorBase' },
-
-        // Populate department
-        { $lookup: { from: 'departments', localField: 'approvalFunction', foreignField: '_id', as: 'approvalFunction' } },
-        { $unwind: '$approvalFunction' },
-
-        // Dynamic filter
-        ...(Object.keys(matchFunc).length ? [{ $match: matchFunc }] : []),
-
-        // createdby
-        { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
-        { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
-
-        // updatedby
-        { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
-        { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
-
-        // approvalDetails unwind
-        { $unwind: { path: "$approvalDetails", preserveNullAndEmptyArrays: true } },
-
-        // approvers unwind
-        { $unwind: { path: "$approvalDetails.approvers", preserveNullAndEmptyArrays: true } },
-
-        // Populate approver account
-        { $lookup: { from: "accounts", localField: "approvalDetails.approvers.approverAccount", foreignField: "_id", as: "approvalDetails.approvers.approverAccount" } },
-
-        // Convert approverAccount array to object
-        {
-            $addFields: {
-                "approvalDetails.approvers.approverAccount": { $arrayElemAt: [ "$approvalDetails.approvers.approverAccount", 0 ] }
-            }
-        },
-
-        // Group approvers back per approval step
-        {
-            $group: {
-                _id: {
-                    rootId: "$_id",
-                    approvalDetailsId: "$approvalDetails._id",
-                },
-                root: { $first: "$$ROOT" },
-                approvers: { $push: "$approvalDetails.approvers" },
-            }
-        },
-
-        // Rebuild approvalDetails
-        {
-            $group: {
-                _id: "$_id.rootId",
-                root: { $first: "$root" },
-                approvalDetails: {
-                    $push: {
-                        _id: "$_id.approvalDetailsId",
-                        approvalLevel: "$root.approvalDetails.approvalLevel",
-                        approvalTitle: "$root.approvalDetails.approvalTitle",
-                        approvalTag: "$root.approvalDetails.approvalTag",
-                        approvers: "$approvers",
-                    },
-                },
-            },
-        },
-
-        // FINAL PERMANENT SORT (approvalDetails array)
-        {
-            $addFields: {
-                approvalDetails: {
-                    $map: {
-                        input: {
-                            $sortArray: {
-                                input: "$approvalDetails",
-                                sortBy: { approvalLevel: 1 },
-                            },
-                        },
-                        as: "item",
-                        in: {
-                            $mergeObjects: [
-                                "$$item",
-                                {
-                                    approvers: {
-                                        $sortArray: {
-                                            input: "$$item.approvers",
-                                            sortBy: { _id: 1 },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                },
-            },
-        },
-
-        // Merge root back
-        { $replaceRoot: { newRoot: { $mergeObjects: [ "$root", { approvalDetails: "$approvalDetails" } ] } } },
-
-        // Optional IST fields
-        {
-            $addFields: {
-                createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
-                updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
-            }
-        },
-
-        { $sort: { updatedAt: -1 } }
-    ];
-    const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline)
+    const dynapprvlRecords = await dynapprvlModel.findOne({ approvalCreatorBase:cBase, approvalFunction:funcId })
+    .populate("approvalCreatorBase")
+    .populate("approvalFunction")
+    .populate("createdby")
+    .populate("updatedby")
+    .populate("approvalDetails.approvers.approverAccount")
+    .lean();
     return dynapprvlRecords
+
+    // const dynapprvlRecords = await dynapprvlModel.findOne({ approvalCreatorBase:cBase, approvalFunction:funcId })
+    // .populate("approvalCreatorBase", "name code")
+    // .populate("approvalFunction", "name code")
+    // .populate("createdby", "acc_fname")
+    // .populate("updatedby", "acc_fname")
+    // .populate("approvalDetails.approvers.approverAccount","acc_fname")
+    // .lean();
+    // return dynapprvlRecords
 }
 const read = async (req, res) => {
     try {
@@ -214,6 +233,7 @@ const read = async (req, res) => {
         const user = req.user || null
 
         const records = await fetchApprovalDetails(cBase, funcId, user)
+        // console.log(records);
 
         res.status(200).json({
             message: 'Dynamic Approval records retrieved successfully',
@@ -312,7 +332,7 @@ const readById = async (req, res) => {
     try {
         const dynapprvlId = req.params.id;
         const dynapprvlRecord = await dynapprvlModel.findById(dynapprvlId)
-            .populate(['approvalCreatorBase', 'approvalFunction', { path: 'approvalDetails', populate: 'approvers'}, 'createdby', 'updatedby']);
+            .populate(['approvalCreatorBase', 'approvalFunction', { path: 'approvalDetails', populate: 'approvers'}, 'createdby', 'updatedby']).lean();
         if (!dynapprvlRecord) {
             return res.status(404).json({ message: "Dynamic Approval record not found" });
         }

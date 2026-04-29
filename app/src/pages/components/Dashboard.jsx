@@ -145,7 +145,7 @@ const Dashboard = () => {
       {/* Middle row */}
       <div className="content">
         {/* Upcoming Deadlines */}
-        {/* <div className="left">
+        <div className="left">
           <div className="panel-header">
             <h3>Upcoming Deadlines</h3>
             <CalendarTodayIcon />
@@ -166,7 +166,7 @@ const Dashboard = () => {
               </div>
             ))
           }
-        </div> */}
+        </div>
 
         {/* Recent Activity */}
         <div className="right">

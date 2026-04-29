@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React from "react";
 import "../styles/User.css";
 import AddUser from "./AddUser";
 import axiosInstance from "../../config/axiosInstance";
@@ -9,19 +9,19 @@ const USER_KEY = "user_data";
 const PAGE_SIZE = 10;
 
 const Users = () => {
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [showAddForm, setShowAddForm] = React.useState(false);
+  const [editingUser, setEditingUser] = React.useState(null);
+  const [data, setData] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
 
-  const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState("");
-  const [filterPlant, setFilterPlant] = useState("");
-  const [filterDepartment, setFilterDepartment] = useState("");
-  const [page, setPage] = useState(1);
-  const [saved, setSaved] = useState(false);
+  const [search, setSearch] = React.useState("");
+  const [filterRole, setFilterRole] = React.useState("");
+  const [filterPlant, setFilterPlant] = React.useState("");
+  const [filterDepartment, setFilterDepartment] = React.useState("");
+  const [page, setPage] = React.useState(1);
+  const [saved, setSaved] = React.useState(false);
 
-  const getAllUserData = useCallback(async () => {
+  const getAllUserData = React.useCallback(async () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get("/api/acc/fetch");
@@ -37,19 +37,19 @@ const Users = () => {
     }
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     getAllUserData();
   }, [getAllUserData]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     localStorage.setItem(USER_KEY, JSON.stringify(data));
   }, [data]);
 
-  const roles = useMemo(() => [...new Set(data?.map(d => d.acc_typ?.typname || ""))].filter(Boolean), [data]);
-  const plants = useMemo(() => [...new Set(data?.map(d => d.acc_plnt?.name || ""))].filter(Boolean), [data]);
-  const departments = useMemo(() => [...new Set(data?.map(d => d.acc_dept?.name || ""))].filter(Boolean), [data]);
+  const roles = React.useMemo(() => [...new Set(data?.map(d => d.acc_typ?.typname || ""))].filter(Boolean), [data]);
+  const plants = React.useMemo(() => [...new Set(data?.map(d => d.acc_plnt?.name || ""))].filter(Boolean), [data]);
+  const departments = React.useMemo(() => [...new Set(data?.map(d => d.acc_dept?.name || ""))].filter(Boolean), [data]);
 
-  const filtered = useMemo(() => {
+  const filtered = React.useMemo(() => {
     const q = search.toLowerCase();
     return data?.filter(u => {
       const matchSearch = !q || u.acc_fname.toLowerCase().includes(q) || u.acc_uname.toLowerCase().includes(q) || u.acc_eml.toLowerCase().includes(q);
@@ -60,17 +60,17 @@ const Users = () => {
     });
   }, [data, search, filterRole, filterPlant, filterDepartment]);
 
-  const totalPages = Math.ceil(filtered?.length / PAGE_SIZE);
-  const paged = filtered?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = React.useMemo(() => Math.ceil(filtered?.length / PAGE_SIZE), [filtered]);
+  const paged = React.useMemo(() => filtered?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page]);
 
-  const getRoleClass = (role) => {
+  const getRoleClass = React.useCallback((role) => {
     if (role?.includes("Superadmin")) return "tag blue";
     if (role?.includes("Admin")) return "tag purple";
     if (role?.includes("General")) return "tag green";
     return "tag orange";
-  };
+  }, []);
 
-  const handleAddSubmit = async (formData) => {
+  const handleAddSubmit = React.useCallback(async (formData) => {
     try {
       if (editingUser) {
         setData(prev => prev.map(u => u.acc_uname === editingUser.acc_uname ? { ...u, ...formData } : u));
@@ -106,14 +106,14 @@ const Users = () => {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [editingUser, getAllUserData]);
 
-  const handleEdit = (user) => {
+  const handleEdit = React.useCallback((user) => {
     setEditingUser(user);
     setShowAddForm(true);
-  };
+  }, []);
 
-  const handleDelete = async (id) => {
+  const handleDelete = React.useCallback(async (id) => {
     try {
       if (window.confirm("Delete this user?")) {
         const response = await axiosInstance.delete(`/api/acc/delete?id=${id}`);
@@ -124,7 +124,7 @@ const Users = () => {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, []);
 
   const resetFilters = () => {
     setSearch(""); setFilterRole(""); setFilterPlant(""); setFilterDepartment(""); setPage(1);
