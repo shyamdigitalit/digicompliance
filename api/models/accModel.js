@@ -20,8 +20,6 @@ const AccSchema = new Schema({
     acc_addrss: { type: String, trim: true },
     acc_pan: { type: String, trim: true },
     acc_gst: { type: String, trim: true },
-    // acc_img: { type: String },
-    // acc_img_publicid: { type: String },
     acc_dob: { type: Date },
     acc_anniversary: { type: Date },
     acc_is_creator: { type: Boolean, required: true, enum: [true, false], default: true },
