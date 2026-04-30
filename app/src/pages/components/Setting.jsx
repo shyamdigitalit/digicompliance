@@ -7,7 +7,7 @@ import NotificationTab from './tabcomponents/NotificationTab'
 const ApprovalFlow = React.lazy(() => import('./tabcomponents/ApprovalFlow'))
 import MasterTab from './tabcomponents/MasterTab'
 import axiosInstance from '../../config/axiosInstance'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { logout } from '../../redux/slices/auth'
 import { useNavigate } from 'react-router-dom'
 import { masterListTabs } from './tabcomponents/masterListTabs'
@@ -19,24 +19,24 @@ const Setting = React.memo(function Setting() {
   const [activeTab, setActiveTab] = React.useState("Profile");
   const [showMasters, setShowMasters] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  const [plants, setPlants] = React.useState([]);
-  const [departments, setDepartments] = React.useState([]);
-  const [saved, setSaved] = React.useState(false);
+  // const [plants, setPlants] = React.useState([]);
+  // const [departments, setDepartments] = React.useState([]);
+  // const [saved, setSaved] = React.useState(false);
   const navigate = useNavigate();
-  const [loading, setLoading] = React.useState(false)
-  const [isPending, startTransition] = React.useTransition()
+  // const [loading, setLoading] = React.useState(false)
+  const [_, startTransition] = React.useTransition()
 
-  const storedUser = useSelector(state => state.auth.user) || {};
-  const nameParts = React.useMemo(() => storedUser.acc_fname ? storedUser.acc_fname.split(" ") : ["", ""], [storedUser]);
-  const [profile, setProfile] = React.useState({
-    acc_fname: storedUser.acc_fname || "",
-    acc_eml: storedUser.acc_eml || "",
-    acc_phn: storedUser.acc_phn || "",
-    acc_comp: storedUser.acc_comp || "",
-    acc_plnt: storedUser.acc_plnt?._id || null,
-    acc_dept: storedUser.acc_dept?._id || null,
-  });
-  const initials = React.useMemo(() => `${nameParts.join(" ")?.[0] || "U"}`.toUpperCase(), [nameParts]);
+  // const storedUser = useSelector(state => state.auth.user) || {};
+  // const nameParts = React.useMemo(() => storedUser.acc_fname ? storedUser.acc_fname.split(" ") : ["", ""], []);
+  // const [profile, setProfile] = React.useState({
+  //   acc_fname: storedUser.acc_fname || "",
+  //   acc_eml: storedUser.acc_eml || "",
+  //   acc_phn: storedUser.acc_phn || "",
+  //   acc_comp: storedUser.acc_comp || "",
+  //   acc_plnt: storedUser.acc_plnt?._id || null,
+  //   acc_dept: storedUser.acc_dept?._id || null,
+  // });
+  // const initials = React.useMemo(() => `${nameParts.join(" ")?.[0] || "U"}`.toUpperCase(), [nameParts]);
 
   const handleSidebar = React.useCallback(() => setSidebarOpen(v => !v), [])
 
@@ -52,7 +52,7 @@ const Setting = React.memo(function Setting() {
     setSidebarOpen(false);
   }, [])
 
-  const handleLogout = React.useCallback(async () => {
+  const handleLogout = async () => {
     try {
       const response = await axiosInstance.post("/api/auth/logout");
       if (response.status === 200) {
@@ -61,7 +61,7 @@ const Setting = React.memo(function Setting() {
         navigate("/login");
       }
     } catch (error) { console.error(error); }
-  }, [logout]);
+  };
 
   return (
     <>

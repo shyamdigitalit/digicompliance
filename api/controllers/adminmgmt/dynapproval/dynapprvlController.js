@@ -209,22 +209,13 @@ const create = async (req, res) => {
 // }
 export const fetchApprovalDetails = async (cBase, funcId, user) => {
     const dynapprvlRecords = await dynapprvlModel.findOne({ approvalCreatorBase:cBase, approvalFunction:funcId })
-    .populate("approvalCreatorBase")
-    .populate("approvalFunction")
-    .populate("createdby")
-    .populate("updatedby")
-    .populate("approvalDetails.approvers.approverAccount")
+    .populate("approvalCreatorBase", "name code")
+    .populate("approvalFunction", "name code")
+    .populate("createdby", "acc_uname acc_fname")
+    .populate("updatedby", "acc_uname acc_fname")
+    .populate("approvalDetails.approvers.approverAccount","acc_uname acc_fname")
     .lean();
     return dynapprvlRecords
-
-    // const dynapprvlRecords = await dynapprvlModel.findOne({ approvalCreatorBase:cBase, approvalFunction:funcId })
-    // .populate("approvalCreatorBase", "name code")
-    // .populate("approvalFunction", "name code")
-    // .populate("createdby", "acc_fname")
-    // .populate("updatedby", "acc_fname")
-    // .populate("approvalDetails.approvers.approverAccount","acc_fname")
-    // .lean();
-    // return dynapprvlRecords
 }
 const read = async (req, res) => {
     try {

@@ -9,14 +9,13 @@ import { uploadFiles, deleteFiles } from '../../utilities/fileOperations.js';
 import { isValidObjectId } from '../../utilities/isValidObjectId.js';
 import { safeJSONParse } from '../../utilities/safeJSONParse.js';
 import { fetchApprovalDetails } from '../adminmgmt/dynapproval/dynapprvlController.js';
-const { Types } = mongoose;
 import { mailConfig } from '../../configs/mailConfig.js';
 
 /* ======================================================
    Helpers
 ====================================================== */
 
-const toObjectId = v => (isValidObjectId(v) ? new Types.ObjectId(v) : null);
+const toObjectId = v => (isValidObjectId(v) ? new mongoose.Types.ObjectId(v) : null);
 
 const mapIds = payload => ({
     plant: toObjectId(payload.plant),
@@ -202,7 +201,7 @@ const calculateApproval = (user, maxLvl, currLvl, flag) => {
 
 const sendMailToApprover = async (plant, department, currentPendingApprovalLevel) => {
     const approvals = await fetchApprovalDetails(String(plant?._id), String(department?._id), null);
-    const currentLevelApprovers = approvals[0]?.approvalDetails
+    const currentLevelApprovers = approvals?.approvalDetails
     ?.find(ad => ad.approvalLevel === parseInt(currentPendingApprovalLevel, 10))
     ?.approvers?.map(a => ({ ...a, approvalLevel: parseInt(currentPendingApprovalLevel, 10) })) || [];
 
@@ -295,7 +294,10 @@ export const create = async (req, res) => {
 
         const approvals = await fetchApprovalDetails(String(plantId), String(departmentId), user);
         // console.log(approvals);
-        const hasApproval = approvals.length > 0;
+        let hasApproval = true;
+        if (!approvals) {
+            hasApproval = false;
+        }
 
         const compliance = await complianceModel.create({
             ...compPayload,
@@ -331,7 +333,7 @@ export const create = async (req, res) => {
 export const read = async (req, res) => {
     try {
         const result = await fetchComplianceDetails(req.user);
-        res.status(result.success ? 200 : 400).json({ success: result.success, data: result.data });
+        res.status(result.success ? 200 : 400).json({ message: result.message, success: result.success, data: result.data });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -352,9 +354,9 @@ export const readById = async (req, res) => {
             .populate(['plant', 'department', 'createdby', 'updatedby'])
             .lean();
 
-        if (!data) return res.status(404).json({ success: false });
+        if (!data) return res.status(404).json({ message: 'Compliance record not found', success: false });
 
-        res.status(200).json({ success: true, data });
+        res.status(200).json({ message: 'Compliance record retrieved successfully', success: true, data });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -409,7 +411,7 @@ export const approve = async (req, res) => {
         const { plant, department, currentPendingApprovalLevel } = safeJSONParse(req.body);
 
         const approvals = await fetchApprovalDetails(String(plant?._id), String(department?._id), user);
-        const result = calculateApproval(user, approvals[0]?.approvalDetails?.length, currentPendingApprovalLevel, flag);
+        const result = calculateApproval(user, approvals?.approvalDetails?.length, currentPendingApprovalLevel, flag);
 
         const apprvData = await complianceModel.findByIdAndUpdate(
             id,

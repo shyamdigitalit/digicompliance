@@ -295,7 +295,7 @@ const Compliance = React.memo(function Compliance() {
 
   const handleStatusChange = React.useCallback((id, newStatus) => {
     setData(prev => prev.map(d => d._id === id ? { ...d, status: newStatus } : d));
-  }, setData);
+  }, []);
 
   const handleExport = React.useCallback(() => {
     if (!paged.length) {

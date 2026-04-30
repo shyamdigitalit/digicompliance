@@ -201,7 +201,7 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
     } catch (error) {
       console.error(error);
     }
-  }, [isSubmitting, setIsSubmitting, form, files, removedFileIds, onSubmit]);
+  }, [form, files, removedFileIds, onSubmit, isHierarchyThree, isSubmitting, user]);
 
   React.useEffect(() => {
     if (isHierarchyThree) {
