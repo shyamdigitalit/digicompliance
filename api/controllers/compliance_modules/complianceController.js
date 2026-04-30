@@ -293,7 +293,7 @@ export const create = async (req, res) => {
         const { uploaded } = await uploadFiles([].concat(files));
 
         const approvals = await fetchApprovalDetails(String(plantId), String(departmentId), user);
-        // console.log(approvals);
+        console.log(approvals);
         let hasApproval = true;
         if (!approvals) {
             hasApproval = false;
