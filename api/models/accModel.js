@@ -31,6 +31,9 @@ const AccSchema = new Schema({
     updatedby: { type: Types.ObjectId, ref: 'Account' }
 }, { timestamps: true });
 
+AccSchema.index({ acc_uname: 1 }, { unique: true });
+AccSchema.index({ acc_typ: 1, acc_plnt: 1, acc_dept: 1, acc_desig: 1, status: 1 });
+
 export default model('Account', AccSchema);
 
 

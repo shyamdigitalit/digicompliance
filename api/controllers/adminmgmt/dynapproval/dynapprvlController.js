@@ -236,72 +236,169 @@ const read = async (req, res) => {
     }
 };
 
+// export const fetchAvailableAccounts = async (cBase, funcId) => {
+//     const matchStage = {
+//         $match: {
+//             $or: [
+//                 // ✅ Case 1: hierarchy >= 2 with plant/department condition
+//                 {
+//                     $and: [
+//                     { "acc_typ.heirarchy": { $gt: 2 } },
+
+//                     ...(cBase
+//                         ? [
+//                             mongoose.Types.ObjectId.isValid(cBase)
+//                             ? { "acc_plnt._id": new mongoose.Types.ObjectId(cBase) }
+//                             : { "acc_plnt.code": { $regex: `^${cBase}$`, $options: "i" } }
+//                         ]
+//                         : []),
+
+//                     ...(funcId
+//                         ? [
+//                             {
+//                             $or: [
+//                                 mongoose.Types.ObjectId.isValid(funcId)
+//                                 ? { "acc_dept._id": new mongoose.Types.ObjectId(funcId) }
+//                                 : { "acc_dept.code": { $regex: `^${funcId}$`, $options: "i" } },
+//                                 { acc_dept: null }, // ✅ allow plant-only mapping
+//                             ]
+//                             }
+//                         ]
+//                         : [])
+//                     ]
+//                 },
+
+//                 // ✅ Case 2: hierarchy < 2 (no restriction)
+//                 {
+//                     "acc_typ.heirarchy": { $lte: 2 }
+//                 }
+//             ]
+//         }
+//     };
+
+//     const pipeline = [
+//         { $lookup: { from: 'accounttypes', localField: 'acc_typ', foreignField: '_id', as: 'acc_typ' } },
+//         { $unwind: { path: '$acc_typ', preserveNullAndEmptyArrays: true } },
+//         { $lookup: { from: 'plants', localField: 'acc_plnt', foreignField: '_id', as: 'acc_plnt' } },
+//         { $unwind: { path: '$acc_plnt', preserveNullAndEmptyArrays: true } },
+//         { $lookup: { from: 'departments', localField: 'acc_dept', foreignField: '_id', as: 'acc_dept' } },
+//         { $unwind: { path: '$acc_dept', preserveNullAndEmptyArrays: true } },
+//         { $lookup: { from: 'designations', localField: 'acc_desig', foreignField: '_id', as: 'acc_desig' } },
+//         { $unwind: { path: '$acc_desig', preserveNullAndEmptyArrays: true } },
+//         { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
+//         { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
+//         { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
+//         { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
+
+//         // Dynamic filter
+//         matchStage,
+
+//         { $addFields: {
+//             createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
+//             updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
+//         }}
+//     ];
+
+//     const accounts = await accModel.aggregate(pipeline);
+//     return accounts;
+// }
+// export const fetchAvailableAccounts = async (cBase, funcId) => {
+//     const matchStage = {
+//         $match: {
+//             $or: [
+//                 // ✅ Case 1: hierarchy >= 2 with plant/department condition
+//                 {
+//                     $and: [
+//                     { "acc_typ.heirarchy": { $gt: 2 } },
+
+//                     ...(cBase
+//                         ? [
+//                             mongoose.Types.ObjectId.isValid(cBase)
+//                             ? { "acc_plnt._id": new mongoose.Types.ObjectId(cBase) }
+//                             : { "acc_plnt.code": { $regex: `^${cBase}$`, $options: "i" } }
+//                         ]
+//                         : []),
+
+//                     ...(funcId
+//                         ? [
+//                             {
+//                             $or: [
+//                                 mongoose.Types.ObjectId.isValid(funcId)
+//                                 ? { "acc_dept._id": new mongoose.Types.ObjectId(funcId) }
+//                                 : { "acc_dept.code": { $regex: `^${funcId}$`, $options: "i" } },
+//                                 { acc_dept: null }, // ✅ allow plant-only mapping
+//                             ]
+//                             }
+//                         ]
+//                         : [])
+//                     ]
+//                 },
+
+//                 // ✅ Case 2: hierarchy < 2 (no restriction)
+//                 {
+//                     "acc_typ.heirarchy": { $lte: 2 }
+//                 }
+//             ]
+//         }
+//     };
+//     const query = matchStage.$match ? { $and: [ matchStage.$match ] } : {};
+
+//     const accounts = accModel.find(query)
+//         .select("_id acc_fname acc_typ acc_plnt acc_dept")
+//         .lean();
+//     return accounts;
+// }
+
 export const fetchAvailableAccounts = async (cBase, funcId) => {
-    const matchStage = {
-        $match: {
-            $or: [
-                // ✅ Case 1: hierarchy >= 2 with plant/department condition
-                {
-                    $and: [
-                    { "acc_typ.heirarchy": { $gt: 2 } },
+    // 1. Pre-process IDs to avoid validation overhead inside the query
+    const isCBaseId = mongoose.Types.ObjectId.isValid(cBase);
+    const isFuncId = mongoose.Types.ObjectId.isValid(funcId);
 
-                    ...(cBase
-                        ? [
-                            mongoose.Types.ObjectId.isValid(cBase)
-                            ? { "acc_plnt._id": new mongoose.Types.ObjectId(cBase) }
-                            : { "acc_plnt.code": { $regex: `^${cBase}$`, $options: "i" } }
-                        ]
-                        : []),
-
-                    ...(funcId
-                        ? [
-                            {
-                            $or: [
-                                mongoose.Types.ObjectId.isValid(funcId)
-                                ? { "acc_dept._id": new mongoose.Types.ObjectId(funcId) }
-                                : { "acc_dept.code": { $regex: `^${funcId}$`, $options: "i" } },
-                                { acc_dept: null }, // ✅ allow plant-only mapping
-                            ]
-                            }
-                        ]
-                        : [])
-                    ]
-                },
-
-                // ✅ Case 2: hierarchy < 2 (no restriction)
-                {
-                    "acc_typ.heirarchy": { $lte: 2 }
-                }
+    // 2. Define the main query
+    // Note: Filtering on populated fields (like acc_typ.heirarchy) 
+    // requires a two-step process or keeping the logic in the match.
+    const query = {
+        $or: [
+        { "acc_typ.heirarchy": { $lte: 2 } }, // This only works if denormalized
+        {
+            $and: [
+            // Filter by plant ID directly if it's an ObjectId
+            ...(cBase && isCBaseId ? [{ acc_plnt: new mongoose.Types.ObjectId(cBase) }] : []),
+            // For code-based filtering or hierarchy, we usually use populate match
             ]
         }
+        ]
     };
 
-    const pipeline = [
-        { $lookup: { from: 'accounttypes', localField: 'acc_typ', foreignField: '_id', as: 'acc_typ' } },
-        { $unwind: { path: '$acc_typ', preserveNullAndEmptyArrays: true } },
-        { $lookup: { from: 'plants', localField: 'acc_plnt', foreignField: '_id', as: 'acc_plnt' } },
-        { $unwind: { path: '$acc_plnt', preserveNullAndEmptyArrays: true } },
-        { $lookup: { from: 'departments', localField: 'acc_dept', foreignField: '_id', as: 'acc_dept' } },
-        { $unwind: { path: '$acc_dept', preserveNullAndEmptyArrays: true } },
-        { $lookup: { from: 'designations', localField: 'acc_desig', foreignField: '_id', as: 'acc_desig' } },
-        { $unwind: { path: '$acc_desig', preserveNullAndEmptyArrays: true } },
-        { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
-        { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
-        { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
-        { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
+    const accounts = await accModel.find(query).populate({
+            path: 'acc_typ',
+            match: {}, // You can add filters here, but it won't hide the parent Account
+        }).populate({
+            path: 'acc_plnt',
+            match: !isCBaseId && cBase ? { code: new RegExp(`^${cBase}$`, 'i') } : {}
+        }).populate({
+            path: 'acc_dept',
+            match: !isFuncId && funcId ? { code: new RegExp(`^${funcId}$`, 'i') } : {}
+        }).populate('acc_desig createdby updatedby').lean(); // Returns plain JS objects for better performance
 
-        // Dynamic filter
-        matchStage,
+    // 3. Post-query filtering (Required for .find() if filtering by populated fields)
+    return accounts.filter(acc => {
+        const hierarchy = acc.acc_typ?.heirarchy;
+        
+        // Case 1: Hierarchy < 2
+        if (hierarchy <= 2) return true;
 
-        { $addFields: {
-            createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
-            updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
-        }}
-    ];
+        // Case 2: Hierarchy > 2 (Must match plant/dept)
+        const plantMatch = !cBase || (isCBaseId ? String(acc.acc_plnt?._id) === cBase : acc.acc_plnt?.code?.toLowerCase() === cBase.toLowerCase());
+        const deptMatch = !funcId || (isFuncId ? String(acc.acc_dept?._id) === funcId : acc.acc_dept?.code?.toLowerCase() === funcId.toLowerCase()) || acc.acc_dept === null;
 
-    const accounts = await accModel.aggregate(pipeline);
-    return accounts;
-}
+        return hierarchy > 2 && plantMatch && deptMatch;
+    }).map(acc => ({
+        ...acc,
+        createdAtITC: acc.createdAt?.toLocaleString("en-GB", { timeZone: "+05:30" }),
+        updatedAtITC: acc.updatedAt?.toLocaleString("en-GB", { timeZone: "+05:30" })
+    }));
+};
 const filterAccounts = async (req, res) => {
     try {
         const cBase = String(req.query.cbase || '').trim();
@@ -317,6 +414,7 @@ const filterAccounts = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
 
 
 const readById = async (req, res) => {

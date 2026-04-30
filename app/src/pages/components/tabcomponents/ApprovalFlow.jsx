@@ -114,7 +114,7 @@ const ApprovalFlow = React.memo(function ApprovalFlow() {
     }, [plants, departments, activePlntTab, activeDeptTab, setAllAccs]);
     React.useEffect(() => { fetchAllAccounts(); }, [fetchAllAccounts]);
 
-    const getUsedAccountIds = (stepsData) => stepsData.flatMap(s => s.approvers.map(a => a.id));
+    const getUsedAccountIds = React.useCallback((stepsData) => stepsData.flatMap(s => s.approvers.map(a => a.id)), []);
 
     const removeApprover = (si, ai) =>
         setSteps(prev => prev.map((s, i) => i === si ? { ...s, approvers: s.approvers.filter((_, j) => j !== ai) } : s));
@@ -129,7 +129,7 @@ const ApprovalFlow = React.memo(function ApprovalFlow() {
         const initials = accDetails?.acc_fname.trim().split(" ").map(w => w[0] || "").join("").slice(0, 2).toUpperCase();
         setSteps(prev => prev.map((s, i) => i === modal ? { ...s, approvers: [...s.approvers, { initials, id: accDetails?._id, name: accDetails?.acc_fname.trim(), role: modalRole.trim() || "Team Member" }] } : s));
         setModal(null);
-    }, [modalName, getUsedAccountIds, allAccs]);
+    }, [modalName, getUsedAccountIds, allAccs, modal, modalRole, steps]);
 
     const addStep = () => {
         const n = steps.length + 1;
@@ -164,12 +164,12 @@ const ApprovalFlow = React.memo(function ApprovalFlow() {
         });
         try {
             response = await axiosInstance.post(`/api/dynapprvl/create`, dynapprvlPayld);
-            console.log(response);
+            // console.log(response);
             if (response.status === 201) { setSaved(true); setTimeout(() => setSaved(false), 2500); }
             else { setError({ ...error, status: true, log: response}); setTimeout(() => setError(false), 2500)}
         }
         catch (error) {
-            console.error(response)
+            console.error(error)
         }
     };
 
