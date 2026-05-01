@@ -1,4 +1,5 @@
 import React from "react";
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import "../styles/Document.css";
 import axiosInstance from "../../config/axiosInstance";
 import Loader from "../../components/loader";
@@ -149,7 +150,6 @@ const Documents = React.memo(function Documents() {
             >
               <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} onChange={handleFileChange} accept=".pdf,.doc,.docx,.xls,.xlsx" />
               <div className="upload-content">
-                <div className="upload-icon">⬆</div>
                 <p>Click to upload or drag and drop</p>
                 <span>PDF, DOC, DOCX, XLS, XLSX (Max 50MB)</span>
               </div>
@@ -166,7 +166,7 @@ const Documents = React.memo(function Documents() {
                 <thead>
                   <tr>
                     <th className="text-nowrap">Document Name</th>
-                    <th className="text-nowrap">File Type</th>
+                    <th className="text-nowrap">Compliance ID</th>
                     <th className="text-nowrap">Size</th>
                     <th className="text-nowrap">Uploaded On</th>
                     <th className="text-nowrap">Actions</th>
@@ -177,12 +177,12 @@ const Documents = React.memo(function Documents() {
                     <tr><td colSpan={8} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No documents found</td></tr>
                   ) : fileList.map((doc) => (
                     <tr key={doc._id}>
-                      <td className="doc-name">{getFileIcon(doc.filename)} {doc.filename}</td>
-                      <td>{doc.mimetype}</td>
+                      <td className="doc-name">{(doc.filename)} {doc.filename}</td>
+                      <td>{doc.complianceId || "N/A"}</td>
                       <td>{parseFloat(doc.size/1000).toFixed(2)} KB</td>
                       <td>{new Date(doc.createdAt).toLocaleDateString()}</td>
                       <td className="actions" style={{ display: "flex", justifyContent:'center', alignItems:'center', gap: "8px" }}>
-                        <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px" }} title="Download" onClick={() => handleDownload(doc)}>⬇</button>
+                        <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px" }} title="Download" onClick={() => handleDownload(doc)}><FileDownloadOutlinedIcon /></button>
                         {/* <button onClick={() => handleDelete(doc.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button> */}
                       </td>
                     </tr>

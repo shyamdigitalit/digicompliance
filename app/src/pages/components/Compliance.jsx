@@ -1,9 +1,13 @@
 import React from "react";
+import DeleteSweepOutlinedIcon from '@mui/icons-material/DeleteSweepOutlined';
+import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
+import FolderZipOutlinedIcon from '@mui/icons-material/FolderZipOutlined';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import AddCompliance from "./AddCompliance";
 import "../styles/Compliance.css";
 import axiosInstance from "../../config/axiosInstance";
 import { useSelector } from "react-redux";
-import FolderZipIcon from '@mui/icons-material/FolderZip';
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
@@ -475,29 +479,29 @@ const Compliance = React.memo(function Compliance() {
                               onClick={() => handleEdit(item)}
                               style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }}
                               title="Edit"
-                            >✏</button>
+                            ><EditNoteOutlinedIcon /></button>
                             <button
                               onClick={() => handleZipDownload(item.allDocs, item.complianceId)}
                               style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#e525eb", fontSize: "5px" }}
                               title="ZIP Download"
-                            ><FolderZipIcon /></button>
+                            ><FolderZipOutlinedIcon /></button>
                             <button
                               onClick={() => handleApprove(item)}
                               style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#11bd2e", fontSize: "16px" }}
                               disabled={!item.isApprover}
                               title="Approve"
-                            >✓</button>
+                            ><DoneAllIcon /></button>
                             <button
                               onClick={() => handleReject(item)}
                               style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#bd6d11", fontSize: "16px" }}
                               disabled={!item.isApprover}
                               title="Reject"
-                            >!</button>
+                            ><CancelOutlinedIcon /></button>
                             <button
                               onClick={() => handleDelete(item._id)}
                               style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "16px" }}
                               title="Delete"
-                            >🗑</button>
+                            ><DeleteSweepOutlinedIcon /></button>
                           </td>
                         </tr>
                       ))}

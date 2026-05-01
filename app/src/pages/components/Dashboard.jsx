@@ -6,39 +6,36 @@ import ErrorOutlineIcon       from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CalendarTodayIcon      from '@mui/icons-material/CalendarToday';
 
-const COMPLIANCE_KEY = "compliance_data";
-const ACTIVITY_KEY   = "activity_log";
+function futureDate(daysFromNow) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  return d.toISOString().slice(0, 10);
+}
 
 const defaultCompliance = [
-  { id:"CMP-001", plant:"Mumbai Plant A",    dept:"Operations", type:"Safety Inspection", category:"Health & Safety",    freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate:"2026-04-11" },
-  { id:"CMP-002", plant:"Delhi Plant B",     dept:"Quality",    type:"ISO Audit Review",  category:"Quality Management", freq:"Quarterly", criticality:"Critical", status:"Pending",     dueDate:"2026-04-14" },
-  { id:"CMP-003", plant:"Bangalore Plant C", dept:"HR",         type:"Labour Law Compliance", category:"Statutory",    freq:"Annual",    criticality:"Medium",   status:"In Progress", dueDate:"2026-04-19" },
-  { id:"CMP-004", plant:"Mumbai Plant A",    dept:"Environment",type:"Environmental Assessment", category:"Environmental", freq:"Monthly", criticality:"High",   status:"Pending",     dueDate:"2026-04-21" },
-  { id:"CMP-005", plant:"Delhi Plant B",     dept:"Operations", type:"Fire Safety",        category:"Health & Safety",    freq:"Weekly",    criticality:"High",     status:"Completed",   dueDate:"2026-04-22" },
-  { id:"CMP-006", plant:"Bangalore Plant C", dept:"Quality",    type:"Product Testing",    category:"Quality Management", freq:"Daily",     criticality:"Medium",   status:"In Progress", dueDate:"2026-04-17" },
-  { id:"CMP-007", plant:"Mumbai Plant A",    dept:"HR",         type:"Employee Training",  category:"Statutory",          freq:"Quarterly", criticality:"Low",      status:"Pending",     dueDate:"2026-04-23" },
-  { id:"CMP-008", plant:"Delhi Plant B",     dept:"Environment",type:"Waste Management",   category:"Environmental",      freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate:"2026-04-26" },
+  { id:"CMP-001", plant:"Mumbai Plant A",    dept:"Operations",  type:"Safety Inspection",       category:"Health & Safety",    freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate: futureDate(-5)  },
+  { id:"CMP-002", plant:"Delhi Plant B",     dept:"Quality",     type:"ISO Audit Review",        category:"Quality Management", freq:"Quarterly", criticality:"Critical", status:"Pending",     dueDate: futureDate(3)   },
+  { id:"CMP-003", plant:"Bangalore Plant C", dept:"HR",          type:"Labour Law Compliance",   category:"Statutory",          freq:"Annual",    criticality:"Medium",   status:"In Progress", dueDate: futureDate(8)   },
+  { id:"CMP-004", plant:"Mumbai Plant A",    dept:"Environment", type:"Environmental Assessment", category:"Environmental",      freq:"Monthly",   criticality:"High",     status:"Pending",     dueDate: futureDate(5)   },
+  { id:"CMP-005", plant:"Delhi Plant B",     dept:"Operations",  type:"Fire Safety",             category:"Health & Safety",    freq:"Weekly",    criticality:"High",     status:"Completed",   dueDate: futureDate(-2)  },
+  { id:"CMP-006", plant:"Bangalore Plant C", dept:"Quality",     type:"Product Testing",         category:"Quality Management", freq:"Daily",     criticality:"Medium",   status:"In Progress", dueDate: futureDate(12)  },
+  { id:"CMP-007", plant:"Mumbai Plant A",    dept:"HR",          type:"Employee Training",       category:"Statutory",          freq:"Quarterly", criticality:"Low",      status:"Pending",     dueDate: futureDate(15)  },
+  { id:"CMP-008", plant:"Delhi Plant B",     dept:"Environment", type:"Waste Management",        category:"Environmental",      freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate: futureDate(-1)  },
 ];
 
 const defaultActivities = [
-  { text:"Completed Safety Inspection - Mumbai Plant A", user:"John Smith",      time:"2 hours ago" },
-  { text:"Approved Quality Audit - Delhi plant",         user:"Michael Chen",    time:"4 hours ago" },
-  { text:"Updated Labour Law Compliance",                user:"Sarah Johnson",   time:"5 hours ago" },
-  { text:"Created New Compliance Record",                user:"Emily Davis",     time:"1 day ago"   },
-  { text:"Rejected Product Testing Report",              user:"Robert Wilson",   time:"1 day ago"   },
-  { text:"Scheduled Safety Training Session - Bengaluru",user:"Lisa Patel",      time:"2 days ago"  },
+  { text:"Completed Safety Inspection - Mumbai Plant A",  user:"John Smith",    time:"2 hours ago" },
+  { text:"Approved Quality Audit - Delhi plant",          user:"Michael Chen",  time:"4 hours ago" },
+  { text:"Updated Labour Law Compliance",                 user:"Sarah Johnson", time:"5 hours ago" },
+  { text:"Created New Compliance Record",                 user:"Emily Davis",   time:"1 day ago"   },
+  { text:"Rejected Product Testing Report",               user:"Robert Wilson", time:"1 day ago"   },
+  { text:"Scheduled Safety Training Session - Bengaluru", user:"Lisa Patel",    time:"2 days ago"  },
 ];
 
 const Dashboard = () => {
-  const complianceData = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem(COMPLIANCE_KEY)) || defaultCompliance; }
-    catch { return defaultCompliance; }
-  }, []);
-
-  const activities = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem(ACTIVITY_KEY)) || defaultActivities; }
-    catch { return defaultActivities; }
-  }, []);
+  // No localStorage — use default data directly
+  const complianceData = defaultCompliance;
+  const activities     = defaultActivities;
 
   const stats = useMemo(() => ({
     total:     complianceData.length,
@@ -49,9 +46,14 @@ const Dashboard = () => {
 
   const upcomingDeadlines = useMemo(() => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     return complianceData
       .filter(c => c.status !== "Completed" && c.dueDate)
-      .map(c => ({ ...c, daysLeft: Math.ceil((new Date(c.dueDate) - today) / 86400000) }))
+      .map(c => {
+        const due = new Date(c.dueDate);
+        due.setHours(0, 0, 0, 0);
+        return { ...c, daysLeft: Math.round((due - today) / 86400000) };
+      })
       .sort((a, b) => a.daysLeft - b.daysLeft)
       .slice(0, 4);
   }, [complianceData]);
@@ -70,24 +72,24 @@ const Dashboard = () => {
   }, [complianceData]);
 
   const statusDist = useMemo(() => {
-    const total = complianceData.length || 1;
+    const total      = complianceData.length || 1;
     const completed  = complianceData.filter(c => c.status === "Completed").length;
     const inProgress = complianceData.filter(c => c.status === "In Progress").length;
     const pending    = complianceData.filter(c => c.status === "Pending" || c.status === "Overdue").length;
     return [
-      { label:"Good",  count:completed,  pct:Math.round(completed  / total * 100), cls:"good" },
-      { label:"Fair",  count:inProgress, pct:Math.round(inProgress / total * 100), cls:"fair" },
-      { label:"Poor",  count:pending,    pct:Math.round(pending    / total * 100), cls:"poor" },
+      { label:"Good", count:completed,  pct:Math.round(completed  / total * 100), cls:"good" },
+      { label:"Fair", count:inProgress, pct:Math.round(inProgress / total * 100), cls:"fair" },
+      { label:"Poor", count:pending,    pct:Math.round(pending    / total * 100), cls:"poor" },
     ];
   }, [complianceData]);
 
-  const tagClass = (p) =>
+  const tagClass = p =>
     p === "Critical" ? "tag red" : p === "High" ? "tag orange" : p === "Medium" ? "tag yellow" : "tag blue";
 
-  const daysLabel = (d) => d < 0 ? `${Math.abs(d)} days overdue` : d === 0 ? "Due today" : `${d} days`;
-  const daysClass = (d) => `deadline-days${d < 0 ? " overdue-text" : d <= 5 ? " urgent-text" : ""}`;
+  const daysLabel = d => d < 0 ? `${Math.abs(d)} days overdue` : d === 0 ? "Due today" : `${d} days`;
+  const daysClass = d => `deadline-days${d < 0 ? " overdue-text" : d <= 5 ? " urgent-text" : ""}`;
 
-  const formatDate = (iso) => {
+  const formatDate = iso => {
     if (!iso) return "";
     const d = new Date(iso);
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -97,13 +99,11 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* Page header */}
       <div className="dash-header">
         <h2>Dashboard</h2>
         <p>Overview of compliance status and activities</p>
       </div>
 
-      {/* Stat cards */}
       <div className="stats">
         <div className="card">
           <div className="card-top">
@@ -113,7 +113,6 @@ const Dashboard = () => {
           <h2>{stats.total}</h2>
           <div className="card-sub positive">↑ +12 this month</div>
         </div>
-
         <div className="card">
           <div className="card-top">
             <span className="card-label">Pending</span>
@@ -122,7 +121,6 @@ const Dashboard = () => {
           <h2 style={{ color:"#f97316" }}>{stats.pending}</h2>
           <div className="card-sub warning">Requires attention</div>
         </div>
-
         <div className="card">
           <div className="card-top">
             <span className="card-label">Critical</span>
@@ -131,7 +129,6 @@ const Dashboard = () => {
           <h2 style={{ color:"#ef4444" }}>{stats.critical}</h2>
           <div className="card-sub danger">High priority</div>
         </div>
-
         <div className="card">
           <div className="card-top">
             <span className="card-label">Completed</span>
@@ -142,10 +139,8 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Middle row */}
       <div className="content">
-        {/* Upcoming Deadlines */}
-        {/* <div className="left">
+        <div className="left">
           <div className="panel-header">
             <h3>Upcoming Deadlines</h3>
             <CalendarTodayIcon />
@@ -166,13 +161,10 @@ const Dashboard = () => {
               </div>
             ))
           }
-        </div> */}
+        </div>
 
-        {/* Recent Activity */}
         <div className="right">
-          <div className="panel-header">
-            <h3>Recent Activity</h3>
-          </div>
+          <div className="panel-header"><h3>Recent Activity</h3></div>
           {activities.slice(0, 6).map((item, i) => (
             <div className="activity-item" key={i}>
               <div className="activity-dot" />
@@ -186,7 +178,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Bottom row */}
       <div className="bottom">
         <div className="progress">
           <h4>Compliance by Category</h4>

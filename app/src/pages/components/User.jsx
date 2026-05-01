@@ -1,5 +1,7 @@
 import React from "react";
 import "../styles/User.css";
+import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
+import DeleteSweepOutlinedIcon from '@mui/icons-material/DeleteSweepOutlined';
 import AddUser from "./AddUser";
 import axiosInstance from "../../config/axiosInstance";
 import Loader from "../../components/loader";
@@ -205,8 +207,8 @@ const Users = () => {
                           <td>{user.acc_dept?.name}</td>
                           <td>{user.acc_typ?.heirarchy}</td>
                           <td style={{ display: "flex", gap: "8px" }}>
-                            <button onClick={() => handleEdit(user)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit">✏</button>
-                            <button onClick={() => handleDelete(user._id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                            <button onClick={() => handleEdit(user)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }} title="Edit"><EditNoteOutlinedIcon /></button>
+                            <button onClick={() => handleDelete(user._id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete"><DeleteSweepOutlinedIcon /></button>
                           </td>
                         </tr>
                       ))}

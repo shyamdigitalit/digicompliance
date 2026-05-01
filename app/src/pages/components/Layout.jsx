@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import FileOpenOutlinedIcon  from '@mui/icons-material/FileOpenOutlined';
@@ -6,10 +6,13 @@ import TextSnippetOutlinedIcon from '@mui/icons-material/TextSnippetOutlined';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import SettingsOutlinedIcon  from '@mui/icons-material/SettingsOutlined';
 import LogoutIcon            from '@mui/icons-material/Logout';
+import PersonOutlineIcon     from '@mui/icons-material/PersonOutline';
 import SearchIcon            from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import logo from "../../assets/logo.png";
 import "../styles/Dashboard.css";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+// import { logout } from "../redux/authSlice"; // ← uncomment if you have a logout action
 
 const navItems = [
   { path: "/dashboard",  label: "Dashboard",  icon: <DashboardOutlinedIcon /> },
@@ -22,8 +25,11 @@ const navItems = [
 const Layout = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
-  const [search, setSearch]       = useState("");
-  const [showDrop, setShowDrop]   = useState(false);
+  const dispatch  = useDispatch();
+  const [search, setSearch]           = useState("");
+  const [showDrop, setShowDrop]       = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
 
   const user = useSelector(state => state.auth.user) || {};
   const nameParts = user.acc_fname ? user.acc_fname.split(" ") : ["", ""];
@@ -35,10 +41,28 @@ const Layout = () => {
     location.pathname.startsWith(path) ||
     (path === "/setting" && location.pathname.startsWith("/masters"));
 
-  // const handleLogout = () => {
-  //   localStorage.removeItem("user");
-  //   navigate("/login");
-  // };
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    setShowUserMenu(false);
+    // dispatch(logout()); // ← uncomment if using Redux logout action
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
+
+  const handleProfile = () => {
+    setShowUserMenu(false);
+    navigate("/setting");
+  };
 
   const quickLinks = search.trim()
     ? navItems.filter(n => n.label.toLowerCase().includes(search.toLowerCase()))
@@ -57,6 +81,7 @@ const Layout = () => {
       {/* ── SIDEBAR ── */}
       <div className="sidebar">
         <h2 className="logo">Compliance System</h2>
+        {/* <img className="logo" src={logo} alt="Logo" /> */}
 
         <ul>
           {navItems.map(item => (
@@ -114,12 +139,32 @@ const Layout = () => {
               <NotificationsNoneIcon />
             </div>
 
-            <div className="topbar-user" onClick={() => navigate("/setting")}>
-              <div className="topbar-avatar">{initials}</div>
-              <div className="topbar-user-info">
-                <span className="topbar-user-name">{userName}</span>
-                <span className="topbar-user-role">{role}</span>
+            {/* ── USER MENU ── */}
+            <div className="topbar-user-wrap" ref={userMenuRef}>
+              <div
+                className="topbar-user"
+                onClick={() => setShowUserMenu(prev => !prev)}
+              >
+                <div className="topbar-avatar">{initials}</div>
+                <div className="topbar-user-info">
+                  <span className="topbar-user-name">{userName}</span>
+                  <span className="topbar-user-role">{role}</span>
+                </div>
               </div>
+
+              {showUserMenu && (
+                <div className="user-dropdown">
+                  <div className="user-dropdown-item" onClick={handleProfile}>
+                    <PersonOutlineIcon fontSize="small" />
+                    <span>Profile</span>
+                  </div>
+                  <div className="user-dropdown-divider" />
+                  <div className="user-dropdown-item logout" onClick={handleLogout}>
+                    <LogoutIcon fontSize="small" />
+                    <span>Logout</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
