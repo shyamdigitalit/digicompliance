@@ -27,7 +27,7 @@ const mapIds = payload => ({
     penaltyType: toObjectId(payload.penaltyType)
 });
 
-const checkApprover = async (user) => {
+export const checkApprover = async (user) => {
     const accPlnt = user?.acc_plnt?._id ? toObjectId(user.acc_plnt._id) : null;
     const accDept = user?.acc_dept?._id ? toObjectId(user.acc_dept._id) : null;
 
@@ -73,7 +73,7 @@ const checkApprover = async (user) => {
 
 
 // CR
-const fetchComplianceDetails = async user => {
+export const fetchComplianceDetails = async user => {
     if (user?.acc_typ?.heirarchy === 3 && !user?.acc_plnt && !user?.acc_dept) {
         return { success: false, message: 'Plant/Department missing' };
     }
@@ -293,7 +293,7 @@ export const create = async (req, res) => {
         const { uploaded } = await uploadFiles([].concat(files));
 
         const approvals = await fetchApprovalDetails(String(plantId), String(departmentId), user);
-        console.log(approvals);
+        // console.log(approvals);
         let hasApproval = true;
         if (!approvals) {
             hasApproval = false;

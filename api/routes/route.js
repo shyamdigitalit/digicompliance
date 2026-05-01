@@ -20,6 +20,7 @@ import criticltyController from '../controllers/masters/complncsetups/criticltyC
 import penltyController from '../controllers/masters/complncsetups/penltyController.js';
 
 import accController from '../controllers/accController.js';
+import dashController from '../controllers/dashController.js';
 import funcController from '../controllers/adminmgmt/function/funcController.js';
 import dynapprvlController from '../controllers/adminmgmt/dynapproval/dynapprvlController.js';
 import fileOpController from '../controllers/fileOpController.js';
@@ -63,6 +64,7 @@ postRoutes.forEach(route => createRoute('post', route.path, ...route.handlers));
 
 // GET
 const getRoutes = [
+    { path: '/dash/fetch', handlers: [jwtHybrdProtect, dashController.getDashboardData] },
     { path: '/comp/fetch', handlers: [jwtHybrdProtect, complianceController.read] },
     { path: '/settings/fetch', handlers: [jwtHybrdProtect, settingsController.getSettings] },
     { path: '/acctyp/fetch', handlers: [jwtHybrdProtect, acctypController.read] },

@@ -1,10 +1,11 @@
-import React, { useMemo } from "react";
+import React from "react";
 import "../styles/Dashboard.css";
 import FilePresentIcon        from '@mui/icons-material/FilePresent';
 import AccessTimeIcon         from '@mui/icons-material/AccessTime';
 import ErrorOutlineIcon       from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CalendarTodayIcon      from '@mui/icons-material/CalendarToday';
+import axiosInstance from "../../config/axiosInstance";
 
 function futureDate(daysFromNow) {
   const d = new Date();
@@ -36,15 +37,29 @@ const Dashboard = () => {
   // No localStorage — use default data directly
   const complianceData = defaultCompliance;
   const activities     = defaultActivities;
+  const [allDashData, setAllDashData] = React.useState([]);
 
-  const stats = useMemo(() => ({
+  const fetchAllDashData = React.useCallback(async () => {
+    try {
+      const response = await axiosInstance.get('/api/dash/fetch');
+      console.log(response.data.data);
+      setAllDashData(response.data.data);
+    } catch (error) {
+      console.error(error)
+    }
+  }, []);
+  React.useEffect(() => {
+    fetchAllDashData();
+  }, [fetchAllDashData]);
+
+  const stats = React.useMemo(() => ({
     total:     complianceData.length,
     pending:   complianceData.filter(c => c.status === "Pending").length,
     critical:  complianceData.filter(c => c.criticality === "Critical").length,
     completed: complianceData.filter(c => c.status === "Completed").length,
   }), [complianceData]);
 
-  const upcomingDeadlines = useMemo(() => {
+  const upcomingDeadlines = React.useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return complianceData
@@ -58,7 +73,7 @@ const Dashboard = () => {
       .slice(0, 4);
   }, [complianceData]);
 
-  const categoryBreakdown = useMemo(() => {
+  const categoryBreakdown = React.useMemo(() => {
     const cats = {};
     complianceData.forEach(c => {
       if (!cats[c.category]) cats[c.category] = { total: 0, completed: 0 };
@@ -71,7 +86,7 @@ const Dashboard = () => {
     }));
   }, [complianceData]);
 
-  const statusDist = useMemo(() => {
+  const statusDist = React.useMemo(() => {
     const total      = complianceData.length || 1;
     const completed  = complianceData.filter(c => c.status === "Completed").length;
     const inProgress = complianceData.filter(c => c.status === "In Progress").length;
@@ -95,7 +110,13 @@ const Dashboard = () => {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
   };
 
-  const completionPct = stats.total ? Math.round(stats.completed / stats.total * 100) : 0;
+  // const completionPct = stats.total ? Math.round(stats.completed / stats.total * 100) : 0;
+
+  const completionPct = React.useMemo(() => {
+    const total = parseInt(allDashData?.total) || 0;
+    const compltd = parseInt(allDashData?.byStatus?.Active) || 0;
+    return total ? Math.round(compltd / total * 100) : 0;
+  }, [allDashData]);
 
   return (
     <>
@@ -110,7 +131,7 @@ const Dashboard = () => {
             <span className="card-label">Total Compliance</span>
             <div className="card-icon blue"><FilePresentIcon style={{ color:"#2563eb" }} /></div>
           </div>
-          <h2>{stats.total}</h2>
+          <h2>{allDashData?.total}</h2>
           <div className="card-sub positive">↑ +12 this month</div>
         </div>
         <div className="card">
@@ -118,7 +139,7 @@ const Dashboard = () => {
             <span className="card-label">Pending</span>
             <div className="card-icon orange"><AccessTimeIcon style={{ color:"#f97316" }} /></div>
           </div>
-          <h2 style={{ color:"#f97316" }}>{stats.pending}</h2>
+          <h2 style={{ color:"#f97316" }}>{allDashData?.byStatus?.Pending || 0}</h2>
           <div className="card-sub warning">Requires attention</div>
         </div>
         <div className="card">
@@ -134,7 +155,7 @@ const Dashboard = () => {
             <span className="card-label">Completed</span>
             <div className="card-icon green"><CheckCircleOutlineIcon style={{ color:"#22c55e" }} /></div>
           </div>
-          <h2 style={{ color:"#22c55e" }}>{stats.completed}</h2>
+          <h2 style={{ color:"#22c55e" }}>{allDashData?.byStatus?.Active || 0}</h2>
           <div className="card-sub success">{completionPct}% completion rate</div>
         </div>
       </div>
