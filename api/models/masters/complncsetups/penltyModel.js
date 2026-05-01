@@ -10,4 +10,8 @@ const PenltySchema = new Schema({
     updatedby: { type: Types.ObjectId, ref: 'Account' }
 }, { timestamps: true })
 
+PenltySchema.index({ code: 1 }, { unique: true })
+PenltySchema.index({ name: 1 }, { unique: true })
+PenltySchema.index({ status: 1 })
+
 export default model('Penalty', PenltySchema)

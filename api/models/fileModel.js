@@ -8,7 +8,7 @@ const fileSchema = new Schema({
     mimetype: String,
     size: Number,
     path: String,
-    hash: { type: String, index: true }, // 🔥 important for duplicate detection
+    hash: String
 }, { timestamps: true });
 
 fileSchema.index({ hash: 1 }, { unique: true });

@@ -10,4 +10,8 @@ const CompfreqSchema = new Schema({
     updatedby: { type: Types.ObjectId, ref: 'Account' }
 }, { timestamps: true })
 
+CompfreqSchema.index({ code: 1 }, { unique: true })
+CompfreqSchema.index({ name: 1 }, { unique: true })
+CompfreqSchema.index({ status: 1 })
+
 export default model('Compliancefrequency', CompfreqSchema)

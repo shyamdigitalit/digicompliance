@@ -10,4 +10,8 @@ const CompcategSchema = new Schema({
     updatedby: { type: Types.ObjectId, ref: 'Account' }
 }, { timestamps: true })
 
+CompcategSchema.index({ code: 1 }, { unique: true })
+CompcategSchema.index({ name: 1 }, { unique: true })
+CompcategSchema.index({ status: 1 })
+
 export default model('Compliancecategory', CompcategSchema)

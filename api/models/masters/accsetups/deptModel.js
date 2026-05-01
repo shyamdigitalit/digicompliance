@@ -13,4 +13,8 @@ const DeptSchema = new Schema({
     timestamps: true
 });
 
+DeptSchema.index({ code: 1 }, { unique: true });
+DeptSchema.index({ name: 1 }, { unique: true });
+DeptSchema.index({ status: 1 });
+
 export default model('Department', DeptSchema);

@@ -10,4 +10,8 @@ const ComptypSchema = new Schema({
     updatedby: { type: Types.ObjectId, ref: 'Account' }
 }, { timestamps: true })
 
+ComptypSchema.index({ code: 1 }, { unique: true })
+ComptypSchema.index({ name: 1 }, { unique: true })
+ComptypSchema.index({ status: 1 })
+
 export default model('Compliancetype', ComptypSchema)

@@ -11,4 +11,8 @@ const PlntSchema = new Schema({
     updatedby: { type: Types.ObjectId, ref: 'Account' }
 }, { timestamps: true });
 
+PlntSchema.index({ code: 1 }, { unique: true });
+PlntSchema.index({ name: 1 }, { unique: true });
+PlntSchema.index({ status: 1 });
+
 export default model('Plant', PlntSchema);

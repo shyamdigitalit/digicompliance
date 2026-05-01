@@ -1,11 +1,83 @@
 import mongoose from "mongoose";
 import dynapprvlModel from "../../../models/adminmgmt/dynapproval/dynapprvlModel.js";
 import accModel from "../../../models/accModel.js";
+import plantModel from "../../../models/masters/admin/plntModel.js";
+import departmentModel from "../../../models/masters/accsetups/deptModel.js";
+import { formatIST } from "../../../utilities/formatIST.js";
 
+// Dynamic Denormalization Approach (Highest Level of Optimisation):
+// In the create function, we are fetching the account details (username and fullname)
+// for each approver and storing them directly in the Dynamic Approval document.
+// This way, we avoid the need for complex population and aggregation when reading the Dynamic Approval records later.
+// The fetchAccountDetails helper function is used to retrieve the necessary account information based on the approver's account ID.
+// ------------------------------------------------------------------------------------------------------------------------------------------
+// const fetchAccountDetails = async (accountId) => {
+//     if (!mongoose.Types.ObjectId.isValid(accountId)) {
+//         return null;
+//     }
+//     const account = await accModel.findById(accountId).select("acc_uname acc_fname").lean();
+//     if (!account) {
+//         return null;
+//     }
+//     return account;
+// }
+// const create = async (req, res) => {
+//     try {
+//         const dynapprvlPayld = req.body;
+//         const user = req.user;
+
+//         // console.log(dynapprvlPayld);
+//         if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.approvalCreatorBase?._id)) {
+//             dynapprvlPayld.approvalCreatorBaseId = new mongoose.Types.ObjectId(dynapprvlPayld.approvalCreatorBase?._id)
+//             dynapprvlPayld.plantCode = dynapprvlPayld.approvalCreatorBase?.code || "";
+//             dynapprvlPayld.plantName = dynapprvlPayld.approvalCreatorBase?.name || "";
+//         }
+//         if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.approvalFunction?._id)) {
+//             dynapprvlPayld.approvalFunctionId = new mongoose.Types.ObjectId(dynapprvlPayld.approvalFunction?._id)
+//             dynapprvlPayld.departmentCode = dynapprvlPayld.approvalFunction?.code || "";
+//             dynapprvlPayld.departmentName = dynapprvlPayld.approvalFunction?.name || "";
+//         }
+//         const approvalDetails = await Promise.all(dynapprvlPayld.approvalDetails?.filter(elm => elm?.approvers?.length > 0)?.map(async (elm, i) => ({
+//             approvalLevel: i+1,
+//             approvalTitle: elm?.approvalTitle || "",
+//             approvalTag: elm?.approvalTag || "",
+//             approvers: await Promise.all(elm?.approvers?.map(async (apprv) => ({
+//                 approverAccount: {
+//                     approverId: mongoose.Types.ObjectId.isValid(apprv?.approverAccount) ? new mongoose.Types.ObjectId(apprv?.approverAccount) : null,
+//                     approverUsername: (await fetchAccountDetails(apprv?.approverAccount))?.acc_uname || "",
+//                     approverFullname: (await fetchAccountDetails(apprv?.approverAccount))?.acc_fname || "",
+//                 },
+//                 approverAbbreviation: apprv?.approverAbbreviation || "",
+//                 approverRole: apprv?.approverRole || ""
+//             }))) || []
+//         })) || [])
+        
+//         Object.assign(dynapprvlPayld, {
+//             approvalDetails: approvalDetails,
+//             status: approvalDetails.length > 0 ? "Active" : "Inactive",
+//             createdById: user?._id,
+//             createdByName: user?.acc_fname || ""
+//         })
+
+//         const dynapprvl = await dynapprvlModel.create(await dynapprvlPayld);
+//         if (!dynapprvl) {
+//             return res.status(404).json({ message: "Failed to create Dynamic Approval record" });
+//         } else {
+//             res.status(201).json({ message: "Dynamic Approval record created successfully", data: dynapprvl });
+//         }
+//     } catch (error) {
+//         console.error(error)
+//     }
+// }
+
+// ==========================================================================================================================
+// Normalized Approach (Less Optimized, More Flexible):
 const create = async (req, res) => {
     try {
         const dynapprvlPayld = req.body;
         const user = req.user;
+
+        console.log(dynapprvlPayld);
         
         if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.approvalCreatorBase)) {
             dynapprvlPayld.approvalCreatorBase = new mongoose.Types.ObjectId(dynapprvlPayld.approvalCreatorBase)
@@ -75,158 +147,273 @@ const create = async (req, res) => {
     }
 }
 
-export const fetchApprovalDetails = async (cBase, funcId, user) => {
-    // console.log(funcId);
-    const accTyp = parseInt(user?.acc_typ?.heirarchy || 0)
-    // console.log(accTyp);
+// ==========================================================================================================================
+// Read function with optimized aggregation pipeline to handle the denormalized structure efficiently
+// export const fetchApprovalDetails = async (cBase, funcId) => {
+//     const filter = {};
 
-    const matchFunc = {};
-    if (cBase || accTyp>2) {
-        if (mongoose.Types.ObjectId.isValid(cBase)) {
-            matchFunc['approvalCreatorBase._id'] = new mongoose.Types.ObjectId(cBase);
-        } else {
-            matchFunc['approvalCreatorBase.plantCode'] = { $regex: `^${cBase}$`, $options: 'i' };
-        }
-    }
-    if (funcId || accTyp>2) {
-        if (mongoose.Types.ObjectId.isValid(funcId)) {
-            matchFunc['approvalFunction._id'] = new mongoose.Types.ObjectId(funcId);
-        } else {
-            matchFunc['approvalFunction.departmentCode'] = { $regex: `^${funcId}$`, $options: 'i' };
-        }
-    }
+//     if (cBase) {
+//         filter.$or = [
+//             { approvalCreatorBaseId: cBase },
+//             { plantCode: new RegExp(`^${cBase}$`, "i") }
+//         ];
+//     }
 
-    const pipeline = [
-        // Populate plant
-        { $lookup: { from: 'plants', localField: 'approvalCreatorBase', foreignField: '_id', as: 'approvalCreatorBase' } },
-        { $unwind: '$approvalCreatorBase' },
+//     if (funcId) {
+//         filter.$and = [
+//             {
+//                 $or: [
+//                     { approvalFunctionId: funcId },
+//                     { departmentCode: new RegExp(`^${funcId}$`, "i") }
+//                 ]
+//             }
+//         ];
+//     }
 
-        // Populate department
-        { $lookup: { from: 'departments', localField: 'approvalFunction', foreignField: '_id', as: 'approvalFunction' } },
-        { $unwind: '$approvalFunction' },
+//     // console.log(filter);
 
-        // Dynamic filter
-        ...(Object.keys(matchFunc).length ? [{ $match: matchFunc }] : []),
+//     const data = await dynapprvlModel.findOne().sort({ updatedAt: -1 }).lean();
+//     // console.log(data);
+//     return data;
+// };
 
-        // createdby
-        { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
-        { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
-
-        // updatedby
-        { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
-        { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
-
-        // approvalDetails unwind
-        { $unwind: { path: "$approvalDetails", preserveNullAndEmptyArrays: true } },
-
-        // approvers unwind
-        { $unwind: { path: "$approvalDetails.approvers", preserveNullAndEmptyArrays: true } },
-
-        // Populate approver account
-        { $lookup: { from: "accounts", localField: "approvalDetails.approvers.approverAccount", foreignField: "_id", as: "approvalDetails.approvers.approverAccount" } },
-
-        // Convert approverAccount array to object
-        {
-            $addFields: {
-                "approvalDetails.approvers.approverAccount": { $arrayElemAt: [ "$approvalDetails.approvers.approverAccount", 0 ] }
-            }
-        },
-
-        // Group approvers back per approval step
-        {
-            $group: {
-                _id: {
-                    rootId: "$_id",
-                    approvalDetailsId: "$approvalDetails._id",
-                },
-                root: { $first: "$$ROOT" },
-                approvers: { $push: "$approvalDetails.approvers" },
-            }
-        },
-
-        // Rebuild approvalDetails
-        {
-            $group: {
-                _id: "$_id.rootId",
-                root: { $first: "$root" },
-                approvalDetails: {
-                    $push: {
-                        _id: "$_id.approvalDetailsId",
-                        approvalLevel: "$root.approvalDetails.approvalLevel",
-                        approvalTitle: "$root.approvalDetails.approvalTitle",
-                        approvalTag: "$root.approvalDetails.approvalTag",
-                        approvers: "$approvers",
-                    },
-                },
-            },
-        },
-
-        // FINAL PERMANENT SORT (approvalDetails array)
-        {
-            $addFields: {
-                approvalDetails: {
-                    $map: {
-                        input: {
-                            $sortArray: {
-                                input: "$approvalDetails",
-                                sortBy: { approvalLevel: 1 },
-                            },
-                        },
-                        as: "item",
-                        in: {
-                            $mergeObjects: [
-                                "$$item",
-                                {
-                                    approvers: {
-                                        $sortArray: {
-                                            input: "$$item.approvers",
-                                            sortBy: { _id: 1 },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                },
-            },
-        },
-
-        // Merge root back
-        { $replaceRoot: { newRoot: { $mergeObjects: [ "$root", { approvalDetails: "$approvalDetails" } ] } } },
-
-        // Optional IST fields
-        {
-            $addFields: {
-                createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
-                updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
-            }
-        },
-
-        { $sort: { updatedAt: -1 } }
-    ];
-    const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline)
-    return dynapprvlRecords[0]
-}
+// ==========================================================================================================================
+// Normalized Approach with population and aggregation (Less Optimized, More Flexible):
 // export const fetchApprovalDetails = async (cBase, funcId, user) => {
-//     console.log(cBase);
-//     console.log(funcId);
-//     const dynapprvlRecords = await dynapprvlModel.findOne({ approvalCreatorBase:cBase, approvalFunction:funcId })
-//     .populate("approvalCreatorBase", "name code")
-//     .populate("approvalFunction", "name code")
-//     .populate("createdby", "acc_uname acc_fname")
-//     .populate("updatedby", "acc_uname acc_fname")
-//     .populate("approvalDetails.approvers.approverAccount","acc_uname acc_fname")
-//     .lean();
-//     return dynapprvlRecords
+//     // console.log(funcId);
+//     const accTyp = parseInt(user?.acc_typ?.heirarchy || 0)
+//     // console.log(accTyp);
+
+//     const matchFunc = {};
+//     if (cBase || accTyp>2) {
+//         if (mongoose.Types.ObjectId.isValid(cBase)) {
+//             matchFunc['approvalCreatorBase._id'] = new mongoose.Types.ObjectId(cBase);
+//         } else {
+//             matchFunc['approvalCreatorBase.plantCode'] = { $regex: `^${cBase}$`, $options: 'i' };
+//         }
+//     }
+//     if (funcId || accTyp>2) {
+//         if (mongoose.Types.ObjectId.isValid(funcId)) {
+//             matchFunc['approvalFunction._id'] = new mongoose.Types.ObjectId(funcId);
+//         } else {
+//             matchFunc['approvalFunction.departmentCode'] = { $regex: `^${funcId}$`, $options: 'i' };
+//         }
+//     }
+
+//     const pipeline = [
+//         // Populate plant
+//         { $lookup: { from: 'plants', localField: 'approvalCreatorBase', foreignField: '_id', as: 'approvalCreatorBase' } },
+//         { $unwind: '$approvalCreatorBase' },
+
+//         // Populate department
+//         { $lookup: { from: 'departments', localField: 'approvalFunction', foreignField: '_id', as: 'approvalFunction' } },
+//         { $unwind: '$approvalFunction' },
+
+//         // Dynamic filter
+//         ...(Object.keys(matchFunc).length ? [{ $match: matchFunc }] : []),
+
+//         // createdby
+//         { $lookup: { from: 'accounts', localField: 'createdby', foreignField: '_id', as: 'createdby' } },
+//         { $unwind: { path: '$createdby', preserveNullAndEmptyArrays: true } },
+
+//         // updatedby
+//         { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
+//         { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
+
+//         // approvalDetails unwind
+//         { $unwind: { path: "$approvalDetails", preserveNullAndEmptyArrays: true } },
+
+//         // approvers unwind
+//         { $unwind: { path: "$approvalDetails.approvers", preserveNullAndEmptyArrays: true } },
+
+//         // Populate approver account
+//         { $lookup: { from: "accounts", localField: "approvalDetails.approvers.approverAccount", foreignField: "_id", as: "approvalDetails.approvers.approverAccount" } },
+
+//         // Convert approverAccount array to object
+//         {
+//             $addFields: {
+//                 "approvalDetails.approvers.approverAccount": { $arrayElemAt: [ "$approvalDetails.approvers.approverAccount", 0 ] }
+//             }
+//         },
+
+//         // Group approvers back per approval step
+//         {
+//             $group: {
+//                 _id: {
+//                     rootId: "$_id",
+//                     approvalDetailsId: "$approvalDetails._id",
+//                 },
+//                 root: { $first: "$$ROOT" },
+//                 approvers: { $push: "$approvalDetails.approvers" },
+//             }
+//         },
+
+//         // Rebuild approvalDetails
+//         {
+//             $group: {
+//                 _id: "$_id.rootId",
+//                 root: { $first: "$root" },
+//                 approvalDetails: {
+//                     $push: {
+//                         _id: "$_id.approvalDetailsId",
+//                         approvalLevel: "$root.approvalDetails.approvalLevel",
+//                         approvalTitle: "$root.approvalDetails.approvalTitle",
+//                         approvalTag: "$root.approvalDetails.approvalTag",
+//                         approvers: "$approvers",
+//                     },
+//                 },
+//             },
+//         },
+
+//         // FINAL PERMANENT SORT (approvalDetails array)
+//         {
+//             $addFields: {
+//                 approvalDetails: {
+//                     $map: {
+//                         input: {
+//                             $sortArray: {
+//                                 input: "$approvalDetails",
+//                                 sortBy: { approvalLevel: 1 },
+//                             },
+//                         },
+//                         as: "item",
+//                         in: {
+//                             $mergeObjects: [
+//                                 "$$item",
+//                                 {
+//                                     approvers: {
+//                                         $sortArray: {
+//                                             input: "$$item.approvers",
+//                                             sortBy: { _id: 1 },
+//                                         },
+//                                     },
+//                                 },
+//                             ],
+//                         },
+//                     },
+//                 },
+//             },
+//         },
+
+//         // Merge root back
+//         { $replaceRoot: { newRoot: { $mergeObjects: [ "$root", { approvalDetails: "$approvalDetails" } ] } } },
+
+//         // Optional IST fields
+//         {
+//             $addFields: {
+//                 createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
+//                 updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
+//             }
+//         },
+
+//         { $sort: { updatedAt: -1 } }
+//     ];
+//     const dynapprvlRecords = await dynapprvlModel.aggregate(pipeline)
+//     return dynapprvlRecords[0]
 // }
+export const fetchApprovalDetails = async (cBase, funcId, user) => {
+    const accTyp = parseInt(user?.acc_typ?.heirarchy || 0);
+
+    const filter = {};
+
+    /**
+     * -----------------------------------
+     * Resolve approvalCreatorBase
+     * -----------------------------------
+     */
+    if (cBase || accTyp > 2) {
+        if (mongoose.Types.ObjectId.isValid(cBase)) {
+            filter.approvalCreatorBase = cBase;
+        } else if (cBase) {
+            const plant = await plantModel
+                .findOne(
+                    { plantCode: new RegExp(`^${cBase}$`, "i") },
+                    { _id: 1 }
+                )
+                .lean();
+
+            if (!plant) return null;
+
+            filter.approvalCreatorBase = plant._id;
+        }
+    }
+
+    /**
+     * -----------------------------------
+     * Resolve approvalFunction
+     * -----------------------------------
+     */
+    if (funcId || accTyp > 2) {
+        if (mongoose.Types.ObjectId.isValid(funcId)) {
+            filter.approvalFunction = funcId;
+        } else if (funcId) {
+            const dept = await departmentModel
+                .findOne(
+                    { departmentCode: new RegExp(`^${funcId}$`, "i") },
+                    { _id: 1 }
+                )
+                .lean();
+
+            if (!dept) return null;
+
+            filter.approvalFunction = dept._id;
+        }
+    }
+
+    /**
+     * -----------------------------------
+     * Main Query
+     * -----------------------------------
+     */
+    const record = await dynapprvlModel
+        .findOne(filter)
+        .sort({ updatedAt: -1 })
+        .populate("approvalCreatorBase", "code name")
+        .populate("approvalFunction", "code name")
+        .populate("createdby", "acc_uname acc_fname")
+        .populate("updatedby", "acc_uname acc_fname")
+        .populate({
+            path: "approvalDetails.approvers.approverAccount",
+            select: "acc_uname acc_fname"
+        })
+        .lean();
+
+    if (!record) return null;
+
+    /**
+     * -----------------------------------
+     * Sort approvalDetails + approvers
+     * -----------------------------------
+     */
+    if (Array.isArray(record.approvalDetails)) {
+        record.approvalDetails.sort(
+            (a, b) => a.approvalLevel - b.approvalLevel
+        );
+
+        record.approvalDetails.forEach((item) => {
+            if (Array.isArray(item.approvers)) {
+                item.approvers.sort((a, b) =>
+                    String(a._id).localeCompare(String(b._id))
+                );
+            }
+        });
+    }
+    record.createdAtITC = formatIST(record.createdAt);
+    record.updatedAtITC = formatIST(record.updatedAt);
+
+    return record;
+};
+
+
 const read = async (req, res) => {
     try {
         const cBase = String(req.query.cbase || '').trim();
         const funcId = String(req.query.fnid || '').trim();
         const user = req.user || null
 
-        const records = await fetchApprovalDetails(cBase, funcId, user)
-        // console.log(records);
+        const records = await fetchApprovalDetails(cBase, funcId)
+        // const records = await dynapprvlModel.find().sort({ updatedAt: -1 }).lean();
+        console.log(records);
 
         res.status(200).json({
             message: 'Dynamic Approval records retrieved successfully',

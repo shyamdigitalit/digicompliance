@@ -10,4 +10,8 @@ const CriticltySchema = new Schema({
     updatedby: { type: Types.ObjectId, ref: 'Account' }
 }, { timestamps: true })
 
+CriticltySchema.index({ code: 1 }, { unique: true })
+CriticltySchema.index({ name: 1 }, { unique: true })
+CriticltySchema.index({ status: 1 })
+
 export default model('Criticality', CriticltySchema)

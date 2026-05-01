@@ -13,4 +13,8 @@ const CmpnySchema = new Schema({
     timestamps: true,
 });
 
+CmpnySchema.index({ code: 1 }, { unique: true });
+CmpnySchema.index({ name: 1 }, { unique: true });
+CmpnySchema.index({ status: 1 });
+
 export default model('Company', CmpnySchema);
