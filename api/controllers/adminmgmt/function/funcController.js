@@ -8,7 +8,7 @@ const create = async (req, res) => {
         // console.log(funcData)
 
         Object.assign(funcData, { status: funcData.status || 'Active' });
-        const existingFunc = await funcModel.findOne({ func_code: funcData.func_code })
+        const existingFunc = await funcModel.findOne({ code: funcData.code })
         if (existingFunc) {
             funcData.updatedby = user?._id || funcData.updatedby;
             const updtPipeline = [{ $set: funcData }]
@@ -39,8 +39,8 @@ const read = async (req, res) => {
         const matchStage = { $and: [] };
         if (srch) {
             matchStage.$and = [
-                { func_code: { $regex: srch, $options: 'i' } },
-                { func_name: { $regex: srch, $options: 'i' } }
+                { code: { $regex: srch, $options: 'i' } },
+                { name: { $regex: srch, $options: 'i' } }
             ]
         }
 
@@ -51,15 +51,13 @@ const read = async (req, res) => {
 
         // 🔹 Add path filter if provided
         if (path === 'yes') {
-            matchStage.$and.push({
-                func_path: { $exists: true, $ne: "" }
-            });
+            matchStage.$and.push({ func_path: { $exists: true, $ne: "" } });
         } else if (path === 'no') {
             matchStage.$and.push({
                 $or: [
-                    { func_path: { $exists: false } },
-                    { func_path: null },
-                    { func_path: "" }
+                    { path: { $exists: false } },
+                    { path: null },
+                    { path: "" }
                 ]
             });
         }
@@ -74,20 +72,8 @@ const read = async (req, res) => {
             { $match: matchStage },
             {
                 $addFields: {
-                    createdAtITC: {
-                        $dateToString: {
-                            format: "%d-%m-%Y %H:%M:%S",
-                            date: "$createdAt",
-                            timezone: "+05:30"
-                        }
-                    },
-                    updatedAtITC: {
-                        $dateToString: {
-                            format: "%d-%m-%Y %H:%M:%S",
-                            date: "$updatedAt",
-                            timezone: "+05:30"
-                        }
-                    }
+                    createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: "$createdAt", timezone: "+05:30" } },
+                    updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: "$updatedAt", timezone: "+05:30" } }
                 }
             },
             { $sort: { updatedAt: -1 } }

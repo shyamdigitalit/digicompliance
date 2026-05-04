@@ -9,7 +9,7 @@ import { masterListTabs } from "./masterListTabs";
 const MasterForm = React.memo(function MasterForm() {
   const { type } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = React.useState({ name: "", code: "", desc: "" });
+  const [form, setForm] = React.useState({ name: "", code: "" });
   const [saved, setSaved] = React.useState(false);
 
   const masterTab = React.useMemo(() => masterListTabs.find(m => m.key === type), [masterListTabs, type])
@@ -21,7 +21,22 @@ const MasterForm = React.memo(function MasterForm() {
 
   const handleSave = React.useCallback(async () => {
     let newEntry = {}, apiType = "";
-    if (type === "accounttype") {
+    if (type === "function") {
+      if (!form.code.trim() || !form.name.trim() || !form.path.trim()) {
+        console.log('fn');
+        alert("Please fill in all required fields");
+        return;
+      }
+      Object.assign(newEntry, {
+        code: form.code?.trim().toUpperCase(),
+        name: form.name?.trim(),
+        path: form.path?.trim(),
+        query: form.query?.trim(),
+        heirarchy: Number(form.heirarchy || 0),
+        status: "Active"
+      });
+      apiType = "func"
+    } else if (type === "accounttype") {
       if (!form.typname.trim() || !form.heirarchy) {
         alert("Please fill in both Type and Heirarchy");
         return;
@@ -33,8 +48,7 @@ const MasterForm = React.memo(function MasterForm() {
         status: "Active"
       });
       apiType = "acctyp"
-    }
-    else {
+    } else {
       if (!form.name.trim() || !form.code.trim()) {
         alert("Please fill in both Name and Code");
         return;
@@ -73,7 +87,56 @@ const MasterForm = React.memo(function MasterForm() {
     }
   }, [type, form, setSaved]);
 
-  if (type === "accounttype") {
+  if (type === "function") {
+    return (
+      <div className="master-card">
+        <div className="master-header">
+          <h3>Add {masterTab.tabName}</h3>
+          <button className="light-btn" onClick={() => navigate(-1)}>← Back</button>
+        </div>
+
+        <div className="master-form" style={{ flexDirection: "column", gap: "14px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <label>Name *</label>
+            <input name="name" value={form.name} onChange={handleChange} placeholder={`Enter name`} />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <label>Code *</label>
+            <input name="code" value={form.code} onChange={handleChange} placeholder="Short code (e.g. OPS)" style={{ textTransform: "uppercase" }} />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <label>Path *</label>
+            <input name="path" value={form.path} onChange={handleChange} placeholder={`Enter path`} />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <label>Query</label>
+            <input name="query" value={form.query} onChange={handleChange} placeholder={`Enter query`} />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <label>Heirarchy *</label>
+            <input name="heirarchy" value={String(form.heirarchy).match(/(\d+)/)?.[1] || 0} onChange={handleChange} placeholder="Heirarchy Level" />
+          </div>
+          {/* <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
+            <label>Same Level *&nbsp;</label>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+              <input type="radio" name="stacklvl" value="true" onChange={handleChange} />
+              Yes
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+              <input type="radio" name="stacklvl" value="false" onChange={handleChange} />
+              No
+            </label>
+          </div> */}
+        </div>
+
+        <div style={{ marginTop: "20px", display: "flex", gap: "10px", alignItems: "center" }}>
+          <button className="dark-btn" onClick={handleSave}>Save</button>
+          <button className="light-btn" onClick={() => navigate(-1)}>Cancel</button>
+          {saved && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Saved! Redirecting…</span>}
+        </div>
+      </div>
+    );
+  } else if (type === "accounttype") {
     return (
       <div className="master-card">
         <div className="master-header">
@@ -110,8 +173,7 @@ const MasterForm = React.memo(function MasterForm() {
         </div>
       </div>
     );
-  }
-  else {
+  } else {
     return (
       <div className="master-card">
         <div className="master-header">

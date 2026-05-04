@@ -19,9 +19,9 @@ import compfreqController from '../controllers/masters/complncsetups/compfreqCon
 import criticltyController from '../controllers/masters/complncsetups/criticltyController.js';
 import penltyController from '../controllers/masters/complncsetups/penltyController.js';
 
+import funcController from '../controllers/adminmgmt/function/funcController.js';
 import accController from '../controllers/accController.js';
 import dashController from '../controllers/dashController.js';
-import funcController from '../controllers/adminmgmt/function/funcController.js';
 import dynapprvlController from '../controllers/adminmgmt/dynapproval/dynapprvlController.js';
 import fileOpController from '../controllers/fileOpController.js';
 
@@ -53,9 +53,9 @@ const postRoutes = [
     { path: '/compfreq/create', handlers: [jwtHybrdProtect, fileUpload.none(), compfreqController.create] },
     { path: '/criticlty/create', handlers: [jwtHybrdProtect, fileUpload.none(), criticltyController.create] },
     { path: '/penlty/create', handlers: [jwtHybrdProtect, fileUpload.none(), penltyController.create] },
+    { path: '/func/create', handlers: [jwtHybrdProtect, fileUpload.none(), funcController.create] },
     { path: '/acc/create', handlers: [jwtHybrdProtect, fileUpload.none(), accController.create] },
     { path: '/acc/import', handlers: [jwtHybrdProtect, fileUpload.none(), accController.upload] },
-    { path: '/func/create', handlers: [jwtHybrdProtect, fileUpload.none(), funcController.create] },
     { path: '/dynapprvl/create', handlers: [jwtHybrdProtect, fileUpload.none(), dynapprvlController.create] },
     { path: '/file/upload', handlers: [jwtHybrdProtect, fileUpload.fields([ { name: 'files' } ]), fileOpController.uploadHandler] },
     // { path: '/mail/send', handlers: [basicAuth, fileUpload.none(), mailtestController.send] },
@@ -79,10 +79,10 @@ const getRoutes = [
     { path: '/compfreq/fetch', handlers: [jwtHybrdProtect, compfreqController.read] },
     { path: '/criticlty/fetch', handlers: [jwtHybrdProtect, criticltyController.read] },
     { path: '/penlty/fetch', handlers: [jwtHybrdProtect, penltyController.read] },
+    { path: '/func/fetch', handlers: [jwtHybrdProtect, funcController.read] },
     { path: '/acc/fetch', handlers: [jwtHybrdProtect, accController.read] },
     { path: '/acc/fetchby/:id', handlers: [jwtHybrdProtect, accController.readById] },
     { path: '/acc/fetchuppr', handlers: [jwtHybrdProtect, accController.readLowrHierarchy] },
-    { path: '/func/fetch', handlers: [jwtHybrdProtect, funcController.read] },
     { path: '/dynapprvl/fetch', handlers: [jwtHybrdProtect, dynapprvlController.read] },
     { path: '/dynapprvl/acc/filter', handlers: [jwtHybrdProtect, dynapprvlController.filterAccounts] },
     { path: '/file/fetch', handlers: [jwtHybrdProtect, fileOpController.getAllHandler] },
@@ -105,8 +105,8 @@ const patchRoutes = [
     { path: '/compfreq/update', handlers: [jwtHybrdProtect, fileUpload.none(), compfreqController.update] },
     { path: '/criticlty/update', handlers: [jwtHybrdProtect, fileUpload.none(), criticltyController.update] },
     { path: '/penlty/update', handlers: [jwtHybrdProtect, fileUpload.none(), penltyController.update] },
-    { path: '/acc/update', handlers: [jwtHybrdProtect, fileUpload.none(), accController.update] },
     { path: '/func/update', handlers: [jwtHybrdProtect, fileUpload.none(), funcController.update] },
+    { path: '/acc/update', handlers: [jwtHybrdProtect, fileUpload.none(), accController.update] },
 ];
 patchRoutes.forEach(route => createRoute('patch', route.path, ...route.handlers));
 

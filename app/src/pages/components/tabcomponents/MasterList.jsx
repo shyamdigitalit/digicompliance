@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../../config/axiosInstance";
 import Loader from "../../../components/loader";
 import { masterListTabs } from "./masterListTabs";
+import moment from "moment";
 
 // const getMasterKey = (type) => `master_${type}`;
 
@@ -23,6 +24,7 @@ const MasterList = React.memo(function MasterList() {
   const fetchMasterData = React.useCallback(async () => {
     let apiType = "";
     switch (type) {
+      case "function": apiType = "func"; break;
       case "accounttype": apiType = "acctyp"; break;
       case "plant": apiType = "plnt"; break;
       case "department": apiType = "dept"; break;
@@ -53,6 +55,7 @@ const MasterList = React.memo(function MasterList() {
   const handleDelete = React.useCallback(async (idx) => {
     let apiType = "";
     switch (type) {
+      case "function": apiType = "func"; break;
       case "accounttype": apiType = "acctyp"; break;
       case "plant": apiType = "plnt"; break;
       case "department": apiType = "dept"; break;
@@ -107,84 +110,126 @@ const MasterList = React.memo(function MasterList() {
       </div>
 
       { loading ? <Loader /> : (
-        masterTab.key === "accounttype" ? (
+        masterTab.key === "function" ? (
           <div className="table-scroll-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Heirarchy</th>
-                <th>Same Level</th>
-                <th>Status</th>
-                <th>Created At</th>
-                <th>Updated At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data?.length === 0 ? (
-                <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No records yet. Click "+ Add" to create one.</td></tr>
-              ) : data?.map((item, i) => (
-                <tr key={i}>
-                  <td>{item.typname}</td>
-                  <td>{item.heirarchy}</td>
-                  <td>{String(item.stacklvl)}</td>
-                  <td>
-                    <span
-                      className={`tag ${item.status === "Active" ? "green" : "red-light"}`}
-                      onClick={() => handleToggleStatus(i)}
-                      style={{ cursor: "pointer" }}
-                      title="Click to toggle"
-                    >{item.status}</span>
-                  </td>
-                  <td>{item.createdAt}</td>
-                  <td>{item.updatedAt}</td>
-                  <td>
-                    <button onClick={() => handleDelete(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
-                  </td>
+            <table>
+              <thead>
+                <tr>
+                  <th className="text-nowrap">Name</th>
+                  <th className="text-nowrap">Path</th>
+                  <th className="text-nowrap">Query</th>
+                  <th className="text-nowrap">Heirarchy</th>
+                  <th className="text-nowrap">Status</th>
+                  <th className="text-nowrap">Created At</th>
+                  <th className="text-nowrap">Updated At</th>
+                  <th className="text-nowrap">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {data?.length === 0 ? (
+                  <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No records yet. Click "+ Add" to create one.</td></tr>
+                ) : data?.map((item, i) => (
+                  <tr key={i}>
+                    <td className="text-nowrap">{item.name}</td>
+                    <td className="text-nowrap">{item.path}</td>
+                    <td className="text-nowrap">{item.query}</td>
+                    <td className="text-nowrap">{item.heirarchy}</td>
+                    <td className="text-nowrap">
+                      <span
+                        className={`tag ${item.status === "Active" ? "green" : "red-light"}`}
+                        onClick={() => handleToggleStatus(i)}
+                        style={{ cursor: "pointer" }}
+                        title="Click to toggle"
+                      >{item.status}</span>
+                    </td>
+                    <td className="text-nowrap">{moment(item.createdAt).format("DD-MM-YYYY")}</td>
+                    <td className="text-nowrap">{moment(item.updatedAt).format("DD-MM-YYYY")}</td>
+                    <td className="text-nowrap">
+                      <button onClick={() => handleDelete(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : masterTab.key === "accounttype" ? (
+          <div className="table-scroll-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th className="text-nowrap">Type</th>
+                  <th className="text-nowrap">Heirarchy</th>
+                  <th className="text-nowrap">Same Level</th>
+                  <th className="text-nowrap">Status</th>
+                  <th className="text-nowrap">Created At</th>
+                  <th className="text-nowrap">Updated At</th>
+                  <th className="text-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data?.length === 0 ? (
+                  <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No records yet. Click "+ Add" to create one.</td></tr>
+                ) : data?.map((item, i) => (
+                  <tr key={i}>
+                    <td className="text-nowrap">{item.typname}</td>
+                    <td className="text-nowrap">{item.heirarchy}</td>
+                    <td className="text-nowrap">{String(item.stacklvl)}</td>
+                    <td className="text-nowrap">
+                      <span
+                        className={`tag ${item.status === "Active" ? "green" : "red-light"}`}
+                        onClick={() => handleToggleStatus(i)}
+                        style={{ cursor: "pointer" }}
+                        title="Click to toggle"
+                      >{item.status}</span>
+                    </td>
+                    <td className="text-nowrap">{moment(item.createdAt).format("DD-MM-YYYY")}</td>
+                    <td className="text-nowrap">{moment(item.updatedAt).format("DD-MM-YYYY")}</td>
+                    <td className="text-nowrap">
+                      <button onClick={() => handleDelete(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="table-scroll-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Code</th>
-                <th>Status</th>
-                <th>Created At</th>
-                <th>Updated At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data?.length === 0 ? (
-                <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No records yet. Click "+ Add" to create one.</td></tr>
-              ) : data?.map((item, i) => (
-                <tr key={i}>
-                  <td>{item.name}</td>
-                  <td style={{ fontFamily: "monospace", color: "#6b7280" }}>{item.code}</td>
-                  <td>
-                    <span
-                      className={`tag ${item.status === "Active" ? "green" : "red-light"}`}
-                      onClick={() => handleToggleStatus(i)}
-                      style={{ cursor: "pointer" }}
-                      title="Click to toggle"
-                    >{item.status}</span>
-                  </td>
-                  <td>{item.createdAt}</td>
-                  <td>{item.updatedAt}</td>
-                  <td>
-                    <button onClick={() => handleDelete(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
-                  </td>
+            <table>
+              <thead>
+                <tr>
+                  <th className="text-nowrap">Name</th>
+                  <th className="text-nowrap">Code</th>
+                  <th className="text-nowrap">Status</th>
+                  <th className="text-nowrap">Created At</th>
+                  <th className="text-nowrap">Updated At</th>
+                  <th className="text-nowrap">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {data?.length === 0 ? (
+                  <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>No records yet. Click "+ Add" to create one.</td></tr>
+                ) : data?.map((item, i) => (
+                  <tr key={i}>
+                    <td className="text-nowrap">{item.name}</td>
+                    <td className="text-nowrap" style={{ fontFamily: "monospace", color: "#6b7280" }}>{item.code}</td>
+                    <td className="text-nowrap">
+                      <span
+                        className={`tag ${item.status === "Active" ? "green" : "red-light"}`}
+                        onClick={() => handleToggleStatus(i)}
+                        style={{ cursor: "pointer" }}
+                        title="Click to toggle"
+                      >{item.status}</span>
+                    </td>
+                    <td className="text-nowrap">{moment(item.createdAt).format("DD-MM-YYYY")}</td>
+                    <td className="text-nowrap">{moment(item.updatedAt).format("DD-MM-YYYY")}</td>
+                    <td className="text-nowrap">
+                      <button onClick={() => handleDelete(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "15px" }} title="Delete">🗑</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )
       )}
     </div>

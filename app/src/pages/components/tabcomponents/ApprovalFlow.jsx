@@ -1,11 +1,11 @@
 import React from 'react'
-import { DndContext, KeyboardSensor, PointerSensor, useDroppable, pointerWithin } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import axiosInstance from '../../../config/axiosInstance';
 import Loader from '../../../components/loader';
 import { generateAbbreviation } from '../../../utilities/genAbbreviation';
 import { AxiosError } from 'axios';
+import { DndContext, KeyboardSensor, PointerSensor, useDroppable, pointerWithin } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 let DEFAULT_STEPS = [];
 const TAG_LABELS = ["Minimum 1 approver", "Quorum required", "Executive signature", "All must approve"];

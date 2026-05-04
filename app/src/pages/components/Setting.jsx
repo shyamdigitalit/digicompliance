@@ -5,6 +5,7 @@ import SecurityTab from './tabcomponents/SecurityTab'
 import NotificationTab from './tabcomponents/NotificationTab'
 // import ApprovalFlow from './tabcomponents/ApprovalFlow'
 const ApprovalFlow = React.lazy(() => import('./tabcomponents/ApprovalFlow'))
+const Privileges = React.lazy(() => import('./tabcomponents/Privileges'))
 import MasterTab from './tabcomponents/MasterTab'
 import axiosInstance from '../../config/axiosInstance'
 import { useDispatch } from 'react-redux'
@@ -77,7 +78,7 @@ const Setting = React.memo(function Setting() {
 
       <div className="settings-container">
         <div className={`settings-sidebar ${sidebarOpen ? "settings-sidebar--open" : ""}`}>
-          {["Profile", "Security", "Notifications", "Approval"].map((item) => (
+          {["Profile", "Security", "Notifications", "Approval", "Privilege"].map((item) => (
             <div
               key={item}
               className={`settings-item ${activeTab === item ? "active" : ""}`}
@@ -114,6 +115,7 @@ const Setting = React.memo(function Setting() {
           {activeTab === "Security" && <SecurityTab />}
           {activeTab === "Notifications" && <NotificationTab />}
           <Suspense fallback={<Loader />}>{activeTab === "Approval" && <ApprovalFlow />}</Suspense>
+          <Suspense fallback={<Loader />}>{activeTab === "Privilege" && <Privileges />}</Suspense>
           {activeTab === "Masters" && <MasterTab />}
         </div>
       </div>

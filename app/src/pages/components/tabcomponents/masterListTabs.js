@@ -1,4 +1,5 @@
 export const masterListTabs = [
+    { key: "function", tabName: "Functions" },
     { key: "accounttype", tabName: "Account Types" },
     { key: "plant", tabName: "Plants" },
     { key: "department", tabName: "Departments" },
