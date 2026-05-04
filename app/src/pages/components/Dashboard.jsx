@@ -6,12 +6,15 @@ import ErrorOutlineIcon       from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CalendarTodayIcon      from '@mui/icons-material/CalendarToday';
 import axiosInstance from "../../config/axiosInstance";
+import Loader from '../../components/loader';
 
 function futureDate(daysFromNow) {
   const d = new Date();
   d.setDate(d.getDate() + daysFromNow);
   return d.toISOString().slice(0, 10);
 }
+
+const dueDays = (dueDate) => Math.round(dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
 
 const defaultCompliance = [
   { id:"CMP-001", plant:"Mumbai Plant A",    dept:"Operations",  type:"Safety Inspection",       category:"Health & Safety",    freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate: futureDate(-5)  },
@@ -38,19 +41,37 @@ const Dashboard = () => {
   const complianceData = defaultCompliance;
   const activities     = defaultActivities;
   const [allDashData, setAllDashData] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [statusDist, setStatusDist] = React.useState([]);
 
   const fetchAllDashData = React.useCallback(async () => {
+    setLoading(true);
     try {
       const response = await axiosInstance.get('/api/dash/fetch');
       console.log(response.data.data);
       setAllDashData(response.data.data);
+      setStatusDist(statusDistribution(response.data.data));
     } catch (error) {
       console.error(error)
+    } finally {
+      setLoading(false);
     }
   }, []);
   React.useEffect(() => {
     fetchAllDashData();
   }, [fetchAllDashData]);
+
+  const statusDistribution = React.useCallback((compianceStat) => {
+    const total      = compianceStat?.total || 1;
+    const completed  = compianceStat?.byStatus?.find(s => s.name === "Active")?.count || 0;
+    const inProgress = compianceStat?.byStatus?.find(s => s.name === "Open" || s.name === "Pending")?.count || 0;
+    const inactive    = compianceStat?.byStatus?.find(s => s.name === "Inactive" || s.name === "Closed")?.count || 0;
+    return [
+      { label:"Good", count:completed, pct:Math.round(completed / total * 100), cls:"good" },
+      { label:"Fair", count:inProgress, pct:Math.round(inProgress / total * 100), cls:"fair" },
+      { label:"Poor", count:inactive, pct:Math.round(inactive / total * 100), cls:"poor" },
+    ];
+  }, []);
 
   const stats = React.useMemo(() => ({
     total:     complianceData.length,
@@ -85,19 +106,7 @@ const Dashboard = () => {
       pct: Math.round((v.completed / v.total) * 100),
     }));
   }, [complianceData]);
-
-  const statusDist = React.useMemo(() => {
-    const total      = complianceData.length || 1;
-    const completed  = complianceData.filter(c => c.status === "Completed").length;
-    const inProgress = complianceData.filter(c => c.status === "In Progress").length;
-    const pending    = complianceData.filter(c => c.status === "Pending" || c.status === "Overdue").length;
-    return [
-      { label:"Good", count:completed,  pct:Math.round(completed  / total * 100), cls:"good" },
-      { label:"Fair", count:inProgress, pct:Math.round(inProgress / total * 100), cls:"fair" },
-      { label:"Poor", count:pending,    pct:Math.round(pending    / total * 100), cls:"poor" },
-    ];
-  }, [complianceData]);
-
+  
   const tagClass = p =>
     p === "Critical" ? "tag red" : p === "High" ? "tag orange" : p === "Medium" ? "tag yellow" : "tag blue";
 
@@ -120,116 +129,150 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="dash-header">
-        <h2>Dashboard</h2>
-        <p>Overview of compliance status and activities</p>
-      </div>
+      {loading ? <Loader /> : (
+        <>
+          <div className="dash-header">
+            <h2>Dashboard</h2>
+            <p>Overview of compliance status and activities</p>
+          </div>
 
-      <div className="stats">
-        <div className="card">
-          <div className="card-top">
-            <span className="card-label">Total Compliance</span>
-            <div className="card-icon blue"><FilePresentIcon style={{ color:"#2563eb" }} /></div>
-          </div>
-          <h2>{allDashData?.total}</h2>
-          <div className="card-sub positive">↑ +12 this month</div>
-        </div>
-        <div className="card">
-          <div className="card-top">
-            <span className="card-label">Pending</span>
-            <div className="card-icon orange"><AccessTimeIcon style={{ color:"#f97316" }} /></div>
-          </div>
-          <h2 style={{ color:"#f97316" }}>{allDashData?.byStatus?.Pending || 0}</h2>
-          <div className="card-sub warning">Requires attention</div>
-        </div>
-        <div className="card">
-          <div className="card-top">
-            <span className="card-label">Critical</span>
-            <div className="card-icon red"><ErrorOutlineIcon style={{ color:"#ef4444" }} /></div>
-          </div>
-          <h2 style={{ color:"#ef4444" }}>{stats.critical}</h2>
-          <div className="card-sub danger">High priority</div>
-        </div>
-        <div className="card">
-          <div className="card-top">
-            <span className="card-label">Completed</span>
-            <div className="card-icon green"><CheckCircleOutlineIcon style={{ color:"#22c55e" }} /></div>
-          </div>
-          <h2 style={{ color:"#22c55e" }}>{allDashData?.byStatus?.Active || 0}</h2>
-          <div className="card-sub success">{completionPct}% completion rate</div>
-        </div>
-      </div>
-
-      <div className="content">
-        <div className="left">
-          <div className="panel-header">
-            <h3>Upcoming Deadlines</h3>
-            <CalendarTodayIcon />
-          </div>
-          {upcomingDeadlines.length === 0
-            ? <p style={{ color:"#9ca3af", fontSize:"13px" }}>No upcoming deadlines</p>
-            : upcomingDeadlines.map((item, i) => (
-              <div className="deadline-item" key={i}>
-                <div className="deadline-left">
-                  <div className="deadline-title">{item.type}</div>
-                  <div className="deadline-plant">{item.plant}</div>
-                </div>
-                <span className={tagClass(item.criticality)}>{item.criticality}</span>
-                <div className="deadline-right">
-                  <div className={daysClass(item.daysLeft)}>{daysLabel(item.daysLeft)}</div>
-                  <div className="deadline-date">{formatDate(item.dueDate)}</div>
-                </div>
+          <div className="stats">
+            <div className="card">
+              <div className="card-top">
+                <span className="card-label">Total Compliance</span>
+                <div className="card-icon blue"><FilePresentIcon style={{ color:"#2563eb" }} /></div>
               </div>
-            ))
-          }
-        </div>
-
-        <div className="right">
-          <div className="panel-header"><h3>Recent Activity</h3></div>
-          {activities.slice(0, 6).map((item, i) => (
-            <div className="activity-item" key={i}>
-              <div className="activity-dot" />
-              <div className="activity-body">
-                <div className="activity-text">{item.text}</div>
-                <div className="activity-meta">By: {item.user}</div>
-              </div>
-              <div className="activity-time">{item.time}</div>
+              <h2>{allDashData?.total}</h2>
+              <div className="card-sub positive">↑ +12 this month</div>
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="card">
+              <div className="card-top">
+                <span className="card-label">Open & Pending</span>
+                <div className="card-icon orange"><AccessTimeIcon style={{ color:"#f97316" }} /></div>
+              </div>
+              <h2 style={{ color:"#f97316" }}>{allDashData?.byStatus?.find(s => ["Open", "Pending"].includes(s.name))?.count || 0}</h2>
+              <div className="card-sub warning">Requires attention</div>
+            </div>
+            <div className="card">
+              <div className="card-top">
+                <span className="card-label">Critical</span>
+                <div className="card-icon red"><ErrorOutlineIcon style={{ color:"#ef4444" }} /></div>
+              </div>
+              <h2 style={{ color:"#ef4444" }}>{allDashData?.byCriticality?.find(c => c.name === "High")?.count || 0}</h2>
+              <div className="card-sub danger">High priority</div>
+            </div>
+            <div className="card">
+              <div className="card-top">
+                <span className="card-label">Completed</span>
+                <div className="card-icon green"><CheckCircleOutlineIcon style={{ color:"#22c55e" }} /></div>
+              </div>
+              <h2 style={{ color:"#22c55e" }}>{allDashData?.byStatus?.find(s => s.name === "Active")?.count || 0}</h2>
+              <div className="card-sub success">{parseFloat((allDashData?.byStatus?.find(s => s.name === "Active")?.count || 0)/allDashData?.total * 100).toFixed(2)}% completion rate</div>
+            </div>
+          </div>
 
-      <div className="bottom">
-        <div className="progress">
-          <h4>Compliance by Category</h4>
-          {categoryBreakdown.map((cat, i) => (
-            <React.Fragment key={i}>
-              <div className="category">
-                <span>{cat.name}</span>
-                <span>{cat.completed}/{cat.total} ({cat.pct}%)</span>
+          <div className="content">
+            <div className="left">
+              <div className="panel-header">
+                <h3>Upcoming Deadlines</h3>
+                <CalendarTodayIcon />
               </div>
-              <div className="bar">
-                <div className="fill" style={{ width:`${cat.pct}%` }} />
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
+              {upcomingDeadlines.length === 0
+                ? <p style={{ color:"#9ca3af", fontSize:"13px" }}>No upcoming deadlines</p>
+                : upcomingDeadlines.map((item, i) => (
+                  <div className="deadline-item" key={i}>
+                    <div className="deadline-left">
+                      <div className="deadline-title">{item.type}</div>
+                      <div className="deadline-plant">{item.plant}</div>
+                    </div>
+                    <span className={tagClass(item.criticality)}>{item.criticality}</span>
+                    <div className="deadline-right">
+                      <div className={daysClass(item.daysLeft)}>{daysLabel(item.daysLeft)}</div>
+                      <div className="deadline-date">{formatDate(item.dueDate)}</div>
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
 
-        <div className="progress">
-          <h4>Quality Distribution</h4>
-          {statusDist.map((s, i) => (
-            <React.Fragment key={i}>
-              <div className="category">
-                <span>{s.label}</span>
-                <span>{s.pct}%</span>
-              </div>
-              <div className="bar">
-                <div className={`fill ${s.cls}`} style={{ width:`${s.pct}%` }} />
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
+            <div className="right">
+              <div className="panel-header"><h3>Recent Activity</h3></div>
+              {activities.slice(0, 6).map((item, i) => (
+                <div className="activity-item" key={i}>
+                  <div className="activity-dot" />
+                  <div className="activity-body">
+                    <div className="activity-text">{item.text}</div>
+                    <div className="activity-meta">By: {item.user}</div>
+                  </div>
+                  <div className="activity-time">{item.time}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bottom">
+            <div className="progress">
+              <h4>Compliance by Types</h4>
+              {allDashData?.byType?.map((typ, i) => (
+                <React.Fragment key={i}>
+                  <div className="barchart">
+                    <span>{typ.name}</span>
+                    <span>{typ.count}/{allDashData?.total} ({parseFloat(typ.count / allDashData?.total * 100).toFixed(2)}%)</span>
+                  </div>
+                  <div className="bar">
+                    <div className="fill" style={{ width:`${parseFloat(typ.count / allDashData?.total * 100).toFixed(2)}%` }} />
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+
+            <div className="progress">
+              <h4>Compliance by Category</h4>
+              {allDashData?.byCategory?.map((cat, i) => (
+                <React.Fragment key={i}>
+                  <div className="barchart">
+                    <span>{cat.name}</span>
+                    <span>{cat.count}/{allDashData?.total} ({parseFloat(cat.count / allDashData?.total * 100).toFixed(2)}%)</span>
+                  </div>
+                  <div className="bar">
+                    <div className="fill" style={{ width:`${parseFloat(cat.count / allDashData?.total * 100).toFixed(2)}%` }} />
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+
+            <div className="progress">
+              <h4>Compliance by Frequency</h4>
+              {allDashData?.byFrequency?.map((frq, i) => (
+                <React.Fragment key={i}>
+                  <div className="barchart">
+                    <span>{frq.name}</span>
+                    <span>{frq.count}/{allDashData?.total} ({parseFloat(frq.count / allDashData?.total * 100).toFixed(2)}%)</span>
+                  </div>
+                  <div className="bar">
+                    <div className="fill" style={{ width:`${parseFloat(frq.count / allDashData?.total * 100).toFixed(2)}%` }} />
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+
+            <div className="progress">
+              <h4>Quality Distribution</h4>
+              {statusDist.map((s, i) => (
+                <React.Fragment key={i}>
+                  <div className="barchart">
+                    <span>{s.label}</span>
+                    <span>{s.pct}%</span>
+                  </div>
+                  <div className="bar">
+                    <div className={`fill ${s.cls}`} style={{ width:`${s.pct}%` }} />
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 };

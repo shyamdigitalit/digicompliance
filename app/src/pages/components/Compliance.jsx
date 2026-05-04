@@ -1,17 +1,18 @@
 import React from "react";
+import "../styles/Compliance.css";
 import DeleteSweepOutlinedIcon from '@mui/icons-material/DeleteSweepOutlined';
 import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
 import FolderZipOutlinedIcon from '@mui/icons-material/FolderZipOutlined';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import AddCompliance from "./AddCompliance";
-import "../styles/Compliance.css";
 import axiosInstance from "../../config/axiosInstance";
 import { useSelector } from "react-redux";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import Loader from "../../components/loader";
+import moment from 'moment';
 
 const COMPLIANCE_KEY = "compliance_data";
 const ACTIVITY_KEY = "activity_log";
@@ -32,7 +33,7 @@ const Compliance = React.memo(function Compliance() {
   });
   const [data, setData] = React.useState([]);
   const [saved, setSaved] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(false);
 
   const user = useSelector(state => state.auth.user) || {};
 
@@ -420,7 +421,7 @@ const Compliance = React.memo(function Compliance() {
                   {(user.acc_typ?.heirarchy > 2 && user.acc_plnt && user.acc_dept) && (
                     <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
                   )}
-                  <button className="light-btn" onClick={handleExport}>Export</button>
+                  <button className="info-btn" onClick={handleExport}>Export</button>
                 </div>
               </div>
 
@@ -432,6 +433,7 @@ const Compliance = React.memo(function Compliance() {
                         <th>Compliance ID</th>
                         <th>Plant</th>
                         <th>Department</th>
+                        <th>Due Date</th>
                         <th>Compliance Type</th>
                         <th>Category</th>
                         <th>Frequency</th>
@@ -453,6 +455,7 @@ const Compliance = React.memo(function Compliance() {
                           <td className="link">{item.complianceId}</td>
                           <td>{item?.plant?.name}</td>
                           <td>{item?.department?.name}</td>
+                          <td>{moment(item?.dueDate).format("DD-MM-YYYY")}</td>
                           <td>{item?.complianceType?.name}</td>
                           <td>{item?.complianceCategorization?.name}</td>
                           <td>{item?.complianceFrequency?.name}</td>

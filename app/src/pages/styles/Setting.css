@@ -260,31 +260,6 @@ tr:hover {
   background: #f9fafb;
 }
 
-/* ================= BUTTONS ================= */
-.dark-btn {
-  background: #111827;
-  color: #fff;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.dark-btn:hover {
-  opacity: 0.9;
-}
-
-.light-btn {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  background: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.light-btn:hover {
-  background: #f9fafb;
-}
 
 /* ================= TAG ================= */
 .tag.green {

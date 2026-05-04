@@ -89,24 +89,6 @@
   gap: 10px;
 }
 
-/* BUTTON STYLES (MATCH YOUR TABLE PAGE) */
-.light-btn {
-  background: #f1f1f1;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.dark-btn {
-  background: #111827;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .form-grid {

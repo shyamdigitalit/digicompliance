@@ -12,3 +12,108 @@
     min-height: 320px;
     gap: 16px;
 }
+
+/* ================= BUTTONS ================= */
+.light-btn {
+  background: #f1f5f9;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+  &:hover {
+    background: #f9fafb;
+  }
+}
+.dark-btn {
+  background: #111827;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+  &:hover {
+    opacity: 0.9;
+  }
+}
+.primary-btn {
+  background: #0643c5;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+  &:hover {
+    background: #225ad3;
+  }
+}
+.secondary-btn {
+  background: #757575;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+  &:hover {
+    background: #868686;
+  }
+}
+.info-btn {
+  background: #069fc5;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+  &:hover {
+    background: #36b5d4;
+  }
+}
+.success-btn {
+  background: #008332;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+  &:hover {
+    background: #0f9743;
+  }
+}
+.warning-btn {
+  background: #c5a206;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+  &:hover {
+    background: #cfaf1d;
+  }
+}
+.danger-btn {
+  background: #c50606;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+  &:hover {
+    background: #ce4343;
+  }
+}

@@ -2,6 +2,7 @@ import React from "react";
 import "../styles/AddCompliance.css";
 import { useSelector } from "react-redux";
 import axiosInstance from '../../config/axiosInstance';
+import moment from 'moment';
 
 const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mode = 'add', initialData, saved, masterData }) {
 
@@ -14,7 +15,6 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
 
 
   const [form, setForm] = React.useState({
-    // complianceId: "",
     plant: "",
     department: "",
     complianceType: "",
@@ -22,7 +22,7 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
     complianceFrequency: "",
     criticality: "",
     penaltyType: "",
-    dueDate: "",
+    dueDate: null,
     legislation: "",
     complianceHeader: "",
     complianceDescription: "",
@@ -62,7 +62,7 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
         complianceFrequency: initialData?.complianceFrequency?._id || null,
         criticality: initialData?.criticality?._id || null,
         penaltyType: initialData?.penaltyType?._id || null,
-        dueDate: initialData?.dueDate,
+        dueDate: moment(initialData?.dueDate || new Date()).format("YYYY-MM-DD"),
         legislation: initialData?.legislation || "",
         complianceHeader: initialData?.complianceHeader || "",
         complianceDescription: initialData?.complianceDescription || "",
@@ -103,13 +103,10 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
   const handleDownload = React.useCallback(async (file) => {
     try {
       const res = await axiosInstance.get(`/api/file/download/${file.filId}`, { responseType: "blob" });
-
       const blob = new Blob([res.data], {
         type: res.headers["content-type"] || file.filContentType
       });
-
       const url = window.URL.createObjectURL(blob);
-
       const a = document.createElement("a");
       a.href = url;
       a.download = file.filName;
@@ -130,15 +127,10 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
         `/api/file/download/${file.filId}`,
         { responseType: "blob" }
       );
-
       const contentType = res.headers["content-type"];
-
       const blob = new Blob([res.data], { type: contentType });
-
       const url = window.URL.createObjectURL(blob);
-
       window.open(url);
-
     } catch (err) {
       console.error("View error:", err);
     }

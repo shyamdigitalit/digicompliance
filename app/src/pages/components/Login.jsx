@@ -4,7 +4,7 @@ import '../styles/Login.css';
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setCredentials } from '../../redux/slices/auth';
-import { snackbarReducer } from '../../redux/slices/snackbar';
+import { showSnackbar } from '../../redux/slices/snackbar';
 import axiosInstance from '../../config/axiosInstance';
 
 const Login = () => {
@@ -28,11 +28,11 @@ const Login = () => {
                 const response = await axiosInstance.post("/api/auth/login", { acc_uname: username, acc_pass: password });
 
                 if (response.status === 200) {
-                    navigate("/");
                     const userData = response.data;
                     // localStorage.setItem("user", JSON.stringify(userData.data));
                     dispatch(setCredentials(userData));
-                    dispatch(snackbarReducer({ message: "Login successful!", severity: "success" }));
+                    dispatch(showSnackbar({ message: "Login successful", severity: "success" }));
+                    navigate("/");
                 }
             }
         } catch (error) {

@@ -12,7 +12,7 @@ const ComplianceSchema = new Schema({
     complianceFrequency: { type: Types.ObjectId, ref: 'Compliancefrequency' },
     criticality: { type: Types.ObjectId, ref: 'Criticality' },
     penaltyType: { type: Types.ObjectId, ref: 'Penalty' },
-    dueDate: { type: String, trim: true },
+    dueDate: { type: Date, required: true },
     legislation: { type: String, trim: true },
     complianceHeader: { type: String, trim: true },
     complianceDescription: { type: String, trim: true },

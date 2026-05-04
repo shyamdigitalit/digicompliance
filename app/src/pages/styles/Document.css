@@ -120,16 +120,11 @@
   padding: 8px;
 }
 
-.filters select,
-.light-btn {
+.filters select {
   padding: 8px;
   border: 1px solid #ddd;
   background: white;
   border-radius: 6px;
-}
-
-.light-btn {
-  cursor: pointer;
 }
 
 /* Table */
