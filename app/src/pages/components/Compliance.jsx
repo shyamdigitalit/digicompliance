@@ -422,7 +422,7 @@ const Compliance = React.memo(function Compliance() {
                   {(user.acc_typ?.heirarchy > 2 && user.acc_plnt && user.acc_dept) && (
                     <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
                   )}
-                  <button className="info-btn" onClick={handleExport}>Export</button>
+                  <button className="dark-btn" onClick={handleExport}>Export</button>
                 </div>
               </div>
 

@@ -89,6 +89,16 @@
   gap: 10px;
 }
 
+.dark-btn {
+  background: #111827;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .form-grid {

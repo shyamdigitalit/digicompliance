@@ -8,9 +8,11 @@ const fileSchema = new Schema({
     mimetype: String,
     size: Number,
     path: String,
-    hash: String
+    hash: String,
+    // complianceId: { type: Schema.Types.ObjectId, ref: "Compliance" },
 }, { timestamps: true });
 
 fileSchema.index({ hash: 1 }, { unique: true });
+fileSchema.index({ complianceId: 1 });
 
 export default mongoose.model("File", fileSchema);
