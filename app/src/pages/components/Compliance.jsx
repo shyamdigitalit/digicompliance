@@ -349,6 +349,7 @@ const Compliance = React.memo(function Compliance() {
   }, [paged]);
 
   const getTag = (val) => val?.toLowerCase().replace(" ", "-");
+  const isExpired = (dueDate) => dueDate && new Date(dueDate) < new Date();
 
   return (
     <div className="compliance-page">
@@ -439,6 +440,7 @@ const Compliance = React.memo(function Compliance() {
                         <th>Frequency</th>
                         <th>Criticality</th>
                         <th>Status</th>
+                        <th>Due Date</th>
                         <th>Approval Status</th>
                         <th>Actions</th>
                       </tr>
@@ -451,7 +453,7 @@ const Compliance = React.memo(function Compliance() {
                           </td>
                         </tr>
                       ) : paged.map((item) => (
-                        <tr key={item._id}>
+                        <tr key={item._id} className={isExpired(item.dueDate) ? "row-expired" : ""}>
                           <td className="link">{item.complianceId}</td>
                           <td>{item?.plant?.name}</td>
                           <td>{item?.department?.name}</td>
@@ -476,35 +478,49 @@ const Compliance = React.memo(function Compliance() {
                               ))}
                             </select>
                           </td>
-                          <td>{item.approvalStatus}</td>
                           <td>
-                            <button
-                              onClick={() => handleEdit(item)}
-                              style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#2563eb", fontSize: "15px" }}
-                              title="Edit"
-                            ><EditNoteOutlinedIcon /></button>
-                            <button
-                              onClick={() => handleZipDownload(item.allDocs, item.complianceId)}
-                              style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#e525eb", fontSize: "5px" }}
-                              title="ZIP Download"
-                            ><FolderZipOutlinedIcon /></button>
-                            <button
-                              onClick={() => handleApprove(item)}
-                              style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#11bd2e", fontSize: "16px" }}
-                              disabled={!item.isApprover}
-                              title="Approve"
-                            ><DoneAllIcon /></button>
-                            <button
-                              onClick={() => handleReject(item)}
-                              style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#bd6d11", fontSize: "16px" }}
-                              disabled={!item.isApprover}
-                              title="Reject"
-                            ><CancelOutlinedIcon /></button>
-                            <button
-                              onClick={() => handleDelete(item._id)}
-                              style={{ background: "none", padding: "0.5rem", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "16px" }}
-                              title="Delete"
-                            ><DeleteSweepOutlinedIcon /></button>
+                            {item.dueDate ? (
+                              <span className={isExpired(item.dueDate) ? "due-date expired" : "due-date"}>
+                                {new Date(item.dueDate).toLocaleDateString()}
+                                {isExpired(item.dueDate) && <span className="expired-badge">Expired</span>}
+                              </span>
+                            ) : "—"}
+                          </td>
+                          <td>
+                            <span className={`approval-badge approval-${getTag(item.approvalStatus)}`}>
+                              {item.approvalStatus || "Pending"}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+                              <button
+                                onClick={() => handleEdit(item)}
+                                className="action-icon-btn edit"
+                                title="Edit"
+                              ><EditNoteOutlinedIcon /></button>
+                              <button
+                                onClick={() => handleZipDownload(item.allDocs, item.complianceId)}
+                                className="action-icon-btn zip"
+                                title="ZIP Download"
+                              ><FolderZipOutlinedIcon /></button>
+                              <button
+                                onClick={() => handleApprove(item)}
+                                className="action-icon-btn approve"
+                                disabled={!item.isApprover}
+                                title="Approve"
+                              ><DoneAllIcon /></button>
+                              <button
+                                onClick={() => handleReject(item)}
+                                className="action-icon-btn reject"
+                                disabled={!item.isApprover}
+                                title="Reject"
+                              ><CancelOutlinedIcon /></button>
+                              <button
+                                onClick={() => handleDelete(item._id)}
+                                className="action-icon-btn delete"
+                                title="Delete"
+                              ><DeleteSweepOutlinedIcon /></button>
+                            </div>
                           </td>
                         </tr>
                       ))}

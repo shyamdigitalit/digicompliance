@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import FileOpenOutlinedIcon  from '@mui/icons-material/FileOpenOutlined';
@@ -9,10 +9,13 @@ import LogoutIcon            from '@mui/icons-material/Logout';
 import PersonOutlineIcon     from '@mui/icons-material/PersonOutline';
 import SearchIcon            from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import CloseIcon from '@mui/icons-material/Close';
 import logo from "../../assets/logo.png";
 import "../styles/Dashboard.css";
 import { useSelector, useDispatch } from "react-redux";
-// import { logout } from "../redux/authSlice"; // ← uncomment if you have a logout action
+import axiosInstance from "../../config/axiosInstance";
 
 const navItems = [
   { path: "/dashboard",  label: "Dashboard",  icon: <DashboardOutlinedIcon /> },
@@ -22,13 +25,150 @@ const navItems = [
   { path: "/setting",    label: "Settings",   icon: <SettingsOutlinedIcon /> },
 ];
 
+const getFileIcon = (name) => {
+  if (!name) return "📄";
+  if (name.endsWith(".pdf")) return "📑";
+  if (name.endsWith(".docx") || name.endsWith(".doc")) return "📘";
+  if (name.endsWith(".xlsx") || name.endsWith(".xls")) return "📗";
+  return "📄";
+};
+
+const isPdf = (name) => name?.toLowerCase().endsWith(".pdf");
+
+/* ── View Docs Panel ── */
+const ViewDocsPanel = React.memo(({ onClose }) => {
+  const [fileList, setFileList] = useState([]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [pdfViewer, setPdfViewer] = useState(null); // { url, name }
+  const [loadingPdf, setLoadingPdf] = useState(false);
+
+  useEffect(() => {
+    axiosInstance.get("/api/file/fetch")
+      .then(res => setFileList(res.data.files || []))
+      .catch(err => console.error(err))
+      .finally(() => setLoadingList(false));
+  }, []);
+
+  const handleViewPdf = useCallback(async (doc) => {
+    setLoadingPdf(true);
+    try {
+      const res = await axiosInstance.get(`/api/file/download/${doc._id}`, { responseType: "blob" });
+      const blob = new Blob([res.data], { type: res.headers["content-type"] || "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      setPdfViewer({ url, name: doc.filename || "Document" });
+    } catch (err) {
+      console.error("View error:", err);
+      alert("Could not open document.");
+    } finally {
+      setLoadingPdf(false);
+    }
+  }, []);
+
+  const handleDownload = useCallback(async (doc) => {
+    try {
+      const res = await axiosInstance.get(`/api/file/download/${doc._id}`, { responseType: "blob" });
+      const blob = new Blob([res.data], { type: res.headers["content-type"] || "application/octet-stream" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = doc.filename || "file";
+      document.body.appendChild(a); a.click(); a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download error:", err);
+    }
+  }, []);
+
+  const closePdf = useCallback(() => {
+    if (pdfViewer?.url) window.URL.revokeObjectURL(pdfViewer.url);
+    setPdfViewer(null);
+  }, [pdfViewer]);
+
+  return (
+    <>
+      {/* Slide-in panel overlay */}
+      <div className="vd-overlay" onClick={onClose} />
+      <div className="vd-panel">
+        <div className="vd-header">
+          <div>
+            <h3 className="vd-title">Documents</h3>
+            <p className="vd-sub">{fileList.length} file{fileList.length !== 1 ? "s" : ""} uploaded</p>
+          </div>
+          <button className="vd-close" onClick={onClose}><CloseIcon fontSize="small" /></button>
+        </div>
+
+        <div className="vd-body">
+          {loadingList ? (
+            <div className="vd-loading">
+              <div className="vd-spinner" />
+              <span>Loading documents…</span>
+            </div>
+          ) : fileList.length === 0 ? (
+            <div className="vd-empty">
+              <span>📂</span>
+              <p>No documents uploaded yet</p>
+            </div>
+          ) : (
+            <ul className="vd-list">
+              {fileList.map((doc) => (
+                <li key={doc._id} className="vd-item">
+                  <span className="vd-icon">{getFileIcon(doc.filename)}</span>
+                  <div className="vd-info">
+                    <span className="vd-name" title={doc.filename}>{doc.filename}</span>
+                    <span className="vd-meta">
+                      {parseFloat(doc.size / 1000).toFixed(1)} KB
+                      {doc.complianceId ? ` · ${doc.complianceId}` : ""}
+                    </span>
+                  </div>
+                  <div className="vd-actions">
+                    {isPdf(doc.filename) && (
+                      <button
+                        className="vd-btn view"
+                        title="View PDF"
+                        onClick={() => handleViewPdf(doc)}
+                        disabled={loadingPdf}
+                      >
+                        <VisibilityOutlinedIcon fontSize="small" />
+                      </button>
+                    )}
+                    <button
+                      className="vd-btn download"
+                      title="Download"
+                      onClick={() => handleDownload(doc)}
+                    >
+                      <FileDownloadOutlinedIcon fontSize="small" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* PDF viewer on top of the panel */}
+      {pdfViewer && (
+        <div className="vd-pdf-overlay" onClick={closePdf}>
+          <div className="vd-pdf-modal" onClick={e => e.stopPropagation()}>
+            <div className="vd-pdf-header">
+              <span className="vd-pdf-name">{pdfViewer.name}</span>
+              <button className="vd-close" onClick={closePdf}><CloseIcon fontSize="small" /></button>
+            </div>
+            <iframe src={pdfViewer.url} title={pdfViewer.name} className="vd-pdf-frame" frameBorder="0" />
+          </div>
+        </div>
+      )}
+    </>
+  );
+});
+
 const Layout = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const dispatch  = useDispatch();
-  const [search, setSearch]           = useState("");
-  const [showDrop, setShowDrop]       = useState(false);
+  const [search, setSearch]             = useState("");
+  const [showDrop, setShowDrop]         = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showViewDocs, setShowViewDocs] = useState(false);
   const userMenuRef = useRef(null);
 
   const user = useSelector(state => state.auth.user) || {};
@@ -41,7 +181,6 @@ const Layout = () => {
     location.pathname.startsWith(path) ||
     (path === "/setting" && location.pathname.startsWith("/masters"));
 
-  // Close user menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
@@ -54,7 +193,6 @@ const Layout = () => {
 
   const handleLogout = () => {
     setShowUserMenu(false);
-    // dispatch(logout()); // ← uncomment if using Redux logout action
     localStorage.removeItem("user");
     navigate("/login");
   };
@@ -81,7 +219,6 @@ const Layout = () => {
       {/* ── SIDEBAR ── */}
       <div className="sidebar">
         <h2 className="logo">Compliance System</h2>
-        {/* <img className="logo" src={logo} alt="Logo" /> */}
 
         <ul>
           {navItems.map(item => (
@@ -101,7 +238,7 @@ const Layout = () => {
             <h4>Manage Compliance Data</h4>
             <p>Download your history or view our integration guides</p>
             <button onClick={() => navigate("/compliance")}>Export Data</button>
-            <button onClick={() => navigate("/document")}>View Docs</button>
+            <button onClick={() => setShowViewDocs(true)}>View Docs</button>
           </div>
         </div>
       </div>
@@ -139,12 +276,8 @@ const Layout = () => {
               <NotificationsNoneIcon />
             </div>
 
-            {/* ── USER MENU ── */}
             <div className="topbar-user-wrap" ref={userMenuRef}>
-              <div
-                className="topbar-user"
-                onClick={() => setShowUserMenu(prev => !prev)}
-              >
+              <div className="topbar-user" onClick={() => setShowUserMenu(prev => !prev)}>
                 <div className="topbar-avatar">{initials}</div>
                 <div className="topbar-user-info">
                   <span className="topbar-user-name">{userName}</span>
@@ -174,6 +307,9 @@ const Layout = () => {
           <Outlet />
         </div>
       </div>
+
+      {/* ── VIEW DOCS PANEL ── */}
+      {showViewDocs && <ViewDocsPanel onClose={() => setShowViewDocs(false)} />}
     </div>
   );
 };
