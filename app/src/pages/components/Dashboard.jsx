@@ -7,6 +7,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CalendarTodayIcon      from '@mui/icons-material/CalendarToday';
 import axiosInstance from "../../config/axiosInstance";
 import Loader from '../../components/loader';
+import { getActivityLog, formatActivityTime } from "../utils/activityLog";
 
 function futureDate(daysFromNow) {
   const d = new Date();
@@ -39,10 +40,23 @@ const defaultActivities = [
 const Dashboard = () => {
   // No localStorage — use default data directly
   const complianceData = defaultCompliance;
-  const activities     = defaultActivities;
+  const [activities, setActivities] = React.useState([]);
   const [allDashData, setAllDashData] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [statusDist, setStatusDist] = React.useState([]);
+
+  // Load activity log from localStorage on mount and on window focus
+  React.useEffect(() => {
+    const loadActivities = () => setActivities(getActivityLog());
+    loadActivities();
+    window.addEventListener("focus", loadActivities);
+    // Also poll every 5s so activities appear quickly after actions
+    const interval = setInterval(loadActivities, 5000);
+    return () => {
+      window.removeEventListener("focus", loadActivities);
+      clearInterval(interval);
+    };
+  }, []);
 
   const fetchAllDashData = React.useCallback(async () => {
     setLoading(true);
@@ -197,14 +211,16 @@ const Dashboard = () => {
 
             <div className="right">
               <div className="panel-header"><h3>Recent Activity</h3></div>
-              {activities.slice(0, 6).map((item, i) => (
+              {(activities.length > 0 ? activities : defaultActivities).slice(0, 6).map((item, i) => (
                 <div className="activity-item" key={i}>
                   <div className="activity-dot" />
                   <div className="activity-body">
                     <div className="activity-text">{item.text}</div>
                     <div className="activity-meta">By: {item.user}</div>
                   </div>
-                  <div className="activity-time">{item.time}</div>
+                  <div className="activity-time">
+                    {item.time && item.time.includes("T") ? formatActivityTime(item.time) : item.time}
+                  </div>
                 </div>
               ))}
             </div>

@@ -13,6 +13,7 @@ import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import Loader from "../../components/loader";
 import moment from 'moment';
+import { logActivity } from "../utils/activityLog";
 
 const COMPLIANCE_KEY = "compliance_data";
 const ACTIVITY_KEY = "activity_log";
@@ -160,6 +161,7 @@ const Compliance = React.memo(function Compliance() {
           headers: { "Content-Type": "multipart/form-data" }
         });
         if (response.status === 201) {
+          logActivity("Compliance Updated", editing?.complianceId || editing?._id, user);
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -174,6 +176,7 @@ const Compliance = React.memo(function Compliance() {
           headers: { "Content-Type": "multipart/form-data" }
         });
         if (response.status === 201) {
+          logActivity("Compliance Added", response.data?.data?.complianceId || "", user);
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -213,6 +216,7 @@ const Compliance = React.memo(function Compliance() {
           );
           const blob = new Blob([response.data], { type: 'application/zip' });
           saveAs(blob, `${label}.zip`);
+          logActivity("Compliance Downloaded", label, user);
           alert(`Files downloaded successfully!`);
           return;
         } catch (err) {
@@ -232,6 +236,7 @@ const Compliance = React.memo(function Compliance() {
       }
       const zipBlob = await zip.generateAsync({ type: "blob" });
       saveAs(zipBlob, `${label}.zip`);
+      logActivity("Compliance Downloaded", label, user);
       alert(`ZIP exported successfully!`);
     } catch (err) {
       console.error(err);
@@ -244,6 +249,7 @@ const Compliance = React.memo(function Compliance() {
       if (window.confirm("Approve this compliance record?")) {
         const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=1`, row);
         if (response.status === 201) {
+          logActivity("Compliance Approved", row.complianceId || row._id, user);
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -257,13 +263,14 @@ const Compliance = React.memo(function Compliance() {
     } catch (error) {
       console.error(error);
     }
-  }, [setSaved, setShowAddForm, fetchData]);
+  }, [setSaved, setShowAddForm, fetchData, user]);
 
   const handleReject = React.useCallback(async (row) => {
     try {
       if (window.confirm("Reject this compliance record?")) {
         const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=0`, row);
         if (response.status === 201) {
+          logActivity("Compliance Rejected", row.complianceId || row._id, user);
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -277,13 +284,14 @@ const Compliance = React.memo(function Compliance() {
     } catch (error) {
       console.error(error);
     }
-  }, [setSaved, setShowAddForm, fetchData]);
+  }, [setSaved, setShowAddForm, fetchData, user]);
 
   const handleDelete = React.useCallback(async (id) => {
     try {
       if (window.confirm("Delete this compliance record?")) {
         const response = await axiosInstance.delete(`/api/comp/delete?id=${id}`);
         if (response.status === 200) {
+          logActivity("Compliance Deleted", id, user);
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -300,7 +308,8 @@ const Compliance = React.memo(function Compliance() {
 
   const handleStatusChange = React.useCallback((id, newStatus) => {
     setData(prev => prev.map(d => d._id === id ? { ...d, status: newStatus } : d));
-  }, []);
+    logActivity("Compliance Status Changed", `Status set to ${newStatus}`, user);
+  }, [user]);
 
   const handleExport = React.useCallback(() => {
     if (!paged.length) {
@@ -346,7 +355,8 @@ const Compliance = React.memo(function Compliance() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Compliance');
     XLSX.writeFile(workbook, 'Compliance_Datasheet.xlsx');
-  }, [paged]);
+    logActivity("Compliance Exported", `${exportData.length} records`, user);
+  }, [paged, user]);
 
   const getTag = (val) => val?.toLowerCase().replace(" ", "-");
   const isExpired = (dueDate) => dueDate && new Date(dueDate) < new Date();

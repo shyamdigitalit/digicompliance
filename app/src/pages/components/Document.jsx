@@ -4,6 +4,8 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import "../styles/Document.css";
 import axiosInstance from "../../config/axiosInstance";
 import Loader from "../../components/loader";
+import { useSelector } from "react-redux";
+import { logActivity } from "../utils/activityLog";
 
 const defaultFileList = [];
 
@@ -110,6 +112,8 @@ const Documents = React.memo(function Documents() {
   const [pdfViewer, setPdfViewer] = React.useState(null);
   const fileInputRef = React.useRef();
 
+  const user = useSelector(state => state.auth.user) || {};
+
   const fetchFiles = React.useCallback(async () => {
     try {
       const res = await axiosInstance.get("/api/file/fetch");
@@ -155,6 +159,7 @@ const Documents = React.memo(function Documents() {
       await axiosInstance.post("/api/file/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
+      logActivity("Document Uploaded", files.map(f => f.name).join(", "), user);
       setFiles([]);
       setShowCompliancePicker(false);
       // Await fetchFiles so the list is populated before the loader hides
@@ -177,10 +182,11 @@ const Documents = React.memo(function Documents() {
       a.href = url; a.download = file.filename || "file";
       document.body.appendChild(a); a.click(); a.remove();
       window.URL.revokeObjectURL(url);
+      logActivity("Document Downloaded", file.filename || file._id, user);
     } catch (err) {
       console.error("Download error:", err);
     }
-  }, []);
+  }, [user]);
 
   const handleViewPdf = React.useCallback(async (file) => {
     try {
