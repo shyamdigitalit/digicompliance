@@ -8,6 +8,7 @@ import CalendarTodayIcon      from '@mui/icons-material/CalendarToday';
 import axiosInstance from "../../config/axiosInstance";
 import Loader from '../../components/loader';
 import { getActivityLog, formatActivityTime } from "../utils/activityLog";
+import moment from "moment";
 
 function futureDate(daysFromNow) {
   const d = new Date();
@@ -44,6 +45,51 @@ const Dashboard = () => {
   const [allDashData, setAllDashData] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [statusDist, setStatusDist] = React.useState([]);
+  const [compliance, setCompliance] = React.useState([])
+
+  const fetchCompliance = React.useCallback(async () => {
+    try {
+      const response = await axiosInstance.get('/api/comp/fetch')
+      const complnc = response.data?.data?.sort((a, b) => {
+        const criticalityOrder = {
+            HIGH: 3,
+            MEDIUM: 2,
+            LOW: 1
+        };
+        // Get criticality values
+        const aCriticality = criticalityOrder[a?.criticality?.code] || 0;
+        const bCriticality = criticalityOrder[b?.criticality?.code] || 0;
+        // 1. Sort by criticality (Higher → Lower)
+        if (bCriticality !== aCriticality) {
+            return bCriticality - aCriticality;
+        }
+
+        // 2. Sort by due date (Nearer today first)
+        return new Date(a.dueDate) - new Date(b.dueDate)
+      })
+      .map((elm) => {
+        const today = new Date()
+        today.setHours(0,0,0,0)
+        const dueDate = new Date(elm.dueDate)
+        dueDate.setHours(0,0,0,0)
+        const dateDiff = Math.ceil((dueDate - today)/(1000*60*60*24))
+        
+        return {
+          ...elm,
+          dueDateFormatted: moment(elm.dueDate).format("DD-MM-YYYY"),
+          dateDifference: dateDiff
+        }
+      })
+      // console.log("Sorted Data:");
+      // console.log(complnc);
+      setCompliance(complnc || [])
+    } catch (error) {
+      console.error(error)
+    }
+  }, [])
+  React.useEffect(() => {
+    fetchCompliance()
+  }, [fetchCompliance])
 
   // Load activity log from localStorage on mount and on window focus
   React.useEffect(() => {
@@ -191,17 +237,17 @@ const Dashboard = () => {
                 <h3>Upcoming Deadlines</h3>
                 <CalendarTodayIcon />
               </div>
-              {upcomingDeadlines.length === 0
+              {compliance.length === 0
                 ? <p style={{ color:"#9ca3af", fontSize:"13px" }}>No upcoming deadlines</p>
-                : upcomingDeadlines.map((item, i) => (
+                : compliance.map((item, i) => (
                   <div className="deadline-item" key={i}>
                     <div className="deadline-left">
-                      <div className="deadline-title">{item.type}</div>
-                      <div className="deadline-plant">{item.plant}</div>
+                      <div className="deadline-title">{item?.complianceCategorization?.name}</div>
+                      <div className="deadline-plant">{item?.plant?.name}</div>
                     </div>
-                    <span className={tagClass(item.criticality)}>{item.criticality}</span>
+                    <span className={tagClass(item?.criticality?.name)}>{item?.criticality?.name}</span>
                     <div className="deadline-right">
-                      <div className={daysClass(item.daysLeft)}>{daysLabel(item.daysLeft)}</div>
+                      <div className={daysClass(parseInt(item?.dateDifference))}>{daysLabel(item?.dateDifference)}</div>
                       <div className="deadline-date">{formatDate(item.dueDate)}</div>
                     </div>
                   </div>
