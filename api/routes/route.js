@@ -25,9 +25,6 @@ import dashController from '../controllers/dashController.js';
 import dynapprvlController from '../controllers/adminmgmt/dynapproval/dynapprvlController.js';
 import fileOpController from '../controllers/fileOpController.js';
 
-// import { getPolicyExipryMailDetails } from '../utilities/jobscheduler/jobScheduler.js';
-// import { getInstallmentRenewalMailDetails } from '../utilities/jobscheduler/jobScheduler.js';
-
 
 // Utility function to create routes
 const createRoute = (method, path, ...handlers) => {

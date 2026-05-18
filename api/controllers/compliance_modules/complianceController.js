@@ -9,7 +9,7 @@ import { uploadFiles, deleteFiles } from '../../utilities/fileOperations.js';
 import { isValidObjectId } from '../../utilities/isValidObjectId.js';
 import { safeJSONParse } from '../../utilities/safeJSONParse.js';
 import { fetchApprovalDetails } from '../adminmgmt/dynapproval/dynapprvlController.js';
-import { mailConfig } from '../../configs/mailConfig.js';
+// import { mailConfig } from '../../configs/mailConfig.js';
 
 /* ======================================================
    Helpers
@@ -199,30 +199,30 @@ const calculateApproval = (user, maxLvl, currLvl, flag) => {
     };
 };
 
-const sendMailToApprover = async (plant, department, currentPendingApprovalLevel) => {
-    const approvals = await fetchApprovalDetails(String(plant?._id), String(department?._id), null);
-    const currentLevelApprovers = approvals?.approvalDetails
-    ?.find(ad => ad.approvalLevel === parseInt(currentPendingApprovalLevel, 10))
-    ?.approvers?.map(a => ({ ...a, approvalLevel: parseInt(currentPendingApprovalLevel, 10) })) || [];
+// const sendMailToApprover = async (plant, department, currentPendingApprovalLevel) => {
+//     const approvals = await fetchApprovalDetails(String(plant?._id), String(department?._id), null);
+//     const currentLevelApprovers = approvals?.approvalDetails
+//     ?.find(ad => ad.approvalLevel === parseInt(currentPendingApprovalLevel, 10))
+//     ?.approvers?.map(a => ({ ...a, approvalLevel: parseInt(currentPendingApprovalLevel, 10) })) || [];
 
-    // console.log(currentLevelApprovers);
-    if (currentLevelApprovers?.length === 0) return { success: false };
-    const recipients = currentLevelApprovers.map(a => a.approverAccount?.acc_eml && a.approverAccount?.acc_eml.trim()).filter(Boolean);
-    // console.log('Recipients:', recipients);
-    const mailResponse = await mailConfig(
-        recipients,
-        [],
-        [],
-        `Approval Required: Compliance Pending L${currentPendingApprovalLevel} Approval`,
-        `<p>Dear Approver,</p>
-        <p>A compliance record is pending your approval at Level ${currentPendingApprovalLevel}.</p>
-        <p>Please log in to the eCompliance system to review and take necessary action.</p>
-        <p>Regards,<br/>eCompliance System</p>`,
-        []
-    );
-    if (mailResponse?.response) return { success: true, message: 'Email sent successfully', data: mailResponse };
-    else return { success: false, message: 'Failed to send email' };
-}
+//     // console.log(currentLevelApprovers);
+//     if (currentLevelApprovers?.length === 0) return { success: false };
+//     const recipients = currentLevelApprovers.map(a => a.approverAccount?.acc_eml && a.approverAccount?.acc_eml.trim()).filter(Boolean);
+//     // console.log('Recipients:', recipients);
+//     const mailResponse = await mailConfig(
+//         recipients,
+//         [],
+//         [],
+//         `Approval Required: Compliance Pending L${currentPendingApprovalLevel} Approval`,
+//         `<p>Dear Approver,</p>
+//         <p>A compliance record is pending your approval at Level ${currentPendingApprovalLevel}.</p>
+//         <p>Please log in to the eCompliance system to review and take necessary action.</p>
+//         <p>Regards,<br/>eCompliance System</p>`,
+//         []
+//     );
+//     if (mailResponse?.response) return { success: true, message: 'Email sent successfully', data: mailResponse };
+//     else return { success: false, message: 'Failed to send email' };
+// }
 
 /* ======================================================
    File helpers
@@ -312,14 +312,16 @@ export const create = async (req, res) => {
         });
         if (!compliance) return res.status(400).json({ success: false, message: 'Failed to create compliance record' });
 
-        const mailRes = await sendMailToApprover(user, compliance.currentPendingApprovalLevel)
-        if (!mailRes.success) {
-            console.error('Error sending mail to approver:', mailRes.message);
-            res.status(201).json({ success: true, data: compliance, message: 'Compliance record created successfully' });
-        }
-        else {
-            res.status(201).json({ success: true, data: compliance, message: 'Compliance record created successfully' });
-        }
+        // const mailRes = await sendMailToApprover(user, compliance.currentPendingApprovalLevel)
+        // if (!mailRes.success) {
+        //     console.error('Error sending mail to approver:', mailRes.message);
+        //     res.status(201).json({ success: true, data: compliance, message: 'Compliance record created successfully' });
+        // }
+        // else {
+        //     res.status(201).json({ success: true, data: compliance, message: 'Compliance record created successfully' });
+        // }
+
+        res.status(201).json({ success: true, data: compliance, message: 'Compliance record created successfully' })
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: err.message });
@@ -428,14 +430,16 @@ export const approve = async (req, res) => {
         if (!apprvData) return res.status(404).json({ success: false, message: 'Compliance record not found' });
 
         // console.log(apprvData);
-        const mailRes = await sendMailToApprover(apprvData.plant, apprvData.department, apprvData.currentPendingApprovalLevel)
-        if (!mailRes.success) {
-            console.error('Error sending mail to approver:', mailRes.message)
-            res.status(201).json({ success: true, data: apprvData, message: `Compliance record ${flag === 1 ? 'approved' : 'rejected'} successfully` });
-        }
-        else {
-            res.status(201).json({ success: true, data: apprvData, message: `Compliance record ${flag === 1 ? 'approved' : 'rejected'} successfully` });
-        }
+        // const mailRes = await sendMailToApprover(apprvData.plant, apprvData.department, apprvData.currentPendingApprovalLevel)
+        // if (!mailRes.success) {
+        //     console.error('Error sending mail to approver:', mailRes.message)
+        //     res.status(201).json({ success: true, data: apprvData, message: `Compliance record ${flag === 1 ? 'approved' : 'rejected'} successfully` });
+        // }
+        // else {
+        //     res.status(201).json({ success: true, data: apprvData, message: `Compliance record ${flag === 1 ? 'approved' : 'rejected'} successfully` });
+        // }
+
+        res.status(201).json({ success: true, data: apprvData, message: `Compliance record ${flag === 1 ? 'approved' : 'rejected'} successfully` })
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
