@@ -104,11 +104,13 @@ else {
   (async () => {
     await mongoConn();
     
-    app.listen(port, () => {
-      console.log(`Worker ${process.pid}: ${apienv.toUpperCase()}[${appenv.toUpperCase()}] Server running on port ${port}`);
-      if (appenv !== 'production') {
-        console.log(`Worker ${process.pid}: ${apienv.toUpperCase()}[${appenv.toUpperCase()}] Accepting requests from: ${origins[0]}`);
-      }
-    });
+    // app.listen(port, () => {
+    //   console.log(`Worker ${process.pid}: ${apienv.toUpperCase()}[${appenv.toUpperCase()}] Server running on port ${port}`);
+    //   if (appenv !== 'production') {
+    //     console.log(`Worker ${process.pid}: ${apienv.toUpperCase()}[${appenv.toUpperCase()}] Accepting requests from: ${origins[0]}`);
+    //   }
+    // });
   })();
 }
+
+export default app;
