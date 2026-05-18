@@ -344,4 +344,8 @@ tr {
 .action-icon-btn.reject { color: #d97706; }
 .action-icon-btn.reject:hover:not(:disabled) { background: #fffbeb; }
 .action-icon-btn.delete { color: #ef4444; }
+<<<<<<< Updated upstream
 .action-icon-btn.delete:hover:not(:disabled) { background: #fef2f2; }
+=======
+.action-icon-btn.delete:hover:not(:disabled) { background: #fef2f2; }
+>>>>>>> Stashed changes
