@@ -10,24 +10,24 @@ import Loader from '../../components/loader';
 import { getActivityLog, formatActivityTime } from "../utils/activityLog";
 import moment from "moment";
 
-function futureDate(daysFromNow) {
-  const d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
-  return d.toISOString().slice(0, 10);
-}
+// function futureDate(daysFromNow) {
+//   const d = new Date();
+//   d.setDate(d.getDate() + daysFromNow);
+//   return d.toISOString().slice(0, 10);
+// }
 
-const dueDays = (dueDate) => Math.round(dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+// const dueDays = (dueDate) => Math.round(dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
 
-const defaultCompliance = [
-  { id:"CMP-001", plant:"Mumbai Plant A",    dept:"Operations",  type:"Safety Inspection",       category:"Health & Safety",    freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate: futureDate(-5)  },
-  { id:"CMP-002", plant:"Delhi Plant B",     dept:"Quality",     type:"ISO Audit Review",        category:"Quality Management", freq:"Quarterly", criticality:"Critical", status:"Pending",     dueDate: futureDate(3)   },
-  { id:"CMP-003", plant:"Bangalore Plant C", dept:"HR",          type:"Labour Law Compliance",   category:"Statutory",          freq:"Annual",    criticality:"Medium",   status:"In Progress", dueDate: futureDate(8)   },
-  { id:"CMP-004", plant:"Mumbai Plant A",    dept:"Environment", type:"Environmental Assessment", category:"Environmental",      freq:"Monthly",   criticality:"High",     status:"Pending",     dueDate: futureDate(5)   },
-  { id:"CMP-005", plant:"Delhi Plant B",     dept:"Operations",  type:"Fire Safety",             category:"Health & Safety",    freq:"Weekly",    criticality:"High",     status:"Completed",   dueDate: futureDate(-2)  },
-  { id:"CMP-006", plant:"Bangalore Plant C", dept:"Quality",     type:"Product Testing",         category:"Quality Management", freq:"Daily",     criticality:"Medium",   status:"In Progress", dueDate: futureDate(12)  },
-  { id:"CMP-007", plant:"Mumbai Plant A",    dept:"HR",          type:"Employee Training",       category:"Statutory",          freq:"Quarterly", criticality:"Low",      status:"Pending",     dueDate: futureDate(15)  },
-  { id:"CMP-008", plant:"Delhi Plant B",     dept:"Environment", type:"Waste Management",        category:"Environmental",      freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate: futureDate(-1)  },
-];
+// const defaultCompliance = [
+//   { id:"CMP-001", plant:"Mumbai Plant A",    dept:"Operations",  type:"Safety Inspection",       category:"Health & Safety",    freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate: futureDate(-5)  },
+//   { id:"CMP-002", plant:"Delhi Plant B",     dept:"Quality",     type:"ISO Audit Review",        category:"Quality Management", freq:"Quarterly", criticality:"Critical", status:"Pending",     dueDate: futureDate(3)   },
+//   { id:"CMP-003", plant:"Bangalore Plant C", dept:"HR",          type:"Labour Law Compliance",   category:"Statutory",          freq:"Annual",    criticality:"Medium",   status:"In Progress", dueDate: futureDate(8)   },
+//   { id:"CMP-004", plant:"Mumbai Plant A",    dept:"Environment", type:"Environmental Assessment", category:"Environmental",      freq:"Monthly",   criticality:"High",     status:"Pending",     dueDate: futureDate(5)   },
+//   { id:"CMP-005", plant:"Delhi Plant B",     dept:"Operations",  type:"Fire Safety",             category:"Health & Safety",    freq:"Weekly",    criticality:"High",     status:"Completed",   dueDate: futureDate(-2)  },
+//   { id:"CMP-006", plant:"Bangalore Plant C", dept:"Quality",     type:"Product Testing",         category:"Quality Management", freq:"Daily",     criticality:"Medium",   status:"In Progress", dueDate: futureDate(12)  },
+//   { id:"CMP-007", plant:"Mumbai Plant A",    dept:"HR",          type:"Employee Training",       category:"Statutory",          freq:"Quarterly", criticality:"Low",      status:"Pending",     dueDate: futureDate(15)  },
+//   { id:"CMP-008", plant:"Delhi Plant B",     dept:"Environment", type:"Waste Management",        category:"Environmental",      freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate: futureDate(-1)  },
+// ];
 
 const defaultActivities = [
   { text:"Completed Safety Inspection - Mumbai Plant A",  user:"John Smith",    time:"2 hours ago" },
@@ -40,7 +40,7 @@ const defaultActivities = [
 
 const Dashboard = () => {
   // No localStorage — use default data directly
-  const complianceData = defaultCompliance;
+  // const complianceData = defaultCompliance;
   const [activities, setActivities] = React.useState([]);
   const [allDashData, setAllDashData] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
@@ -80,8 +80,6 @@ const Dashboard = () => {
           dateDifference: dateDiff
         }
       })
-      // console.log("Sorted Data:");
-      // console.log(complnc);
       setCompliance(complnc || [])
     } catch (error) {
       console.error(error)
@@ -108,7 +106,7 @@ const Dashboard = () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get('/api/dash/fetch');
-      console.log(response.data.data);
+      // console.log(response.data.data);
       setAllDashData(response.data.data);
       setStatusDist(statusDistribution(response.data.data));
     } catch (error) {
@@ -133,39 +131,39 @@ const Dashboard = () => {
     ];
   }, []);
 
-  const stats = React.useMemo(() => ({
-    total:     complianceData.length,
-    pending:   complianceData.filter(c => c.status === "Pending").length,
-    critical:  complianceData.filter(c => c.criticality === "Critical").length,
-    completed: complianceData.filter(c => c.status === "Completed").length,
-  }), [complianceData]);
+  // const stats = React.useMemo(() => ({
+  //   total:     complianceData.length,
+  //   pending:   complianceData.filter(c => c.status === "Pending").length,
+  //   critical:  complianceData.filter(c => c.criticality === "Critical").length,
+  //   completed: complianceData.filter(c => c.status === "Completed").length,
+  // }), [complianceData]);
 
-  const upcomingDeadlines = React.useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return complianceData
-      .filter(c => c.status !== "Completed" && c.dueDate)
-      .map(c => {
-        const due = new Date(c.dueDate);
-        due.setHours(0, 0, 0, 0);
-        return { ...c, daysLeft: Math.round((due - today) / 86400000) };
-      })
-      .sort((a, b) => a.daysLeft - b.daysLeft)
-      .slice(0, 4);
-  }, [complianceData]);
+  // const upcomingDeadlines = React.useMemo(() => {
+  //   const today = new Date();
+  //   today.setHours(0, 0, 0, 0);
+  //   return complianceData
+  //     .filter(c => c.status !== "Completed" && c.dueDate)
+  //     .map(c => {
+  //       const due = new Date(c.dueDate);
+  //       due.setHours(0, 0, 0, 0);
+  //       return { ...c, daysLeft: Math.round((due - today) / 86400000) };
+  //     })
+  //     .sort((a, b) => a.daysLeft - b.daysLeft)
+  //     .slice(0, 4);
+  // }, [complianceData]);
 
-  const categoryBreakdown = React.useMemo(() => {
-    const cats = {};
-    complianceData.forEach(c => {
-      if (!cats[c.category]) cats[c.category] = { total: 0, completed: 0 };
-      cats[c.category].total++;
-      if (c.status === "Completed") cats[c.category].completed++;
-    });
-    return Object.entries(cats).map(([name, v]) => ({
-      name, total: v.total, completed: v.completed,
-      pct: Math.round((v.completed / v.total) * 100),
-    }));
-  }, [complianceData]);
+  // const categoryBreakdown = React.useMemo(() => {
+  //   const cats = {};
+  //   complianceData.forEach(c => {
+  //     if (!cats[c.category]) cats[c.category] = { total: 0, completed: 0 };
+  //     cats[c.category].total++;
+  //     if (c.status === "Completed") cats[c.category].completed++;
+  //   });
+  //   return Object.entries(cats).map(([name, v]) => ({
+  //     name, total: v.total, completed: v.completed,
+  //     pct: Math.round((v.completed / v.total) * 100),
+  //   }));
+  // }, [complianceData]);
   
   const tagClass = p =>
     p === "Critical" ? "tag red" : p === "High" ? "tag orange" : p === "Medium" ? "tag yellow" : "tag blue";
@@ -181,11 +179,11 @@ const Dashboard = () => {
 
   // const completionPct = stats.total ? Math.round(stats.completed / stats.total * 100) : 0;
 
-  const completionPct = React.useMemo(() => {
-    const total = parseInt(allDashData?.total) || 0;
-    const compltd = parseInt(allDashData?.byStatus?.Active) || 0;
-    return total ? Math.round(compltd / total * 100) : 0;
-  }, [allDashData]);
+  // const completionPct = React.useMemo(() => {
+  //   const total = parseInt(allDashData?.total) || 0;
+  //   const compltd = parseInt(allDashData?.byStatus?.Active) || 0;
+  //   return total ? Math.round(compltd / total * 100) : 0;
+  // }, [allDashData]);
 
   return (
     <>

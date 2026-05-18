@@ -36,7 +36,7 @@ const Compliance = React.memo(function Compliance() {
   const [saved, setSaved] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
-  const user = useSelector(state => state.auth.user) || {};
+  const user = useSelector(state => state.auth.user)
 
   const fetchData = React.useCallback(async () => {
     setLoading(true);
