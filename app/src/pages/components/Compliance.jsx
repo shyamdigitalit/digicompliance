@@ -160,6 +160,7 @@ const Compliance = React.memo(function Compliance() {
         const response = await axiosInstance.patch(`/api/comp/update?id=${editing?._id}`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
         });
+        console.log(editing);
         if (response.status === 201) {
           logActivity("Compliance Updated", editing?.complianceId || editing?._id, user);
           setSaved(true);
@@ -190,7 +191,7 @@ const Compliance = React.memo(function Compliance() {
     } catch (error) {
       console.error(error);
     }
-  }, [editing, setSaved, setShowAddForm, fetchData]);
+  }, [editing, setSaved, setShowAddForm, fetchData, user]);
 
   const handleEdit = React.useCallback((row) => {
     setEditing(row);
@@ -290,8 +291,9 @@ const Compliance = React.memo(function Compliance() {
     try {
       if (window.confirm("Delete this compliance record?")) {
         const response = await axiosInstance.delete(`/api/comp/delete?id=${id}`);
+        console.log(response.data);
         if (response.status === 200) {
-          logActivity("Compliance Deleted", id, user);
+          logActivity("Compliance Deleted", response.data?.data?.complianceId || id, user);
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -304,7 +306,7 @@ const Compliance = React.memo(function Compliance() {
     } catch (error) {
       console.error(error);
     }
-  }, [setSaved, fetchData]);
+  }, [setSaved, fetchData, user]);
 
   const handleStatusChange = React.useCallback((id, newStatus) => {
     setData(prev => prev.map(d => d._id === id ? { ...d, status: newStatus } : d));

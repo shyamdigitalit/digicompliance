@@ -6,6 +6,7 @@ import axiosInstance from "../../config/axiosInstance";
 import Loader from "../../components/loader";
 import { useSelector } from "react-redux";
 import { logActivity } from "../utils/activityLog";
+import moment from "moment";
 
 const defaultFileList = [];
 
@@ -37,6 +38,7 @@ const UploadPreview = React.memo(({ files, onRemove }) => (
 /* ── Compliance Picker Modal ── */
 const CompliancePickerModal = React.memo(({ complianceList, onConfirm, onClose, uploading }) => {
   const [selected, setSelected] = React.useState("");
+  // console.log(complianceList?.find(c => c._id === selected));
   return (
     <div className="doc-modal-overlay" onClick={onClose}>
       <div className="doc-modal" onClick={e => e.stopPropagation()}>
@@ -56,7 +58,7 @@ const CompliancePickerModal = React.memo(({ complianceList, onConfirm, onClose, 
         </select>
         <div className="doc-modal-footer">
           <button className="light-btn" onClick={onClose} disabled={uploading}>Cancel</button>
-          <button className="dark-btn" onClick={() => onConfirm(selected || null)} disabled={uploading}>
+          <button className="dark-btn" onClick={() => onConfirm(complianceList?.find(c => c._id === selected) || null)} disabled={uploading}>
             {uploading ? "Uploading…" : "Upload"}
           </button>
         </div>
@@ -112,12 +114,45 @@ const Documents = React.memo(function Documents() {
   const [pdfViewer, setPdfViewer] = React.useState(null);
   const fileInputRef = React.useRef();
 
-  const user = useSelector(state => state.auth.user) || {};
+  const user = useSelector(state => state.auth.user);
 
   const fetchFiles = React.useCallback(async () => {
     try {
-      const res = await axiosInstance.get("/api/file/fetch");
-      setFileList(res.data.files || []);
+      const [res1, res2] = await Promise.allSettled([
+        axiosInstance.get("/api/comp/fetch"),
+        axiosInstance.get("/api/file/fetch")
+      ]);
+      const compliances = res1.value.data.data || []
+      const allUnmappedFiles = res2.value.data.files || []
+      // console.log(compliances);
+      // console.log(allUnmappedFiles);
+      const complianceMapping = compliances?.flatMap(c => c?.allDocs?.map(a => ({
+        compId: c?._id,
+        complianceId: c?.complianceId,
+        ...a,
+      })))
+
+      const allFiles = allUnmappedFiles?.map(f => {
+        const fMapped = complianceMapping?.find(cd => String(cd?.filId)===String(f?._id))
+        // console.log(fMapped);
+        if (fMapped) {
+          return {
+            compId: fMapped?.compId,
+            complianceId: fMapped?.complianceId,
+            ...f
+          }
+        }
+        else {
+          return {
+            compId: "",
+            complianceId: "",
+            ...f
+          }
+        }
+      })
+
+      // console.log(allFiles);
+      setFileList(allFiles || []);
     } catch (error) {
       console.error("Error fetching files:", error);
     }
@@ -149,16 +184,72 @@ const Documents = React.memo(function Documents() {
   }, [files]);
 
   /* FIX: await fetchFiles() so list updates BEFORE loader disappears */
-  const handleConfirmUpload = React.useCallback(async (complianceId) => {
+  const handleConfirmUpload = React.useCallback(async (complianceData) => {
     setUploading(true);
     setUploadingFiles(true);
+    // console.log(complianceData);
+    const compid = complianceData?._id 
+    let compliancePayload = {
+      plant: "",
+      department: "",
+      complianceType: "",
+      complianceCategorization: "",
+      complianceFrequency: "",
+      criticality: "",
+      penaltyType: "",
+      dueDate: null,
+      legislation: "",
+      complianceHeader: "",
+      complianceDescription: "",
+      complianceApplicability: "",
+      additionalInformation: "",
+      provision: "",
+      complianceStatutoryAuthority: "",
+      location: "",
+      scheduledPeriodicity: "",
+      remarks: "",
+    }
     const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
-    if (complianceId) formData.append("complianceId", complianceId);
+
     try {
-      await axiosInstance.post("/api/file/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      if (complianceData) {
+        Object.assign(compliancePayload, {
+          plant: complianceData?.plant?._id || "",
+          department: complianceData?.department?._id || "",
+          complianceType: complianceData?.complianceType?._id || "",
+          complianceCategorization: complianceData?.complianceCategorization?._id || "",
+          complianceFrequency: complianceData?.complianceFrequency?._id || "",
+          criticality: complianceData?.criticality?._id || "",
+          penaltyType: complianceData?.penaltyType?._id || "",
+          dueDate: complianceData?.dueDate || null,
+          legislation: complianceData?.legislation || "",
+          complianceHeader: complianceData?.complianceHeader || "",
+          complianceDescription: complianceData?.complianceDescription || "",
+          complianceApplicability: complianceData?.complianceApplicability || "",
+          additionalInformation: complianceData?.additionalInformation || "",
+          provision: complianceData?.provision || "",
+          complianceStatutoryAuthority: complianceData?.complianceStatutoryAuthority || "",
+          location: complianceData?.location || "",
+          scheduledPeriodicity: complianceData?.scheduledPeriodicity || "",
+          remarks: complianceData?.remarks || "",
+        })
+        Object.entries(compliancePayload).forEach(([key, value]) => {
+          formData.append(key, value ?? "");
+        });
+        files.forEach((file) => formData.append("allDocs", file));
+        await axiosInstance.patch(`/api/comp/update?id=${compid}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+      }
+      else {
+        files.forEach((file) => formData.append("files", file));
+        await axiosInstance.post(`/api/file/upload`, formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+      }
+      // await axiosInstance.patch(`/api/comp/update?id=${compid}`, formData, {
+      //   headers: { "Content-Type": "multipart/form-data" }
+      // });
       logActivity("Document Uploaded", files.map(f => f.name).join(", "), user);
       setFiles([]);
       setShowCompliancePicker(false);
@@ -171,7 +262,7 @@ const Documents = React.memo(function Documents() {
       setUploading(false);
       setUploadingFiles(false);
     }
-  }, [files, fetchFiles]);
+  }, [files, fetchFiles, user]);
 
   const handleDownload = React.useCallback(async (file) => {
     try {

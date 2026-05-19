@@ -22,6 +22,9 @@ export const uploadHandler = async (req, res) => {
         }
 
         const files = req.files?.files || [];
+
+        console.log(files);
+        console.log(req.body);
         const result = await uploadFiles([].concat(files));
 
         return res.status(200).json({

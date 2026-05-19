@@ -373,6 +373,7 @@ export const update = async (req, res) => {
         const id = req.query.id;
         const user = req.user;
         const payload = safeJSONParse(req.body);
+        console.log(payload);
 
         const ids = mapIds(payload);
 
