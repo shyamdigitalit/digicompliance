@@ -6,7 +6,6 @@ import axiosInstance from "../../config/axiosInstance";
 import Loader from "../../components/loader";
 import { useSelector } from "react-redux";
 import { logActivity } from "../utils/activityLog";
-import moment from "moment";
 
 const defaultFileList = [];
 
@@ -18,7 +17,7 @@ const getFileIcon = (name) => {
   if (name.endsWith(".csv")) return "📊";
   if (name.endsWith(".pdf")) return "📑";
   if (name.endsWith(".webp") || name.endsWith(".png") || name.endsWith(".jpg")) return "🖼️";
-  if (name.endsWith(".webm")) return "🎬";
+  if (name.endsWith(".webm") || name.endsWith(".mp4")) return "🎬";
   return "📄";
 };
 
@@ -323,7 +322,7 @@ const Documents = React.memo(function Documents() {
                     ref={fileInputRef} type="file" multiple
                     style={{ display: "none" }}
                     onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx,.xls,.xlsx"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.webp,.webm,.mp4"
                   />
                   <div className="upload-content">
                     <p>Click to upload or drag and drop</p>
