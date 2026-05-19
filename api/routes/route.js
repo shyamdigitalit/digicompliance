@@ -104,6 +104,7 @@ const patchRoutes = [
     { path: '/penlty/update', handlers: [jwtHybrdProtect, fileUpload.none(), penltyController.update] },
     { path: '/func/update', handlers: [jwtHybrdProtect, fileUpload.none(), funcController.update] },
     { path: '/acc/update', handlers: [jwtHybrdProtect, fileUpload.none(), accController.update] },
+    { path: '/acc/changepass', handlers: [jwtHybrdProtect, fileUpload.none(), accController.changePassword] },
 ];
 patchRoutes.forEach(route => createRoute('patch', route.path, ...route.handlers));
 

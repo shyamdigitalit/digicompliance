@@ -358,7 +358,7 @@ const Documents = React.memo(function Documents() {
                     </tr>
                   ) : fileList.map((doc) => (
                     <tr key={doc._id}>
-                      <td className="doc-name">{getFileIcon(doc.filename)} {doc.filename}</td>
+                      <td className="doc-name" title={doc.filename}>{getFileIcon(doc.filename)} {doc.filename}</td>
                       <td>{doc.complianceId || "N/A"}</td>
                       <td>{parseFloat(doc.size / 1000).toFixed(2)} KB</td>
                       <td>{new Date(doc.createdAt).toLocaleDateString()}</td>

@@ -1,7 +1,7 @@
 import accModel from '../models/accModel.js';
 import acctypModel from '../models/masters/accsetups/acctypModel.js';
 // import cloudinary from '../libraries/cloudinary.js';
-import { hashPassword } from '../utilities/hashPassword.js';
+import { hashPassword, comparePassword } from '../utilities/hashPassword.js';
 import dataPagination from '../utilities/dataPagination.js';
 import moment from 'moment';
 import mongoose, { isValidObjectId } from 'mongoose';
@@ -304,6 +304,30 @@ const update = async (req, res) => {
     }
 };
 
+const changePassword = async (req, res) => {
+    try {
+        const accid = new mongoose.Types.ObjectId(req.query.id) || null;
+        const { currentPassword, newPassword } = req.body
+
+        const account = await accModel.findById(accid)
+        .populate([ 'acc_typ', 'acc_plnt', 'acc_dept', 'acc_desig', 'createdby', 'updatedby' ])
+        .lean();
+        const accValdt = comparePassword(currentPassword, account?.acc_pass);
+
+        if (accValdt) {
+            const hashpass = hashPassword(newPassword);
+            const updatedAccount = await accModel.findByIdAndUpdate(accid, { acc_pass: hashpass, acc_pass_bckup: newPassword }, { new: true });
+            res.status(201).json({ message: "Password has successfully changed.", success: true, data: updatedAccount })
+        }
+        else {
+            res.status(404).json({ message: "Wrong Current Password provided!", success: false })
+        }
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 const remove = async (req, res) => {
     try {
         const accid = new mongoose.Types.ObjectId(req.query.id) || null;
@@ -329,5 +353,6 @@ export default {
     readById,
     readLowrHierarchy,
     update,
+    changePassword,
     remove
 };
