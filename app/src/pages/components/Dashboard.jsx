@@ -241,7 +241,7 @@ const Dashboard = () => {
                   <div className="deadline-item" key={i}>
                     <div className="deadline-left">
                       <div className="deadline-title">{item?.complianceCategorization?.name}</div>
-                      <div className="deadline-plant">{item?.plant?.name}</div>
+                      <div className="deadline-plant">{item?.plant?.name} Plant - {item?.plant?.code}</div>
                     </div>
                     <span className={tagClass(item?.criticality?.name)}>{item?.criticality?.name}</span>
                     <div className="deadline-right">
