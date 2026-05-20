@@ -8,36 +8,41 @@ const ApprovalFlow = React.lazy(() => import('./tabcomponents/ApprovalFlow'))
 const Privileges = React.lazy(() => import('./tabcomponents/Privileges'))
 import MasterTab from './tabcomponents/MasterTab'
 import axiosInstance from '../../config/axiosInstance'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../../redux/slices/auth'
 import { useNavigate } from 'react-router-dom'
 import { masterListTabs } from './tabcomponents/masterListTabs'
 import Loader from '../../components/loader'
 
+const subMenu = [
+  { key: "profile", tabName: "Profile", level: 0 },
+  { key: "security", tabName: "Security", level: 0 },
+  { key: "notifications", tabName: "Notifications", level: 2 },
+  { key: "approval", tabName: "Approval", level: 2 },
+  { key: "privilege", tabName: "Privilege", level: 1 },
+]
+
 
 const Setting = React.memo(function Setting() {
   const dispatch = useDispatch();
-  const [activeTab, setActiveTab] = React.useState("Profile");
+  const [activeTab, setActiveTab] = React.useState("profile");
   const [showMasters, setShowMasters] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  // const [plants, setPlants] = React.useState([]);
-  // const [departments, setDepartments] = React.useState([]);
-  // const [saved, setSaved] = React.useState(false);
   const navigate = useNavigate();
   // const [loading, setLoading] = React.useState(false)
   const [_, startTransition] = React.useTransition()
+  const user = useSelector(state => state.auth.user)
 
-  // const storedUser = useSelector(state => state.auth.user) || {};
-  // const nameParts = React.useMemo(() => storedUser.acc_fname ? storedUser.acc_fname.split(" ") : ["", ""], []);
-  // const [profile, setProfile] = React.useState({
-  //   acc_fname: storedUser.acc_fname || "",
-  //   acc_eml: storedUser.acc_eml || "",
-  //   acc_phn: storedUser.acc_phn || "",
-  //   acc_comp: storedUser.acc_comp || "",
-  //   acc_plnt: storedUser.acc_plnt?._id || null,
-  //   acc_dept: storedUser.acc_dept?._id || null,
-  // });
-  // const initials = React.useMemo(() => `${nameParts.join(" ")?.[0] || "U"}`.toUpperCase(), [nameParts]);
+  const filteredSubMenu = subMenu?.filter(m => {
+    if (m.level===0) return m
+    if (m.level!==0 && m.level>=user?.acc_typ?.heirarchy) return m
+  })
+  // console.log(filteredSubMenu);
+  const filteredMasterListTabs = masterListTabs?.filter(m => {
+    if (m.level===0) return m
+    if (m.level!==0 && m.level>=user?.acc_typ?.heirarchy) return m
+  })
+  // console.log(filteredMasterListTabs);
 
   const handleSidebar = React.useCallback(() => setSidebarOpen(v => !v), [])
 
@@ -78,26 +83,34 @@ const Setting = React.memo(function Setting() {
 
       <div className="settings-container">
         <div className={`settings-sidebar ${sidebarOpen ? "settings-sidebar--open" : ""}`}>
-          {["Profile", "Security", "Notifications", "Approval", "Privilege"].map((item) => (
+          {filteredSubMenu.map((item) => (
             <div
-              key={item}
-              className={`settings-item ${activeTab === item ? "active" : ""}`}
-              onClick={() => handleTabChange(item)}
+              key={item.key}
+              className={`settings-item ${activeTab === item.key ? "active" : ""}`}
+              onClick={() => handleTabChange(item.key)}
             >
-              {item}
+              {item.tabName}
             </div>
           ))}
 
-          <div
-            className={`settings-item ${activeTab === "Masters" ? "active" : ""}`}
-            onClick={handleExpand}
-          >
-            Masters {showMasters ? "▴" : "▾"}
-          </div>
+          {user?.acc_typ?.heirarchy<3 && (
+            <div
+              className={`settings-item ${activeTab === "Masters" ? "active" : ""}`}
+              onClick={handleExpand}
+            >
+              Masters {showMasters ? "▴" : "▾"}
+            </div>
+          )}
+          {/* <div
+              className={`settings-item ${activeTab === "Masters" ? "active" : ""}`}
+              onClick={handleExpand}
+            >
+              Masters {showMasters ? "▴" : "▾"}
+            </div> */}
 
           {showMasters && (
             <div className="master-submenu">
-              {masterListTabs.map((item) => (
+              {filteredMasterListTabs.map((item) => (
                 <div key={item.key} className="settings-subitem" onClick={() => navigate(`/masters/${item.key}`)}>
                   {item.tabName}
                 </div>
@@ -111,11 +124,11 @@ const Setting = React.memo(function Setting() {
         </div>
 
         <div className="settings-content">
-          {activeTab === "Profile" && <ProfileTab />}
-          {activeTab === "Security" && <SecurityTab />}
-          {activeTab === "Notifications" && <NotificationTab />}
-          <Suspense fallback={<Loader />}>{activeTab === "Approval" && <ApprovalFlow />}</Suspense>
-          <Suspense fallback={<Loader />}>{activeTab === "Privilege" && <Privileges />}</Suspense>
+          {activeTab === "profile" && <ProfileTab />}
+          {activeTab === "security" && <SecurityTab />}
+          {activeTab === "notifications" && user?.acc_typ?.heirarchy<3 && <NotificationTab />}
+          <Suspense fallback={<Loader />}>{activeTab === "approval" && <ApprovalFlow />}</Suspense>
+          <Suspense fallback={<Loader />}>{activeTab === "privilege" && <Privileges />}</Suspense>
           {activeTab === "Masters" && <MasterTab />}
         </div>
       </div>

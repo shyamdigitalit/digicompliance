@@ -3,6 +3,8 @@ import moment from 'moment';
 
 import complianceModel from '../../models/compliance_modules/complianceModel.js';
 import dynapprvlModel from '../../models/adminmgmt/dynapproval/dynapprvlModel.js';
+import plntModel from '../../models/masters/admin/plntModel.js';
+import deptModel from '../../models/masters/accsetups/deptModel.js';
 
 // import { uploadFile, uploadUniqueFile, deleteFile } from '../../utilities/fileOperations.js';
 import { uploadFiles, deleteFiles } from '../../utilities/fileOperations.js';
@@ -164,9 +166,23 @@ export const fetchComplianceDetails = async user => {
     return { success: true, data };
 };
 
-const generateId = (user, dataList) => {
-    const plntCode = user?.acc_plnt?.code
-    const deptCode = user?.acc_dept?.code
+const generateId = async (user, dataList, currentData) => {
+    let plntCode, deptCode
+    if (user?.acc_plnt?.code) {
+        plntCode = user?.acc_plnt?.code
+    }
+    else {
+        const plntDetails = await plntModel.findById(currentData?.plantId)
+        plntCode = plntDetails?.code
+    }
+    if (user?.acc_dept?.code) {
+        deptCode = user?.acc_dept?.code
+    }
+    else {
+        const deptDetails = await deptModel.findById(currentData?.departmentId)
+        deptCode = deptDetails?.code
+    }
+    
     const maxHash = dataList.reduce((acc, elm) => {
         const hashData = parseInt(String(elm.complianceId).split("-")[0].split('CMP')[1], 10)
         
@@ -178,7 +194,7 @@ const generateId = (user, dataList) => {
         }
         return acc
     }, 0)
-    return (`CMP${parseInt(maxHash || 0)+1}-${user?.acc_plnt?.code}-${user?.acc_dept?.code}`);
+    return (`CMP${parseInt(maxHash || 0)+1}-${plntCode}-${deptCode}`);
 }
 
 const calculateApproval = (user, maxLvl, currLvl, flag) => {
@@ -285,7 +301,7 @@ export const create = async (req, res) => {
         const departmentId = ids.department || user?.acc_dept?._id;
 
         const existingData = await fetchComplianceDetails(user);
-        compPayload.complianceId = generateId(user, existingData.data)
+        compPayload.complianceId = await generateId(user, existingData.data, { plantId, departmentId })
 
         const files = req.files?.allDocs || [];
         // console.log(files);

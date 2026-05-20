@@ -214,13 +214,18 @@ const readLowrHierarchy = async (req, res) => {
         if (!selectedType) {
             return res.status(404).json({ message: 'Account type not found!', statuscode: 404 });
         }
+        const selectedHeirarchy = parseInt(selectedType.heirarchy);
 
-        const selectedHeirarchy = selectedType.heirarchy;
+        const matchCriteria = {};
+        matchCriteria.$and = [
+            { _id: { $ne: user._id } },
+            { 'acc_typ.heirarchy': { $gte: selectedHeirarchy } }
+        ]
 
         const pipeln = [
             { $lookup: { from: 'accounttypes', localField: 'acc_typ', foreignField: '_id', as: 'acc_typ' } },
             { $unwind: { path: '$acc_typ', preserveNullAndEmptyArrays: true } },
-            { $match: { 'acc_typ.heirarchy': { $gte: selectedHeirarchy } } },
+            ...( matchCriteria.$and?.length ? [{ $match: matchCriteria }] : [] ),
 
             { $lookup: { from: 'plants', localField: 'acc_plnt', foreignField: '_id', as: 'acc_plnt' } },
             { $unwind: { path: '$acc_plnt', preserveNullAndEmptyArrays: true } },
@@ -250,13 +255,13 @@ const readLowrHierarchy = async (req, res) => {
 
         const accDta = await accModel.aggregate(pipeln);
         if (accDta.length > 0) {
-            res.status(200).json({ message: 'Accounts with lower hierarchy fetched successfully.', statuscode: 200, data: accDta });
+            res.status(200).json({ message: 'Accounts with lower hierarchy fetched successfully.', statuscode: 200, data: { Acc: accDta } });
         } else {
             res.status(404).json({ message: 'No accounts found with lower hierarchy!', statuscode: 404 });
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server error', statuscode: 500 });        
+        res.status(500).json({ message: 'Server error', statuscode: 500 });
     }
 }
 

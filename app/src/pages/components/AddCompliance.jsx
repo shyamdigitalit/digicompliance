@@ -137,10 +137,10 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
   }, []);
 
 
-  const handleChange = React.useCallback((e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-  }, [setFiles]);
+  }
 
   // const handleFiles = (e) => {
   //   const files = Array.from(e.target.files);

@@ -99,7 +99,7 @@ const readLowrHierarchy = async (req, res) => {
         if (!usrDtls) {
             return res.status(404).json({ message: 'User not found' });
         }
-        const selectedHeirarchy = usrDtls.acc_typ.heirarchy;
+        const selectedHeirarchy = parseInt(usrDtls.acc_typ.heirarchy);
 
         const pipeln = [
             { $match: { heirarchy: { $gte: selectedHeirarchy } } },

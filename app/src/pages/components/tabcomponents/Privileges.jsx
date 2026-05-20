@@ -16,13 +16,14 @@ const Privileges = () => {
   return (
     <div className="profile-card privilege-card">
         <h3>Dynamic Privilege Management</h3>
+        <p>Manage all user access controls dynamically.</p>
 
-        {loading ? <Loader /> : (
+        {/* {loading ? <Loader /> : (
             <div className="privilege-tabs plnt-tabs">
                 <button className="privilege-tab" onClick={() => { }}>Team Members</button>
                 <button className="privilege-tab active" onClick={() => { }}>Roles</button>
             </div>
-        )}
+        )} */}
     </div>
   )
 }

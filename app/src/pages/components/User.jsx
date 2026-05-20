@@ -26,7 +26,7 @@ const Users = () => {
   const getAllUserData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get("/api/acc/fetch");
+      const response = await axiosInstance.get("/api/acc/fetchuppr");
       if (response?.status === 200) {
         setData(response.data?.data?.Acc);
       } else {
@@ -66,7 +66,8 @@ const Users = () => {
   const paged = React.useMemo(() => filtered?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page]);
 
   const getRoleClass = React.useCallback((role) => {
-    if (role?.includes("Superadmin")) return "tag blue";
+    if (role?.includes("Developer")) return "tag red";
+    if (role?.includes("Supervisor")) return "tag blue";
     if (role?.includes("Admin")) return "tag purple";
     if (role?.includes("General")) return "tag green";
     return "tag orange";

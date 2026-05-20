@@ -15,7 +15,7 @@ const AddUser = React.memo(function AddUser({ mode="add", onCancel, onSubmit, in
   const fetchMasterData = React.useCallback(async () => {
     try {
       const [accTypRes, plantRes, departmentRes] = await Promise.allSettled([
-        axiosInstance.get("/api/acctyp/fetch"),
+        axiosInstance.get("/api/acctyp/fetchuppr"),
         axiosInstance.get("/api/plnt/fetch"),
         axiosInstance.get("/api/dept/fetch")
       ]);

@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../../config/axiosInstance";
 import Loader from "../../../components/loader";
 import { masterListTabs } from "./masterListTabs";
+import { useSelector } from "react-redux";
 import moment from "moment";
 
 // const getMasterKey = (type) => `master_${type}`;
@@ -12,6 +13,7 @@ const MasterList = React.memo(function MasterList() {
   // console.log(masterListTabs);
   const { type } = useParams();
   const navigate = useNavigate();
+  const user = useSelector(state => state.auth.user)
   const [data, setData] = React.useState([]);
   const [saved, setSaved] = React.useState(false);
   const [loading, setLoading] = React.useState(false)
@@ -85,7 +87,7 @@ const MasterList = React.memo(function MasterList() {
     } finally {
       setLoading(false)
     }
-  }, [type, setData, setSaved]);
+  }, [type, setData, setSaved, data]);
 
   const handleToggleStatus = (idx) => {
     setData(prev => prev.map((item, i) => i === idx ? { ...item, status: item.status === "Active" ? "Inactive" : "Active" } : item));
