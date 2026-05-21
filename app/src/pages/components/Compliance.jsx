@@ -8,6 +8,7 @@ import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import AddCompliance from "./AddCompliance";
 import axiosInstance from "../../config/axiosInstance";
 import { useSelector } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
@@ -20,7 +21,74 @@ const ACTIVITY_KEY = "activity_log";
 
 const PAGE_SIZE = 8;
 
+/* ── Export Modal ── */
+const ExportModal = React.memo(({ filtered, onClose, onExport }) => {
+  const [selectAll, setSelectAll] = React.useState(false);
+  const [count, setCount] = React.useState("");
+  const total = filtered.length;
+
+  const handleSelectAll = () => {
+    setSelectAll(true);
+    setCount(String(total));
+  };
+
+  const handleCountChange = (e) => {
+    setSelectAll(false);
+    const val = e.target.value.replace(/\D/g, "");
+    setCount(val);
+  };
+
+  const handleExport = () => {
+    const n = selectAll ? total : Math.min(parseInt(count) || 0, total);
+    if (n === 0) { alert("Please enter a valid count or select all."); return; }
+    onExport(filtered.slice(0, n));
+  };
+
+  return (
+    <div className="doc-modal-overlay" onClick={onClose}>
+      <div className="doc-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+        <div className="doc-modal-header">
+          <h3>Export Compliance</h3>
+          <button className="doc-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <p className="doc-modal-sub" style={{ marginBottom: 16 }}>
+          {total} record{total !== 1 ? "s" : ""} available. Choose how many to export.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+          <label style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}>Number of records</label>
+          <input
+            type="number"
+            min={1}
+            max={total}
+            value={count}
+            placeholder={`Enter count (max ${total})`}
+            onChange={handleCountChange}
+            style={{ padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 14 }}
+          />
+          <button
+            className={selectAll ? "dark-btn" : "light-btn"}
+            onClick={handleSelectAll}
+            style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}
+          >
+            {selectAll ? "✓ All selected" : "Select All"} ({total} records)
+          </button>
+        </div>
+
+        <div className="doc-modal-footer">
+          <button className="light-btn" onClick={onClose}>Cancel</button>
+          <button className="dark-btn" onClick={handleExport}>
+            {selectAll ? `Export All (${total})` : `Export${count ? ` (${Math.min(parseInt(count)||0,total)})` : ""}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 const Compliance = React.memo(function Compliance() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = React.useState(false);
   const [editing, setEditing] = React.useState(null);
   const [masterData, setMasterData] = React.useState({
@@ -35,6 +103,7 @@ const Compliance = React.memo(function Compliance() {
   const [data, setData] = React.useState([]);
   const [saved, setSaved] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [showExportModal, setShowExportModal] = React.useState(false);
 
   const user = useSelector(state => state.auth.user)
 
@@ -87,12 +156,45 @@ const Compliance = React.memo(function Compliance() {
   const [filterPlant, setFilterPlant] = React.useState("");
   const [filterDept, setFilterDept] = React.useState("");
   const [filterStatus, setFilterStatus] = React.useState("");
+  const [filterApprovalStatus, setFilterApprovalStatus] = React.useState("");
   const [filterCompTyp, setFilterCompTyp] = React.useState("");
   const [filterCompCat, setFilterCompCat] = React.useState("");
   const [filterCompFreq, setFilterCompFreq] = React.useState("");
   const [filterCriticality, setFilterCriticality] = React.useState("");
   const [filterPenaltyType, setFilterPenaltyType] = React.useState("");
   const [page, setPage] = React.useState(1);
+
+  // Store pending URL params from Dashboard navigation in a ref
+  // so they can be applied once data has loaded (avoids race condition)
+  const pendingParams = React.useRef(null);
+
+  // Step 1: Read URL params and stash them; don't apply filters yet
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (!params.toString()) return;
+    pendingParams.current = {
+      criticality: params.get("criticality") || "",
+      status: params.get("status") || "",
+      approvalStatus: params.get("approvalStatus") || "",
+      complianceId: params.get("complianceId") || "",
+      q: params.get("q") || "",
+    };
+    navigate("/compliance", { replace: true });
+  }, [location.search]);
+
+  // Step 2: Once data loads (from empty → populated), apply stashed params
+  React.useEffect(() => {
+    if (data.length > 0 && pendingParams.current) {
+      const p = pendingParams.current;
+      pendingParams.current = null;
+      if (p.criticality) setFilterCriticality(p.criticality);
+      if (p.status) setFilterStatus(p.status);
+      if (p.approvalStatus) setFilterApprovalStatus(p.approvalStatus);
+      if (p.complianceId) setSearch(p.complianceId);
+      else if (p.q) setSearch(p.q);
+      setPage(1);
+    }
+  }, [data]);
 
   React.useEffect(() => {
     localStorage.setItem(COMPLIANCE_KEY, JSON.stringify(data));
@@ -109,27 +211,44 @@ const Compliance = React.memo(function Compliance() {
   const penaltyTypes = React.useMemo(() => [...new Set(data?.map(d => d.penaltyType?.name || ""))], [data]);
 
   const filtered = React.useMemo(() => {
-    // console.log(search);
     const q = search.toLowerCase();
     return data?.filter(item => {
-      const matchSearch = !q || item.complianceId.toLowerCase().includes(q) || item.complianceType.toLowerCase().includes(q) || item.complianceCategorization.toLowerCase().includes(q) || item.plant.toLowerCase().includes(q);
-      const matchPlant = !filterPlant || item.plant.name === filterPlant;
-      const matchDept = !filterDept || item.department.name === filterDept;
-      const matchStatus = !filterStatus || item.status === filterStatus;
-      const matchCompTyp = !filterCompTyp || item.complianceType.name === filterCompTyp;
-      const matchCompCat = !filterCompCat || item.complianceCategorization.name === filterCompCat;
-      const matchCompFreq = !filterCompFreq || item.complianceFrequency.name === filterCompFreq;
-      const matchCriticality = !filterCriticality || item.criticality.name === filterCriticality;
-      const matchPenaltyType = !filterPenaltyType || item.penaltyType.name === filterPenaltyType;
-      return matchSearch && matchPlant && matchDept && matchStatus && matchCompTyp && matchCompCat && matchCompFreq && matchCriticality && matchPenaltyType;
+      const matchSearch = !q ||
+        (item.complianceId || "").toLowerCase().includes(q) ||
+        (item.complianceType?.name || "").toLowerCase().includes(q) ||
+        (item.complianceCategorization?.name || "").toLowerCase().includes(q) ||
+        (item.plant?.name || "").toLowerCase().includes(q);
+      const matchPlant = !filterPlant || item.plant?.name === filterPlant;
+      const matchDept = !filterDept || item.department?.name === filterDept;
+      const matchStatus = !filterStatus ||
+        (filterStatus === "__open_pending__"
+          ? ["open", "pending"].includes((item.status || "").toLowerCase().trim())
+          : (item.status || "").toLowerCase().trim() === filterStatus.toLowerCase().trim());
+      // "PENDING" sentinel = records not yet approved (null/empty/Pending)
+      // "APPROVED" sentinel = records that have been approved (any truthy non-pending value)
+      const normalizedApproval = (item.approvalStatus || "").toLowerCase().trim();
+      const isApproved = normalizedApproval !== "" && normalizedApproval !== "pending" && normalizedApproval !== "rejected";
+      const matchApproval = !filterApprovalStatus ||
+        (filterApprovalStatus === "__pending__"
+          ? !isApproved
+          : filterApprovalStatus === "__approved__"
+            ? isApproved
+            : normalizedApproval === filterApprovalStatus.toLowerCase().trim());
+      const matchCompTyp = !filterCompTyp || item.complianceType?.name === filterCompTyp;
+      const matchCompCat = !filterCompCat || item.complianceCategorization?.name === filterCompCat;
+      const matchCompFreq = !filterCompFreq || item.complianceFrequency?.name === filterCompFreq;
+      const matchCriticality = !filterCriticality || item.criticality?.name === filterCriticality;
+      const matchPenaltyType = !filterPenaltyType || item.penaltyType?.name === filterPenaltyType;
+      return matchSearch && matchPlant && matchDept && matchStatus && matchApproval && matchCompTyp && matchCompCat && matchCompFreq && matchCriticality && matchPenaltyType;
     });
-  }, [data, search, filterPlant, filterDept, filterStatus, filterCompTyp, filterCompCat, filterCompFreq, filterCriticality, filterPenaltyType]);
+  }, [data, search, filterPlant, filterDept, filterStatus, filterApprovalStatus, filterCompTyp, filterCompCat, filterCompFreq, filterCriticality, filterPenaltyType]);
 
   const resetFilters = React.useCallback(() => {
     setSearch('');
     setFilterPlant('');
     setFilterDept('');
     setFilterStatus('');
+    setFilterApprovalStatus('');
     setFilterCompTyp('');
     setFilterCompCat('');
     setFilterCompFreq('');
@@ -141,6 +260,7 @@ const Compliance = React.memo(function Compliance() {
     setFilterPlant,
     setFilterDept,
     setFilterStatus,
+    setFilterApprovalStatus,
     setFilterCompTyp,
     setFilterCompCat,
     setFilterCompFreq,
@@ -314,12 +434,15 @@ const Compliance = React.memo(function Compliance() {
   }, [user]);
 
   const handleExport = React.useCallback(() => {
-    if (!paged.length) {
+    if (!filtered.length) {
       alert('No data available to export.');
       return;
     }
-    alert('Exporting data...');
-    const exportData = paged?.map(({
+    setShowExportModal(true);
+  }, [filtered]);
+
+  const handleExportConfirm = React.useCallback((exportRows) => {
+    const exportData = exportRows?.map(({
       _id,
       complianceId,
       plant,
@@ -358,7 +481,8 @@ const Compliance = React.memo(function Compliance() {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Compliance');
     XLSX.writeFile(workbook, 'Compliance_Datasheet.xlsx');
     logActivity("Compliance Exported", `${exportData.length} records`, user);
-  }, [paged, user]);
+    setShowExportModal(false);
+  }, [user]);
 
   const getTag = (val) => val?.toLowerCase().replace(" ", "-");
   const isExpired = (dueDate) => dueDate && new Date(dueDate) < new Date();
@@ -426,7 +550,7 @@ const Compliance = React.memo(function Compliance() {
                   </select>
                 </div>
                 <div className="filter-row second">
-                  {(search || filterPlant || filterDept || filterStatus || filterCompTyp || filterCompCat || filterCompFreq || filterCriticality || filterPenaltyType) && (
+                  {(search || filterPlant || filterDept || filterStatus || filterApprovalStatus || filterCompTyp || filterCompCat || filterCompFreq || filterCriticality || filterPenaltyType) && (
                     <button className="light-btn" onClick={resetFilters}>
                       ✕ Clear Filters
                     </button>
@@ -562,6 +686,13 @@ const Compliance = React.memo(function Compliance() {
             </>
           )}
         </>
+      )}
+      {showExportModal && (
+        <ExportModal
+          filtered={filtered}
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExportConfirm}
+        />
       )}
     </div>
   );

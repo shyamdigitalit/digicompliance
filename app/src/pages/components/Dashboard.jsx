@@ -9,7 +9,26 @@ import axiosInstance from "../../config/axiosInstance";
 import Loader from '../../components/loader';
 import { getActivityLog, formatActivityTime } from "../utils/activityLog";
 import moment from "moment";
+import { useNavigate } from "react-router-dom";
 
+// function futureDate(daysFromNow) {
+//   const d = new Date();
+//   d.setDate(d.getDate() + daysFromNow);
+//   return d.toISOString().slice(0, 10);
+// }
+
+// const dueDays = (dueDate) => Math.round(dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+
+// const defaultCompliance = [
+//   { id:"CMP-001", plant:"Mumbai Plant A",    dept:"Operations",  type:"Safety Inspection",       category:"Health & Safety",    freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate: futureDate(-5)  },
+//   { id:"CMP-002", plant:"Delhi Plant B",     dept:"Quality",     type:"ISO Audit Review",        category:"Quality Management", freq:"Quarterly", criticality:"Critical", status:"Pending",     dueDate: futureDate(3)   },
+//   { id:"CMP-003", plant:"Bangalore Plant C", dept:"HR",          type:"Labour Law Compliance",   category:"Statutory",          freq:"Annual",    criticality:"Medium",   status:"In Progress", dueDate: futureDate(8)   },
+//   { id:"CMP-004", plant:"Mumbai Plant A",    dept:"Environment", type:"Environmental Assessment", category:"Environmental",      freq:"Monthly",   criticality:"High",     status:"Pending",     dueDate: futureDate(5)   },
+//   { id:"CMP-005", plant:"Delhi Plant B",     dept:"Operations",  type:"Fire Safety",             category:"Health & Safety",    freq:"Weekly",    criticality:"High",     status:"Completed",   dueDate: futureDate(-2)  },
+//   { id:"CMP-006", plant:"Bangalore Plant C", dept:"Quality",     type:"Product Testing",         category:"Quality Management", freq:"Daily",     criticality:"Medium",   status:"In Progress", dueDate: futureDate(12)  },
+//   { id:"CMP-007", plant:"Mumbai Plant A",    dept:"HR",          type:"Employee Training",       category:"Statutory",          freq:"Quarterly", criticality:"Low",      status:"Pending",     dueDate: futureDate(15)  },
+//   { id:"CMP-008", plant:"Delhi Plant B",     dept:"Environment", type:"Waste Management",        category:"Environmental",      freq:"Monthly",   criticality:"High",     status:"Completed",   dueDate: futureDate(-1)  },
+// ];
 
 const defaultActivities = [
   { text:"Completed Safety Inspection - Mumbai Plant A",  user:"John Smith",    time:"2 hours ago" },
@@ -23,6 +42,7 @@ const defaultActivities = [
 const Dashboard = () => {
   // No localStorage — use default data directly
   // const complianceData = defaultCompliance;
+  const navigate = useNavigate();
   const [activities, setActivities] = React.useState([]);
   const [allDashData, setAllDashData] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
@@ -84,6 +104,23 @@ const Dashboard = () => {
     };
   }, []);
 
+  const fetchAllDashData = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get('/api/dash/fetch');
+      // console.log(response.data.data);
+      setAllDashData(response.data.data);
+      setStatusDist(statusDistribution(response.data.data));
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  React.useEffect(() => {
+    fetchAllDashData();
+  }, [fetchAllDashData]);
+
   const statusDistribution = React.useCallback((compianceStat) => {
     const total      = compianceStat?.total || 1;
     const completed  = compianceStat?.byStatus?.find(s => s.name === "Active")?.count || 0;
@@ -96,24 +133,39 @@ const Dashboard = () => {
     ];
   }, []);
 
-  const fetchAllDashData = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await axiosInstance.get('/api/dash/fetch');
-      console.log(response.data.data);
-      setAllDashData(response.data.data);
-      const statusCount = response.data.data?.byStatus?.filter(s => ["Open","Pending"].includes(s.name)).reduce((sum, item) => sum+item.count, 0)
-      console.log(statusCount);
-      setStatusDist(statusDistribution(response.data.data));
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setLoading(false);
-    }
-  }, [statusDistribution]);
-  React.useEffect(() => {
-    fetchAllDashData();
-  }, [fetchAllDashData]);
+  // const stats = React.useMemo(() => ({
+  //   total:     complianceData.length,
+  //   pending:   complianceData.filter(c => c.status === "Pending").length,
+  //   critical:  complianceData.filter(c => c.criticality === "Critical").length,
+  //   completed: complianceData.filter(c => c.status === "Completed").length,
+  // }), [complianceData]);
+
+  // const upcomingDeadlines = React.useMemo(() => {
+  //   const today = new Date();
+  //   today.setHours(0, 0, 0, 0);
+  //   return complianceData
+  //     .filter(c => c.status !== "Completed" && c.dueDate)
+  //     .map(c => {
+  //       const due = new Date(c.dueDate);
+  //       due.setHours(0, 0, 0, 0);
+  //       return { ...c, daysLeft: Math.round((due - today) / 86400000) };
+  //     })
+  //     .sort((a, b) => a.daysLeft - b.daysLeft)
+  //     .slice(0, 4);
+  // }, [complianceData]);
+
+  // const categoryBreakdown = React.useMemo(() => {
+  //   const cats = {};
+  //   complianceData.forEach(c => {
+  //     if (!cats[c.category]) cats[c.category] = { total: 0, completed: 0 };
+  //     cats[c.category].total++;
+  //     if (c.status === "Completed") cats[c.category].completed++;
+  //   });
+  //   return Object.entries(cats).map(([name, v]) => ({
+  //     name, total: v.total, completed: v.completed,
+  //     pct: Math.round((v.completed / v.total) * 100),
+  //   }));
+  // }, [complianceData]);
   
   const tagClass = p =>
     p === "Critical" ? "tag red" : p === "High" ? "tag orange" : p === "Medium" ? "tag yellow" : "tag blue";
@@ -127,6 +179,14 @@ const Dashboard = () => {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
   };
 
+  // const completionPct = stats.total ? Math.round(stats.completed / stats.total * 100) : 0;
+
+  // const completionPct = React.useMemo(() => {
+  //   const total = parseInt(allDashData?.total) || 0;
+  //   const compltd = parseInt(allDashData?.byStatus?.Active) || 0;
+  //   return total ? Math.round(compltd / total * 100) : 0;
+  // }, [allDashData]);
+
   return (
     <>
       {loading ? <Loader /> : (
@@ -137,7 +197,7 @@ const Dashboard = () => {
           </div>
 
           <div className="stats">
-            <div className="card">
+            <div className="card" style={{ cursor: "pointer" }} onClick={() => navigate("/compliance")}>
               <div className="card-top">
                 <span className="card-label">Total Compliance</span>
                 <div className="card-icon blue"><FilePresentIcon style={{ color:"#2563eb" }} /></div>
@@ -145,7 +205,7 @@ const Dashboard = () => {
               <h2>{allDashData?.total}</h2>
               <div className="card-sub positive">↑ +12 this month</div>
             </div>
-            <div className="card">
+            <div className="card" style={{ cursor: "pointer" }} onClick={() => navigate("/compliance?status=__open_pending__")}>
               <div className="card-top">
                 <span className="card-label">Open & Pending</span>
                 <div className="card-icon orange"><AccessTimeIcon style={{ color:"#f97316" }} /></div>
@@ -153,7 +213,7 @@ const Dashboard = () => {
               <h2 style={{ color:"#f97316" }}>{allDashData?.byStatus?.filter(s => ["Open","Pending"].includes(s.name)).reduce((sum, item) => sum+item.count, 0) || 0}</h2>
               <div className="card-sub warning">Requires attention</div>
             </div>
-            <div className="card">
+            <div className="card" style={{ cursor: "pointer" }} onClick={() => navigate("/compliance?criticality=High")}>
               <div className="card-top">
                 <span className="card-label">Critical</span>
                 <div className="card-icon red"><ErrorOutlineIcon style={{ color:"#ef4444" }} /></div>
@@ -161,13 +221,13 @@ const Dashboard = () => {
               <h2 style={{ color:"#ef4444" }}>{allDashData?.byCriticality?.find(c => c.name === "High")?.count || 0}</h2>
               <div className="card-sub danger">High priority</div>
             </div>
-            <div className="card">
+            <div className="card" style={{ cursor: "pointer" }} onClick={() => navigate("/compliance?status=Active")}>
               <div className="card-top">
                 <span className="card-label">Completed</span>
                 <div className="card-icon green"><CheckCircleOutlineIcon style={{ color:"#22c55e" }} /></div>
               </div>
               <h2 style={{ color:"#22c55e" }}>{allDashData?.byStatus?.find(s => s.name === "Active")?.count || 0}</h2>
-              <div className="card-sub success">{parseFloat((allDashData?.byStatus?.filter(s => s.name === "Active")?.count || 0)/allDashData?.total * 100).toFixed(2)}% completion rate</div>
+              <div className="card-sub success">{parseFloat((allDashData?.byStatus?.find(s => s.name === "Active")?.count || 0)/allDashData?.total * 100).toFixed(2)}% completion rate</div>
             </div>
           </div>
 
@@ -180,7 +240,12 @@ const Dashboard = () => {
               {compliance.length === 0
                 ? <p style={{ color:"#9ca3af", fontSize:"13px" }}>No upcoming deadlines</p>
                 : compliance.map((item, i) => (
-                  <div className="deadline-item" key={i}>
+                  <div
+                    className="deadline-item"
+                    key={i}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate(`/compliance?complianceId=${encodeURIComponent(item.complianceId)}`)}
+                  >
                     <div className="deadline-left">
                       <div className="deadline-title">{item?.complianceCategorization?.name}</div>
                       <div className="deadline-plant">{item?.plant?.name} Plant - {item?.plant?.code}</div>

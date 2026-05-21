@@ -218,7 +218,7 @@ const Layout = () => {
     <div className="dashboard">
       {/* ── SIDEBAR ── */}
       <div className="sidebar">
-        <h2 className="logo">Compliance System</h2>
+        <h2 className="logo">Document Management System</h2>
 
         <ul>
           {navItems.map(item => (
@@ -235,7 +235,7 @@ const Layout = () => {
 
         <div className="sidebar-footer">
           <div className="footer-box">
-            <h4>Manage Compliance Data</h4>
+            <h4>Manage Documents</h4>
             <p>Download your history or view our integration guides</p>
             <button onClick={() => navigate("/compliance")}>Export Data</button>
             <button onClick={() => setShowViewDocs(true)}>View Docs</button>

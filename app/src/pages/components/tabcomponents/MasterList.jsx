@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../../config/axiosInstance";
 import Loader from "../../../components/loader";
 import { masterListTabs } from "./masterListTabs";
+import { useSelector } from "react-redux";
 import moment from "moment";
 
 // const getMasterKey = (type) => `master_${type}`;
@@ -12,12 +13,13 @@ const MasterList = React.memo(function MasterList() {
   // console.log(masterListTabs);
   const { type } = useParams();
   const navigate = useNavigate();
+  const user = useSelector(state => state.auth.user)
   const [data, setData] = React.useState([]);
   const [saved, setSaved] = React.useState(false);
   const [loading, setLoading] = React.useState(false)
 
   // console.log(type);
-  const masterTab = React.useMemo(() => masterListTabs.find(m => m.key === type), [type])
+  const masterTab = React.useMemo(() => masterListTabs.find(m => m.key === type), [masterListTabs, type])
   // const masterTab = masterListTabs.find(m => m.key === type)
   // console.log(masterTab);
 
@@ -57,7 +59,7 @@ const MasterList = React.memo(function MasterList() {
     switch (type) {
       case "function": apiType = "func"; break;
       case "accounttype": apiType = "acctyp"; break;
-      case "site": apiType = "plnt"; break;
+      case "plant": apiType = "plnt"; break;
       case "department": apiType = "dept"; break;
       case "company": apiType = "cmpny"; break;
       case "designation": apiType = "desig"; break;

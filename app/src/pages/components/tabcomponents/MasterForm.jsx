@@ -23,6 +23,7 @@ const MasterForm = React.memo(function MasterForm() {
     let newEntry = {}, apiType = "";
     if (type === "function") {
       if (!form.code.trim() || !form.name.trim() || !form.path.trim()) {
+        console.log('fn');
         alert("Please fill in all required fields");
         return;
       }
@@ -60,7 +61,7 @@ const MasterForm = React.memo(function MasterForm() {
       });
 
       switch (type) {
-        case "site": apiType = "plnt"; break;
+        case "plant": apiType = "plnt"; break;
         case "department": apiType = "dept"; break;
         case "company": apiType = "cmpny"; break;
         case "designation": apiType = "desig"; break;
@@ -84,7 +85,7 @@ const MasterForm = React.memo(function MasterForm() {
     } catch (error) {
       console.error(error)
     }
-  }, [type, form, setSaved, navigate]);
+  }, [type, form, setSaved]);
 
   if (type === "function") {
     return (
@@ -101,7 +102,7 @@ const MasterForm = React.memo(function MasterForm() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <label>Code *</label>
-            <input name="code" value={String(form.code).toUpperCase().match(/\S+/) || ""} onChange={handleChange} placeholder="Short code (e.g. OPS)" />
+            <input name="code" value={form.code} onChange={handleChange} placeholder="Short code (e.g. OPS)" style={{ textTransform: "uppercase" }} />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <label>Path *</label>
@@ -115,8 +116,19 @@ const MasterForm = React.memo(function MasterForm() {
             <label>Heirarchy *</label>
             <input name="heirarchy" value={String(form.heirarchy).match(/(\d+)/)?.[1] || 0} onChange={handleChange} placeholder="Heirarchy Level" />
           </div>
+          {/* <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
+            <label>Same Level *&nbsp;</label>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+              <input type="radio" name="stacklvl" value="true" onChange={handleChange} />
+              Yes
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+              <input type="radio" name="stacklvl" value="false" onChange={handleChange} />
+              No
+            </label>
+          </div> */}
         </div>
-        
+
         <div style={{ marginTop: "20px", display: "flex", gap: "10px", alignItems: "center" }}>
           <button className="dark-btn" onClick={handleSave}>Save</button>
           <button className="light-btn" onClick={() => navigate(-1)}>Cancel</button>

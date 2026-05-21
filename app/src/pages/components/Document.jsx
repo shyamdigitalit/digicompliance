@@ -1,11 +1,13 @@
 import React from "react";
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import FolderZipOutlinedIcon from '@mui/icons-material/FolderZipOutlined';
 import "../styles/Document.css";
 import axiosInstance from "../../config/axiosInstance";
 import Loader from "../../components/loader";
 import { useSelector } from "react-redux";
 import { logActivity } from "../utils/activityLog";
+import { saveAs } from "file-saver";
 
 const defaultFileList = [];
 
@@ -263,6 +265,20 @@ const Documents = React.memo(function Documents() {
     }
   }, [files, fetchFiles, user]);
 
+  const handleDownloadAll = React.useCallback(async () => {
+    if (!fileList.length) { alert("No documents to download."); return; }
+    try {
+      const fileIds = fileList.map(f => f._id).join(",");
+      const res = await axiosInstance.get(`/api/file/downloadall?files=${fileIds}`, { responseType: "blob" });
+      const blob = new Blob([res.data], { type: "application/zip" });
+      saveAs(blob, "All_Documents.zip");
+      logActivity("All Documents Downloaded", `${fileList.length} files`, user);
+    } catch (err) {
+      console.error("Download all error:", err);
+      alert("Failed to download all documents. Please try again.");
+    }
+  }, [fileList, user]);
+
   const handleDownload = React.useCallback(async (file) => {
     try {
       const res = await axiosInstance.get(`/api/file/download/${file._id}`, { responseType: "blob" });
@@ -337,7 +353,17 @@ const Documents = React.memo(function Documents() {
           </div>
 
           <div className="table-container" style={{ marginBottom: "2rem" }}>
-            <div style={{ padding: "2rem", fontSize: "1.5rem" }}>All Uploaded Files</div>
+            <div style={{ padding: "2rem 2rem 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ fontSize: "1.5rem" }}>All Uploaded Files</div>
+              <button
+                className="dark-btn"
+                onClick={handleDownloadAll}
+                style={{ display: "flex", alignItems: "center", gap: 6 }}
+              >
+                <FolderZipOutlinedIcon fontSize="small" />
+                Download All
+              </button>
+            </div>
             <div className="doc-table-scroll">
               <table>
                 <thead>
@@ -363,15 +389,6 @@ const Documents = React.memo(function Documents() {
                       <td>{parseFloat(doc.size / 1000).toFixed(2)} KB</td>
                       <td>{new Date(doc.createdAt).toLocaleDateString()}</td>
                       <td className="actions" style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px" }}>
-                        {isPdf(doc.filename) && (
-                          <button
-                            className="action-icon-btn view-pdf"
-                            title="View PDF"
-                            onClick={() => handleViewPdf(doc)}
-                          >
-                            <VisibilityOutlinedIcon />
-                          </button>
-                        )}
                         <button
                           className="action-icon-btn download"
                           title="Download"
