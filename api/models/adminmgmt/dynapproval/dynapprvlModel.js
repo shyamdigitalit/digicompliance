@@ -47,6 +47,8 @@ const { Schema, model, Types } = mongoose
 // DynapprvlSchema.index({ plantCode: 1, departmentCode: 1 })
 // DynapprvlSchema.index({ status: 1 })
 
+
+
 // Normalized Approach (Less Optimized, More Flexible) ==========================================================
 const DynapprvlSchema = new Schema({
     approvalCode: { type: String, required: true, trim: true },
@@ -67,8 +69,18 @@ const DynapprvlSchema = new Schema({
     updatedby: { type: Types.ObjectId, ref: 'Account' }
 }, { timestamps: true })
 
-DynapprvlSchema.index({ approvalCreatorBase: 1, approvalFunction: 1, updatedAt: -1 }, { unique: true })
+// DynapprvlSchema.index({ approvalCreatorBase: 1, approvalFunction: 1, updatedAt: -1 }, { unique: true })
 DynapprvlSchema.index({ approvalCode: 1 }, { unique: true })
+DynapprvlSchema.index({
+    approvalCreatorBase: 1,
+    approvalFunction: 1
+}, {
+    unique: true,
+    partialFilterExpression: {
+        approvalCreatorBase: { $exists: true },
+        approvalFunction: { $exists: true }
+    }
+})
 DynapprvlSchema.index({ status: 1 })
 
 

@@ -61,7 +61,7 @@ const MasterForm = React.memo(function MasterForm() {
       });
 
       switch (type) {
-        case "plant": apiType = "plnt"; break;
+        case "site": apiType = "plnt"; break;
         case "department": apiType = "dept"; break;
         case "company": apiType = "cmpny"; break;
         case "designation": apiType = "desig"; break;
@@ -85,7 +85,7 @@ const MasterForm = React.memo(function MasterForm() {
     } catch (error) {
       console.error(error)
     }
-  }, [type, form, setSaved]);
+  }, [type, form, setSaved, navigate]);
 
   if (type === "function") {
     return (

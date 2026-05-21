@@ -77,19 +77,21 @@ const create = async (req, res) => {
         const dynapprvlPayld = req.body;
         const user = req.user;
 
-        console.log(dynapprvlPayld);
+        // console.log(dynapprvlPayld);
         
-        if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.approvalCreatorBase)) {
-            dynapprvlPayld.approvalCreatorBase = new mongoose.Types.ObjectId(dynapprvlPayld.approvalCreatorBase)
+        if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.approvalCreatorBase?._id)) {
+            dynapprvlPayld.approvalCreatorBase = new mongoose.Types.ObjectId(dynapprvlPayld.approvalCreatorBase?._id)
         }        
-        if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.approvalFunction)) {
-            dynapprvlPayld.approvalFunction = new mongoose.Types.ObjectId(dynapprvlPayld.approvalFunction)
+        if (mongoose.Types.ObjectId.isValid(dynapprvlPayld.approvalFunction?._id)) {
+            dynapprvlPayld.approvalFunction = new mongoose.Types.ObjectId(dynapprvlPayld.approvalFunction?._id)
         }
         // console.log(dynapprvlPayld);
         const existingDynapprvl = await dynapprvlModel.findOne({
             approvalCreatorBase: dynapprvlPayld.approvalCreatorBase,
             approvalFunction: dynapprvlPayld.approvalFunction
         }).lean();
+
+        console.log(dynapprvlPayld);
 
         dynapprvlPayld.approvalDetails = dynapprvlPayld.approvalDetails?.filter(elm => elm?.approvers?.length > 0)?.map((elm, i) => ({
             approvalLevel: i+1,
@@ -413,7 +415,7 @@ const read = async (req, res) => {
 
         const records = await fetchApprovalDetails(cBase, funcId)
         // const records = await dynapprvlModel.find().sort({ updatedAt: -1 }).lean();
-        console.log(records);
+        // console.log(records);
 
         res.status(200).json({
             message: 'Dynamic Approval records retrieved successfully',
