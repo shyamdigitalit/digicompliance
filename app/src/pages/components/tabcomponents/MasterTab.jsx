@@ -12,7 +12,6 @@ const MasterTab = React.memo(function MasterTab() {
     if (m.level===0) return m
     if (m.level!==0 && m.level>=user?.acc_typ?.heirarchy) return m
   })
-  // console.log(filteredMasterListTabs);
 
   return (
     <div className="profile-card">
