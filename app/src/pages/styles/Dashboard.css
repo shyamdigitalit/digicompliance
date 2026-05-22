@@ -972,3 +972,142 @@
 .action-icon-btn.view-pdf:hover  { background: #eff6ff; }
 .action-icon-btn.download  { color: #374151; }
 .action-icon-btn.download:hover  { background: #f3f4f6; }
+
+.content .deadline-item,
+.content .activity-item {
+  transition: all 0.25s ease;
+}
+
+/* Upcoming Deadlines Hover */
+.content .deadline-item:hover {
+  background: #f9fafb;
+  border-radius: 10px;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Optional text highlight on hover */
+.content .deadline-item:hover .deadline-title {
+  color: #2563eb;
+}
+
+/* Recent Activity Hover */
+.content .activity-item:hover {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 6px 8px;
+  transform: translateX(4px);
+}
+
+/* Dot animation */
+.content .activity-item:hover .activity-dot {
+  transform: scale(1.2);
+  background: #2563eb;
+}
+
+.activity-dot {
+  transition: all 0.25s ease;
+}
+
+.content {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Panels */
+.content .left,
+.content .right {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  max-height: 500px;   /* Adjust height as needed */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+/* Custom Scrollbar */
+.content .left::-webkit-scrollbar,
+.content .right::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content .left::-webkit-scrollbar-track,
+.content .right::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content .left::-webkit-scrollbar-thumb,
+.content .right::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.content .left::-webkit-scrollbar-thumb:hover,
+.content .right::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Smooth scrolling */
+.content .left,
+.content .right {
+  scroll-behavior: smooth;
+}
+
+.content .right {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  max-height: 500px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar */
+.content .right::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content .right::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content .right::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.content .right::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Activity Item Hover */
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.activity-item:hover {
+  background: #f9fafb;
+  transform: translateX(4px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.activity-item:hover  {
+  background: #2563eb;
+  transform: scale(1.2);
+}
+
+/* Text Hover */
+.activity-item:hover .activity-text {
+  color: #2563eb;
+}
