@@ -539,7 +539,7 @@ const Compliance = React.memo(function Compliance() {
 
   return (
     <div className="compliance-page">
-hg      {showAddForm ? (
+      {showAddForm ? (
         <AddCompliance
         onCancel={() => setShowAddForm(false)}
         onSubmit={handleAddEditSubmit}
