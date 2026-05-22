@@ -91,7 +91,7 @@ const create = async (req, res) => {
             approvalFunction: dynapprvlPayld.approvalFunction
         }).lean();
 
-        console.log(dynapprvlPayld);
+        // console.log(dynapprvlPayld);
 
         dynapprvlPayld.approvalDetails = dynapprvlPayld.approvalDetails?.filter(elm => elm?.approvers?.length > 0)?.map((elm, i) => ({
             approvalLevel: i+1,
@@ -487,7 +487,8 @@ export const fetchAvailableAccounts = async (cBase, funcId) => {
         { $addFields: {
             createdAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$createdAt', timezone: "+05:30" } },
             updatedAtITC: { $dateToString: { format: "%d-%m-%Y %H:%M:%S", date: '$updatedAt', timezone: "+05:30" } }
-        }}
+        }},
+        { $sort: { updatedAt: -1 }}
     ];
 
     const accounts = await accModel.aggregate(pipeline);

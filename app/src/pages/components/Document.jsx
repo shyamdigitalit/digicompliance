@@ -6,8 +6,13 @@ import "../styles/Document.css";
 import axiosInstance from "../../config/axiosInstance";
 import Loader from "../../components/loader";
 import { useSelector } from "react-redux";
+<<<<<<< Updated upstream
 import { logActivity } from "../utils/activityLog";
 import { saveAs } from "file-saver";
+=======
+import { logActivity } from "../utils/activityLog-old.js";
+// import { logActivity } from "../utils/activityLog.js";
+>>>>>>> Stashed changes
 
 const defaultFileList = [];
 

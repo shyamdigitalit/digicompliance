@@ -31,12 +31,12 @@ import { useNavigate } from "react-router-dom";
 // ];
 
 const defaultActivities = [
-  { text:"Completed Safety Inspection - Mumbai Plant A",  user:"John Smith",    time:"2 hours ago" },
-  { text:"Approved Quality Audit - Delhi plant",          user:"Michael Chen",  time:"4 hours ago" },
-  { text:"Updated Labour Law Compliance",                 user:"Sarah Johnson", time:"5 hours ago" },
-  { text:"Created New Compliance Record",                 user:"Emily Davis",   time:"1 day ago"   },
-  { text:"Rejected Product Testing Report",               user:"Robert Wilson", time:"1 day ago"   },
-  { text:"Scheduled Safety Training Session - Bengaluru", user:"Lisa Patel",    time:"2 days ago"  },
+  // { text:"Completed Safety Inspection - Mumbai Plant A",  user:"John Smith",    time:"2 hours ago" },
+  // { text:"Approved Quality Audit - Delhi plant",          user:"Michael Chen",  time:"4 hours ago" },
+  // { text:"Updated Labour Law Compliance",                 user:"Sarah Johnson", time:"5 hours ago" },
+  // { text:"Created New Compliance Record",                 user:"Emily Davis",   time:"1 day ago"   },
+  // { text:"Rejected Product Testing Report",               user:"Robert Wilson", time:"1 day ago"   },
+  // { text:"Scheduled Safety Training Session - Bengaluru", user:"Lisa Patel",    time:"2 days ago"  },
 ];
 
 const Dashboard = () => {

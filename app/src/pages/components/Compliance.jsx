@@ -14,10 +14,13 @@ import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import Loader from "../../components/loader";
 import moment from 'moment';
-import { logActivity } from "../utils/activityLog";
+// import { logActivity } from "../utils/activityLog-old.js";
+import { logActivity } from "../utils/activityLog.js";
 
 const COMPLIANCE_KEY = "compliance_data";
 const ACTIVITY_KEY = "activity_log";
+const FUNC_CODE = "COMPLIANCE"
+const COLLECTION_NAME = "compliances"
 
 const PAGE_SIZE = 8;
 
@@ -256,6 +259,7 @@ const Compliance = React.memo(function Compliance() {
     page * PAGE_SIZE
   );
 
+<<<<<<< Updated upstream
   // EXPORT HANDLERS
 
   const handleSelectRow = (id) => {
@@ -276,6 +280,183 @@ const Compliance = React.memo(function Compliance() {
 
   const handleExportConfirm = React.useCallback((exportRows) => {
     const exportData = exportRows?.map(({
+=======
+  // Data Manipulation Handlers
+  const handleAddEditSubmit = React.useCallback(async (formData) => {
+    try {
+      if (editing) {
+        const response = await axiosInstance.patch(`/api/comp/update?id=${editing?._id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        console.log(editing);
+        if (response.status === 201) {
+          // logActivity("Compliance Updated", editing?.complianceId || editing?._id, user);
+          logActivity('Compliance Updated', '', FUNC_CODE, COLLECTION_NAME, "complianceId", editing?.complianceId, "")
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false);
+            setShowAddForm(false);
+            fetchData();
+          }, 1000);
+        } else {
+          alert("Failed to add compliance. Please try again.");
+        }
+      } else {
+        const response = await axiosInstance.post("/api/comp/create", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        if (response.status === 201) {
+          // logActivity("Compliance Added", response.data?.data?.complianceId || "", user);
+          logActivity('Compliance Added', '', FUNC_CODE, COLLECTION_NAME, "complianceId", response.data?.data?.complianceId, "")
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false);
+            setShowAddForm(false);
+            fetchData();
+          }, 1000);
+        } else {
+          alert("Failed to add compliance. Please try again.");
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [editing, setSaved, setShowAddForm, fetchData]);
+
+  const handleEdit = React.useCallback((row) => {
+    setEditing(row);
+    setShowAddForm(true);
+  }, [setEditing, setShowAddForm]);
+
+  const handleZipDownload = React.useCallback(async (value = [], label = "Compliance_Files") => {
+    if (!value || value.length === 0) {
+      alert(`No files available for download!`);
+      return;
+    }
+    try {
+      const backendFiles = value.filter(f => f.filId);
+      const localFiles = value.filter(f => f instanceof File);
+      const urlFiles = value.filter(f => f.filUrl && !f.filId);
+
+      if (backendFiles.length > 0) {
+        try {
+          const fileIds = backendFiles.map(f => f.filId).join(',');
+          const response = await axiosInstance.get(
+            `/api/file/downloadall?files=${fileIds}`,
+            { responseType: 'blob' }
+          );
+          const blob = new Blob([response.data], { type: 'application/zip' });
+          saveAs(blob, `${label}.zip`);
+          // logActivity("Compliance Downloaded", label, user);
+          logActivity('Compliance All Files Downloaded', '', FUNC_CODE, "files", "filename", label, "")
+          alert(`Files downloaded successfully!`);
+          return;
+        } catch (err) {
+          console.log(err);
+          alert(`Backend ZIP failed, trying fallback.`);
+        }
+      }
+
+      const zip = new JSZip();
+      for (const file of localFiles) {
+        zip.file(file.name, file);
+      }
+      for (const file of urlFiles) {
+        const response = await fetch(file.filUrl);
+        const blob = await response.blob();
+        zip.file(file.filName || "file", blob);
+      }
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      saveAs(zipBlob, `${label}.zip`);
+      // logActivity("Compliance Downloaded", label, user);
+          logActivity('Compliance All Files Downloaded', '', FUNC_CODE, "files", "filename", label, "")
+      alert(`ZIP exported successfully!`);
+    } catch (err) {
+      console.error(err);
+      alert(`ZIP download failed.`);
+    }
+  }, []);
+
+  const handleApprove = React.useCallback(async (row) => {
+    try {
+      if (window.confirm("Approve this compliance record?")) {
+        const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=1`, row);
+        if (response.status === 201) {
+          // logActivity("Compliance Approved", row.complianceId || row._id, user);
+          logActivity('Compliance Approved', '', FUNC_CODE, COLLECTION_NAME, "complianceId", row.complianceId, "")
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false);
+            setShowAddForm(false);
+            fetchData();
+          }, 1000);
+        } else {
+          alert(`Approval Failed`);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [setSaved, setShowAddForm, fetchData]);
+
+  const handleReject = React.useCallback(async (row) => {
+    try {
+      if (window.confirm("Reject this compliance record?")) {
+        const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=0`, row);
+        if (response.status === 201) {
+          // logActivity("Compliance Rejected", row.complianceId || row._id, user);
+          logActivity('Compliance Rejected', '', FUNC_CODE, COLLECTION_NAME, "complianceId", row.complianceId, "")
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false);
+            setShowAddForm(false);
+            fetchData();
+          }, 1000);
+        } else {
+          alert(`Rejection Failed`);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [setSaved, setShowAddForm, fetchData]);
+
+  const handleDelete = React.useCallback(async (id) => {
+    try {
+      if (window.confirm("Delete this compliance record?")) {
+        const response = await axiosInstance.delete(`/api/comp/delete?id=${id}`);
+        console.log(response.data);
+        if (response.status === 200) {
+          // logActivity("Compliance Deleted", response.data?.data?.complianceId || id, user);
+          logActivity('Compliance Deleted', '', FUNC_CODE, COLLECTION_NAME, "complianceId", response.data?.data?.complianceId, "")
+          setSaved(true);
+          setTimeout(() => {
+            setSaved(false);
+            fetchData();
+          }, 1000);
+        } else {
+          alert(`Deletion Failed`);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [setSaved, fetchData]);
+
+  const handleStatusChange = React.useCallback((id, newStatus) => {
+    setData(prev => prev.map(d => d._id === id ? { ...d, status: newStatus } : d));
+    // logActivity("Compliance Status Changed", `Status set to ${newStatus}`, user);
+    logActivity('Compliance Status Changed', '', FUNC_CODE, COLLECTION_NAME, "status", "", `Status set to ${newStatus}`)
+  }, []);
+
+  const handleExport = React.useCallback(() => {
+    if (!paged.length) {
+      alert('No data available to export.');
+      return;
+    }
+    alert('Exporting data...');
+    const exportData = paged?.map(({
+>>>>>>> Stashed changes
       _id,
       complianceId,
       plant,
@@ -305,6 +486,15 @@ const Compliance = React.memo(function Compliance() {
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
+<<<<<<< Updated upstream
+=======
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Compliance');
+    XLSX.writeFile(workbook, 'Compliance_Datasheet.xlsx');
+    // logActivity("Compliance Exported", `${exportData.length} records`, user);
+    logActivity('Compliance data Exported', '', FUNC_CODE, COLLECTION_NAME, "", "", `${exportData.length} records`)
+  }, [paged]);
+>>>>>>> Stashed changes
 
     const workbook = XLSX.utils.book_new();
 

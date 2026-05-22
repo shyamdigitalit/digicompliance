@@ -24,6 +24,7 @@ import accController from '../controllers/accController.js';
 import dashController from '../controllers/dashController.js';
 import dynapprvlController from '../controllers/adminmgmt/dynapproval/dynapprvlController.js';
 import fileOpController from '../controllers/fileOpController.js';
+import activitylogController from '../controllers/adminmgmt/logmaintainance/activitylogController.js';
 
 
 // Utility function to create routes
@@ -55,6 +56,7 @@ const postRoutes = [
     { path: '/acc/import', handlers: [jwtHybrdProtect, fileUpload.none(), accController.upload] },
     { path: '/dynapprvl/create', handlers: [jwtHybrdProtect, fileUpload.none(), dynapprvlController.create] },
     { path: '/file/upload', handlers: [jwtHybrdProtect, fileUpload.fields([ { name: 'files' } ]), fileOpController.uploadHandler] },
+    { path: '/activitylog/create', handlers: [jwtHybrdProtect, fileUpload.none(), activitylogController.create] },
     // { path: '/mail/send', handlers: [basicAuth, fileUpload.none(), mailtestController.send] },
 ];
 postRoutes.forEach(route => createRoute('post', route.path, ...route.handlers));
@@ -85,6 +87,8 @@ const getRoutes = [
     { path: '/file/fetch', handlers: [jwtHybrdProtect, fileOpController.getAllHandler] },
     { path: '/file/download/:id', handlers: [jwtHybrdProtect, fileOpController.downloadHandler] },
     { path: '/file/downloadall', handlers: [jwtHybrdProtect, fileOpController.downloadAllHandler] },
+    { path: '/activitylog/fetch', handlers: [jwtHybrdProtect, activitylogController.read] },
+    { path: '/activitylog/fetchby/:id', handlers: [jwtHybrdProtect, activitylogController.readById] },
 ];
 getRoutes.forEach(route => createRoute('get', route.path, ...route.handlers));
 
@@ -105,6 +109,7 @@ const patchRoutes = [
     { path: '/func/update', handlers: [jwtHybrdProtect, fileUpload.none(), funcController.update] },
     { path: '/acc/update', handlers: [jwtHybrdProtect, fileUpload.none(), accController.update] },
     { path: '/acc/changepass', handlers: [jwtHybrdProtect, fileUpload.none(), accController.changePassword] },
+    { path: '/activitylog/update', handlers: [jwtHybrdProtect, fileUpload.none(), activitylogController.update] },
 ];
 patchRoutes.forEach(route => createRoute('patch', route.path, ...route.handlers));
 
@@ -124,7 +129,8 @@ const deleteRoutes = [
     { path: '/acc/delete', handlers: [jwtHybrdProtect, accController.remove] },
     { path: '/func/delete', handlers: [jwtHybrdProtect, funcController.remove] },
     { path: '/file/delete/:fileId', handlers: [jwtHybrdProtect, fileOpController.deleteHandler] },
-    { path: '/file/delete/multiple', handlers: [jwtHybrdProtect, fileOpController.deleteManyHandler] }
+    { path: '/file/delete/multiple', handlers: [jwtHybrdProtect, fileOpController.deleteManyHandler] },
+    { path: '/activitylog/delete', handlers: [jwtHybrdProtect, activitylogController.remove] },
 ];
 deleteRoutes.forEach(route => createRoute('delete', route.path, ...route.handlers));
 
