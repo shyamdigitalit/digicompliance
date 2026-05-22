@@ -22,69 +22,69 @@ const ACTIVITY_KEY = "activity_log";
 const PAGE_SIZE = 8;
 
 /* ── Export Modal ── */
-// const ExportModal = React.memo(({ filtered, onClose, onExport }) => {
-//   const [selectAll, setSelectAll] = React.useState(false);
-//   const [count, setCount] = React.useState("");
-//   const total = filtered.length;
+const ExportModal = React.memo(({ filtered, onClose, onExport }) => {
+  const [selectAll, setSelectAll] = React.useState(false);
+  const [count, setCount] = React.useState("");
+  const total = filtered.length;
 
-//   const handleSelectAll = () => {
-//     setSelectAll(true);
-//     setCount(String(total));
-//   };
+  const handleSelectAll = () => {
+    setSelectAll(true);
+    setCount(String(total));
+  };
 
-//   const handleCountChange = (e) => {
-//     setSelectAll(false);
-//     const val = e.target.value.replace(/\D/g, "");
-//     setCount(val);
-//   };
+  const handleCountChange = (e) => {
+    setSelectAll(false);
+    const val = e.target.value.replace(/\D/g, "");
+    setCount(val);
+  };
 
-//   const handleExport = () => {
-//     const n = selectAll ? total : Math.min(parseInt(count) || 0, total);
-//     if (n === 0) { alert("Please enter a valid count or select all."); return; }
-//     onExport(filtered.slice(0, n));
-//   };
+  const handleExport = () => {
+    const n = selectAll ? total : Math.min(parseInt(count) || 0, total);
+    if (n === 0) { alert("Please enter a valid count or select all."); return; }
+    onExport(filtered.slice(0, n));
+  };
 
-//   return (
-//     <div className="doc-modal-overlay" onClick={onClose}>
-//       <div className="doc-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
-//         <div className="doc-modal-header">
-//           <h3>Export Compliance</h3>
-//           <button className="doc-modal-close" onClick={onClose}>✕</button>
-//         </div>
-//         <p className="doc-modal-sub" style={{ marginBottom: 16 }}>
-//           {total} record{total !== 1 ? "s" : ""} available. Choose how many to export.
-//         </p>
+  return (
+    <div className="doc-modal-overlay" onClick={onClose}>
+      <div className="doc-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+        <div className="doc-modal-header">
+          <h3>Export Compliance</h3>
+          <button className="doc-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <p className="doc-modal-sub" style={{ marginBottom: 16 }}>
+          {total} record{total !== 1 ? "s" : ""} available. Choose how many to export.
+        </p>
 
-//         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
-//           <label style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}>Number of records</label>
-//           <input
-//             type="number"
-//             min={1}
-//             max={total}
-//             value={count}
-//             placeholder={`Enter count (max ${total})`}
-//             onChange={handleCountChange}
-//             style={{ padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 14 }}
-//           />
-//           <button
-//             className={selectAll ? "dark-btn" : "light-btn"}
-//             onClick={handleSelectAll}
-//             style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}
-//           >
-//             {selectAll ? "✓ All selected" : "Select All"} ({total} records)
-//           </button>
-//         </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+          <label style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}>Number of records</label>
+          <input
+            type="number"
+            min={1}
+            max={total}
+            value={count}
+            placeholder={`Enter count (max ${total})`}
+            onChange={handleCountChange}
+            style={{ padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 14 }}
+          />
+          <button
+            className={selectAll ? "dark-btn" : "light-btn"}
+            onClick={handleSelectAll}
+            style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}
+          >
+            {selectAll ? "✓ All selected" : "Select All"} ({total} records)
+          </button>
+        </div>
 
-//         <div className="doc-modal-footer">
-//           <button className="light-btn" onClick={onClose}>Cancel</button>
-//           <button className="dark-btn" onClick={handleExport}>
-//             {selectAll ? `Export All (${total})` : `Export${count ? ` (${Math.min(parseInt(count)||0,total)})` : ""}`}
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// });
+        <div className="doc-modal-footer">
+          <button className="light-btn" onClick={onClose}>Cancel</button>
+          <button className="dark-btn" onClick={handleExport}>
+            {selectAll ? `Export All (${total})` : `Export${count ? ` (${Math.min(parseInt(count)||0,total)})` : ""}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 const Compliance = React.memo(function Compliance() {
   const location = useLocation();
@@ -103,9 +103,7 @@ const Compliance = React.memo(function Compliance() {
   const [data, setData] = React.useState([]);
   const [saved, setSaved] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  // const [showExportModal, setShowExportModal] = React.useState(false);
-  const [showExportSelection, setShowExportSelection] = React.useState(false);
-  const [selectedRows, setSelectedRows] = React.useState([]);
+  const [showExportModal, setShowExportModal] = React.useState(false);
 
   const user = useSelector(state => state.auth.user)
 
@@ -270,7 +268,7 @@ const Compliance = React.memo(function Compliance() {
     setFilterPenaltyType,
     setPage
   ]);
-
+  
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -435,21 +433,13 @@ const Compliance = React.memo(function Compliance() {
     logActivity("Compliance Status Changed", `Status set to ${newStatus}`, user);
   }, [user]);
 
-  const handleSelectRow = (id) => {
-    setSelectedRows(prev =>
-      prev.includes(id)
-        ? prev.filter(x => x !== id)
-        : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedRows.length === filtered.length) {
-      setSelectedRows([]);
-    } else {
-      setSelectedRows(filtered.map(item => item._id));
+  const handleExport = React.useCallback(() => {
+    if (!filtered.length) {
+      alert('No data available to export.');
+      return;
     }
-  };
+    setShowExportModal(true);
+  }, [filtered]);
 
   const handleExportConfirm = React.useCallback((exportRows) => {
     const exportData = exportRows?.map(({
@@ -463,8 +453,13 @@ const Compliance = React.memo(function Compliance() {
       criticality,
       penaltyType,
       dueDate,
+      allDocs,
+      approvalDetails,
+      createdAt,
+      updatedAt,
       createdby,
       updatedby,
+      __v,
       ...rest
     }) => ({
       complianceId,
@@ -482,73 +477,19 @@ const Compliance = React.memo(function Compliance() {
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
-
     const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(
-      workbook,
-      worksheet,
-      'Compliance'
-    );
-
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Compliance');
     XLSX.writeFile(workbook, 'Compliance_Datasheet.xlsx');
-
-    logActivity(
-      "Compliance Exported",
-      `${exportData.length} records`,
-      user
-    );
+    logActivity("Compliance Exported", `${exportData.length} records`, user);
+    setShowExportModal(false);
   }, [user]);
-
-  const handleExport = React.useCallback(() => {
-    if (!filtered.length) {
-      alert("No data available to export.");
-      return;
-    }
-
-    if (!showExportSelection) {
-      setShowExportSelection(true);
-      return;
-    }
-
-    const exportRows =
-      selectedRows.length === filtered.length
-        ? filtered
-        : filtered.filter(item =>
-          selectedRows.includes(item._id)
-        );
-
-    if (!exportRows.length) {
-      alert("Please select at least one compliance.");
-      return;
-    }
-
-    handleExportConfirm(exportRows);
-
-    setShowExportSelection(false);
-    setSelectedRows([]);
-  }, [
-    filtered,
-    selectedRows,
-    showExportSelection,
-    handleExportConfirm
-  ]);
 
   const getTag = (val) => val?.toLowerCase().replace(" ", "-");
   const isExpired = (dueDate) => dueDate && new Date(dueDate) < new Date();
 
   return (
     <div className="compliance-page">
-hg      {showAddForm ? (
-        <AddCompliance
-        onCancel={() => setShowAddForm(false)}
-        onSubmit={handleAddEditSubmit}
-        initialData={editing}
-        mode={editing ? "edit" : "add"}
-        saved={saved}
-        masterData={masterData}
-        />
-      ) : (
+      
         <>
           <div className="header">
             <div>
@@ -609,16 +550,7 @@ hg      {showAddForm ? (
                     <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
                   )} */}
                   <button className="dark-btn" onClick={() => setShowAddForm(true)}>+ Add Compliance</button>
-                  <button
-                    className="dark-btn"
-                    onClick={handleExport}
-                  >
-                    {!showExportSelection
-                      ? "Export"
-                      : selectedRows.length === filtered.length
-                        ? `Export All (${filtered.length})`
-                        : `Export Selected (${selectedRows.length})`}
-                  </button>
+                  <button className="dark-btn" onClick={handleExport}>Export</button>
                 </div>
               </div>
 
@@ -627,18 +559,6 @@ hg      {showAddForm ? (
                   <table>
                     <thead>
                       <tr>
-                        {showExportSelection && (
-                          <th>
-                            <input
-                              type="checkbox"
-                              checked={
-                                filtered.length > 0 &&
-                                selectedRows.length === filtered.length
-                              }
-                              onChange={handleSelectAll}
-                            />
-                          </th>
-                        )}
                         <th>Compliance ID</th>
                         <th>Plant</th>
                         <th>Department</th>
@@ -656,23 +576,12 @@ hg      {showAddForm ? (
                     <tbody>
                       {paged.length === 0 ? (
                         <tr>
-                          <td colSpan={12} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>
+                          <td colSpan={9} style={{ textAlign: "center", color: "#9ca3af", padding: "30px" }}>
                             No records found
                           </td>
                         </tr>
                       ) : paged.map((item) => (
                         <tr key={item._id} className={isExpired(item.dueDate) ? "row-expired" : ""}>
-                          {showExportSelection && (
-                            <td>
-                              <input
-                                type="checkbox"
-                                checked={selectedRows.includes(item._id)}
-                                onChange={() =>
-                                  handleSelectRow(item._id)
-                                }
-                              />
-                            </td>
-                          )}
                           <td className="link">{item.complianceId}</td>
                           <td>{item?.plant?.name}</td>
                           <td>{item?.department?.name}</td>
@@ -769,8 +678,17 @@ hg      {showAddForm ? (
           )}
         </>
       )}
+      {showExportModal && (
+        <ExportModal
+          filtered={filtered}
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExportConfirm}
+        />
+      )}
     </div>
   );
 });
 
 export default Compliance;
+
+// instead of it's exporting now make it like when we click on export checkbox should appear in compliance table either the user can choose which  multiple compliance they want to export or they can select all when they click the select all checkbox the button will change to export all 
