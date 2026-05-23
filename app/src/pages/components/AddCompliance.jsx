@@ -91,7 +91,7 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
 
   const sortedExistingFiles = React.useMemo(() => {
     return [...existingFiles].sort((a, b) =>
-      a.filName.localeCompare(b.filName)
+      a.filename.localeCompare(b.filename)
     );
   }, [existingFiles]);
   const sortedNewFiles = React.useMemo(() => {
@@ -102,14 +102,14 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
 
   const handleDownload = React.useCallback(async (file) => {
     try {
-      const res = await axiosInstance.get(`/api/file/download/${file.filId}`, { responseType: "blob" });
+      const res = await axiosInstance.get(`/api/file/download/${file._id}`, { responseType: "blob" });
       const blob = new Blob([res.data], {
-        type: res.headers["content-type"] || file.filContentType
+        type: res.headers["content-type"] || file.mimetype
       });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = file.filName;
+      a.download = file.filename;
 
       document.body.appendChild(a);
       a.click();
@@ -363,8 +363,8 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
                       </svg>
                     </div>
                     <div className="file-info">
-                      <span className="file-name">{file.filName}</span>
-                      <span className="file-meta">{file.filContentType}</span>
+                      <span className="file-name">{file.filename}</span>
+                      <span className="file-meta">{file.mimetype}</span>
                     </div>
                     <div className="file-btns">
                       <button type="button" className="icon-btn" onClick={() => handleView(file)}>

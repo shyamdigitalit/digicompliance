@@ -23,17 +23,7 @@ const ComplianceSchema = new Schema({
     location: { type: String, trim: true },
     scheduledPeriodicity: { type: String, trim: true },
     remarks: { type: String, trim: true },
-    allDocs: [{
-        filId: { type: String, trim: true, required: true },
-        filName: { type: String, trim: true, required: true },
-        filContentType: { type: String, trim: true, required: true },
-        filContentSize: { type: String, trim: true, required: true },
-        filPath: { type: String, trim: true, required: true },
-        filUploadStatus: { type: String, required: true, enum: ['Pending', 'Done'], default: 'Done' },
-        fileUploadDate: { type: String, required: true, trim: true, default: () => moment().format("DD-MM-YYYY") },
-        fileUploadTime: { type: String, required: true, trim: true, default: () => moment().format("HH:mm:ss") },
-        fileUploadedby: { type: Types.ObjectId, ref: 'Account' }
-    }],
+    allDocs: [{ type: Types.ObjectId, ref: "File" }],
     status: { type: String, required: true, enum: ['Open', 'Pending', 'Active', 'Inactive', 'Closed'], default: 'Active' }, // status
     createdby: { type: Types.ObjectId, ref: 'Account', required: true }, // master
     updatedby: { type: Types.ObjectId, ref: 'Account' }, // master

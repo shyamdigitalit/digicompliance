@@ -123,6 +123,9 @@ export const fetchComplianceDetails = async user => {
         { $lookup: { from: 'accounts', localField: 'updatedby', foreignField: '_id', as: 'updatedby' } },
         { $unwind: { path: '$updatedby', preserveNullAndEmptyArrays: true } },
 
+        /* ✅ POPULATE FILES */
+        { $lookup: { from: 'files', localField: 'allDocs', foreignField: '_id', as: 'allDocs' } },
+
         // { $addFields: { isApprover: approverInfo.length > 0 } },
         {
             $addFields: {
@@ -307,6 +310,7 @@ export const create = async (req, res) => {
         // console.log(files);
 
         const { uploaded } = await uploadFiles([].concat(files));
+        // console.log(uploaded);
 
         const approvals = await fetchApprovalDetails(String(plantId), String(departmentId), user);
         // console.log(approvals);

@@ -6,7 +6,7 @@ import { data } from "react-router-dom";
 // Reusable functions
 const toObjectId = v => (isValidObjectId(v) ? new mongoose.Types.ObjectId(v) : null);
 const fetchAll = async () => {
-    const activitylogs = await activitylogModel.find().populate('activityReferenceFunction activityReferenceBy')
+    const activitylogs = await activitylogModel.find().sort({ updatedAt: -1 }).populate('activityReferenceFunction activityReferenceBy')
     return activitylogs
 }
 
@@ -18,11 +18,20 @@ const create = async (req, res) => {
         const funcCode = activitylogPayload.activityReferenceFunction
         const funcDetails = await funcModel.findOne({ code: funcCode })
         activitylogPayload.activityReferenceFunction = funcDetails?._id
-        activitylogPayload.activityCode = asciiGenerator(`${activitylogPayload.activityName}${funcCode}${activitylogPayload.activityReferenceId}`)
+        activitylogPayload.activityCode = asciiGenerator(`${activitylogPayload.activityName}${funcCode}${activitylogPayload.activityReferenceUniqueFieldName}${activitylogPayload.activityReferenceUniqueFieldValue}`)
         activitylogPayload.activityReferenceBy = user._id
-        const newActivitylog = new activitylogModel(activitylogPayload)
-        const savedActivitylog = await newActivitylog.save()
-        res.status(201).json({ message: 'Activity log created successfully', success: true, data: savedActivitylog })
+
+        const existingLog = await activitylogModel.findOne({ activityCode: activitylogPayload.activityCode }).populate('activityReferenceFunction activityReferenceBy')
+        if (existingLog) {
+            delete activitylogPayload.activityCode
+            const updatedLog = await activitylogModel.findByIdAndUpdate(existingLog?._id, activitylogPayload, { new: true })
+            if (updatedLog) return res.status(201).json({ message: 'Old Activity log updated successfully', success: true, data: savedActivitylog })
+        }
+        else {
+            const newActivitylog = new activitylogModel(activitylogPayload)
+            const savedActivitylog = await newActivitylog.save()
+            res.status(201).json({ message: 'Activity log created successfully', success: true, data: savedActivitylog })
+        }
     } catch (error) {
         console.error(error)
         res.status(500).json({ error: 'Internal Server Error', success: false })

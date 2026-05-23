@@ -3,7 +3,7 @@
 import {
     uploadFiles,
     getFiles,
-    downloadFile,
+    getFileById,
     downloadFilesZip,
     removeFile,
     deleteFiles
@@ -12,7 +12,7 @@ import {
 /* ------------------------------------------------------------------
    ✅ Upload Multiple Files
 ------------------------------------------------------------------ */
-export const uploadHandler = async (req, res) => {
+const uploadHandler = async (req, res) => {
     try {
         if (!req.files?.files || req.files?.files?.length === 0) {
             return res.status(400).json({
@@ -22,25 +22,19 @@ export const uploadHandler = async (req, res) => {
         }
 
         const files = req.files?.files || [];
-
-        console.log(files);
-        console.log(req.body);
         const result = await uploadFiles([].concat(files));
-
         return res.status(200).json({
             success: true,
-            message:
-                result.duplicates.length > 0
-                    ? "Files uploaded with duplicate reuse"
-                    : "Files uploaded successfully",
+            message: result.duplicates.length > 0
+                ? "Files uploaded with duplicate reuse"
+                : "Files uploaded successfully",
             uploadedCount: result.uploaded.length,
             duplicateCount: result.duplicates.length,
             duplicateFiles: result.duplicates,
-            files: result.uploaded
+            file: result.uploaded[0] || null
         });
     } catch (error) {
         console.error("Upload Handler Error:", error);
-
         return res.status(500).json({
             success: false,
             message: "Upload failed",
@@ -52,10 +46,9 @@ export const uploadHandler = async (req, res) => {
 /* ------------------------------------------------------------------
    ✅ Get All Uploaded Files
 ------------------------------------------------------------------ */
-export const getAllHandler = async (req, res) => {
+const getAllHandler = async (req, res) => {
     try {
         const files = await getFiles();
-
         return res.status(200).json({
             success: true,
             count: files.length,
@@ -63,7 +56,6 @@ export const getAllHandler = async (req, res) => {
         });
     } catch (error) {
         console.error("Get All Files Error:", error);
-
         return res.status(500).json({
             success: false,
             message: "Failed to fetch files",
@@ -73,24 +65,20 @@ export const getAllHandler = async (req, res) => {
 };
 
 /* ------------------------------------------------------------------
-   ✅ Download Single File
+   ✅ Fetch Single File
 ------------------------------------------------------------------ */
-export const downloadHandler = async (req, res) => {
+const getByIdHandler = async (req, res) => {
     try {
         const { id } = req.params;
-
-        const { file, stream } = await downloadFile(id);
-
+        const { file, stream } = await getFileById(id);
         res.set({
             "Content-Disposition": `attachment; filename="${file.originalname}"`,
             "Content-Type": file.mimetype,
             "Content-Length": file.size
         });
-
         stream.pipe(res);
     } catch (error) {
-        console.error("Download File Error:", error);
-
+        console.error("Fetch File Error:", error);
         return res.status(404).json({
             success: false,
             message: error.message
@@ -103,7 +91,7 @@ export const downloadHandler = async (req, res) => {
    Example:
    /api/files/download-zip?files=id1,id2,id3
 ------------------------------------------------------------------ */
-export const downloadAllHandler = async (req, res) => {
+const downloadAllHandler = async (req, res) => {
     try {
         const fileIds = req.query.files
             ? req.query.files.split(",").filter(Boolean)
@@ -117,16 +105,13 @@ export const downloadAllHandler = async (req, res) => {
         }
 
         const zipStream = await downloadFilesZip(fileIds);
-
         res.set({
             "Content-Type": "application/zip",
             "Content-Disposition": `attachment; filename="Files_${Date.now()}.zip"`
         });
-
         zipStream.pipe(res);
     } catch (error) {
         console.error("ZIP Download Error:", error);
-
         return res.status(500).json({
             success: false,
             message: "ZIP download failed",
@@ -138,19 +123,16 @@ export const downloadAllHandler = async (req, res) => {
 /* ------------------------------------------------------------------
    ✅ Delete Single File
 ------------------------------------------------------------------ */
-export const deleteHandler = async (req, res) => {
+const deleteHandler = async (req, res) => {
     try {
         const { fileId } = req.params;
-
         const result = await removeFile(fileId);
-
         return res.status(200).json({
             success: true,
             ...result
         });
     } catch (error) {
         console.error("Delete File Error:", error);
-
         return res.status(500).json({
             success: false,
             message: "Delete failed",
@@ -163,7 +145,7 @@ export const deleteHandler = async (req, res) => {
    ✅ Delete Multiple Files
    req.body = { ids: [] }
 ------------------------------------------------------------------ */
-export const deleteManyHandler = async (req, res) => {
+const deleteManyHandler = async (req, res) => {
     try {
         const { ids } = req.body;
 
@@ -192,14 +174,12 @@ export const deleteManyHandler = async (req, res) => {
     }
 };
 
-/* ------------------------------------------------------------------
-   ✅ Default Export
------------------------------------------------------------------- */
+
 export default {
     uploadHandler,
     getAllHandler,
-    downloadHandler,
+    getByIdHandler,
     downloadAllHandler,
     deleteHandler,
     deleteManyHandler
-};
+}

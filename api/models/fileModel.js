@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const { Schema, model } = mongoose;
+const { Schema } = mongoose;
 
 const fileSchema = new Schema({
     filename: String,
@@ -8,10 +8,10 @@ const fileSchema = new Schema({
     mimetype: String,
     size: Number,
     path: String,
+    relativePath: String,
     hash: String
 }, { timestamps: true });
 
 fileSchema.index({ hash: 1 }, { unique: true });
-fileSchema.index({ complianceId: 1 });
 
 export default mongoose.model("File", fileSchema);

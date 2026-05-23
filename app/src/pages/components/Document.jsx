@@ -6,15 +6,13 @@ import "../styles/Document.css";
 import axiosInstance from "../../config/axiosInstance";
 import Loader from "../../components/loader";
 import { useSelector } from "react-redux";
-<<<<<<< Updated upstream
 import { logActivity } from "../utils/activityLog";
 import { saveAs } from "file-saver";
-=======
-import { logActivity } from "../utils/activityLog-old.js";
-// import { logActivity } from "../utils/activityLog.js";
->>>>>>> Stashed changes
+import { useLocation } from "react-router-dom";
 
 const defaultFileList = [];
+const FUNCTION_CODE = "DOCUMENTS"
+const COLLECTION_NAME = "files"
 
 const getFileIcon = (name) => {
   if (!name) return "📄";
@@ -28,7 +26,7 @@ const getFileIcon = (name) => {
   return "📄";
 };
 
-const isPdf = (name) => name?.toLowerCase().endsWith(".pdf");
+// const isPdf = (name) => name?.toLowerCase().endsWith(".pdf");
 
 const UploadPreview = React.memo(({ files, onRemove }) => (
   <div className="upload-preview">
@@ -109,6 +107,7 @@ const BookLoader = ({ label = "Loading…" }) => (
 );
 
 const Documents = React.memo(function Documents() {
+  const location = useLocation()
   const [files, setFiles] = React.useState([]);
   const [fileList, setFileList] = React.useState(defaultFileList);
   const [loading, setLoading] = React.useState(true);
@@ -120,10 +119,24 @@ const Documents = React.memo(function Documents() {
   const [pdfViewer, setPdfViewer] = React.useState(null);
   const fileInputRef = React.useRef();
 
-  const user = useSelector(state => state.auth.user);
+  const filterData = React.useCallback((data) => {
+    const params = new URLSearchParams(location.search)
+    // console.log(params);
+    const logParams = String(params).split("=")[1]
+    // console.log(logParams.length);
+
+    const filteredData = logParams && data.some(elm => elm.filename===logParams)
+    ? data.filter(elm => elm.filename===logParams) : data
+
+    return filteredData
+  }, [location.search])
 
   const fetchFiles = React.useCallback(async () => {
     try {
+      // const params = new URLSearchParams(location.search)
+      // console.log(params);
+      // const logParams = String(params).split("=")[1]
+      // console.log(logParams.length);
       const [res1, res2] = await Promise.allSettled([
         axiosInstance.get("/api/comp/fetch"),
         axiosInstance.get("/api/file/fetch")
@@ -139,7 +152,7 @@ const Documents = React.memo(function Documents() {
       })))
 
       const allFiles = allUnmappedFiles?.map(f => {
-        const fMapped = complianceMapping?.find(cd => String(cd?.filId)===String(f?._id))
+        const fMapped = complianceMapping?.find(cd => String(cd?._id)===String(f?._id))
         // console.log(fMapped);
         if (fMapped) {
           return {
@@ -156,13 +169,13 @@ const Documents = React.memo(function Documents() {
           }
         }
       })
-
-      // console.log(allFiles);
-      setFileList(allFiles || []);
+      const filteredFiles = filterData(allFiles)
+      // console.log(filteredFiles);
+      setFileList(filteredFiles || []);
     } catch (error) {
       console.error("Error fetching files:", error);
     }
-  }, []);
+  }, [filterData]);
 
   const fetchCompliance = React.useCallback(async () => {
     try {
@@ -256,7 +269,8 @@ const Documents = React.memo(function Documents() {
       // await axiosInstance.patch(`/api/comp/update?id=${compid}`, formData, {
       //   headers: { "Content-Type": "multipart/form-data" }
       // });
-      logActivity("Document Uploaded", files.map(f => f.name).join(", "), user);
+      // logActivity("Document Uploaded", files.map(f => f.name).join(", "), user);
+      logActivity("Document Uploaded", "", FUNCTION_CODE, COLLECTION_NAME, "filename", files.map(f => f.name).join(", "), "");
       setFiles([]);
       setShowCompliancePicker(false);
       // Await fetchFiles so the list is populated before the loader hides
@@ -268,7 +282,7 @@ const Documents = React.memo(function Documents() {
       setUploading(false);
       setUploadingFiles(false);
     }
-  }, [files, fetchFiles, user]);
+  }, [files, fetchFiles]);
 
   const handleDownloadAll = React.useCallback(async () => {
     if (!fileList.length) { alert("No documents to download."); return; }
@@ -277,12 +291,13 @@ const Documents = React.memo(function Documents() {
       const res = await axiosInstance.get(`/api/file/downloadall?files=${fileIds}`, { responseType: "blob" });
       const blob = new Blob([res.data], { type: "application/zip" });
       saveAs(blob, "All_Documents.zip");
-      logActivity("All Documents Downloaded", `${fileList.length} files`, user);
+      // logActivity("All Documents Downloaded", `${fileList.length} files`, user);
+      logActivity("All Documents Downloaded", "", FUNCTION_CODE, COLLECTION_NAME, "", "", `${fileList.length} files`);
     } catch (err) {
       console.error("Download all error:", err);
       alert("Failed to download all documents. Please try again.");
     }
-  }, [fileList, user]);
+  }, [fileList]);
 
   const handleDownload = React.useCallback(async (file) => {
     try {
@@ -293,23 +308,24 @@ const Documents = React.memo(function Documents() {
       a.href = url; a.download = file.filename || "file";
       document.body.appendChild(a); a.click(); a.remove();
       window.URL.revokeObjectURL(url);
-      logActivity("Document Downloaded", file.filename || file._id, user);
+      // logActivity("Document Downloaded", file.filename || file._id, user);
+      logActivity("Document Downloaded", "", FUNCTION_CODE, COLLECTION_NAME, "filename", file.filename, "");
     } catch (err) {
       console.error("Download error:", err);
     }
-  }, [user]);
-
-  const handleViewPdf = React.useCallback(async (file) => {
-    try {
-      const res = await axiosInstance.get(`/api/file/download/${file._id}`, { responseType: "blob" });
-      const blob = new Blob([res.data], { type: res.headers["content-type"] || "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-      setPdfViewer({ url, name: file.filename || "Document" });
-    } catch (err) {
-      console.error("View error:", err);
-      alert("Could not open document.");
-    }
   }, []);
+
+  // const handleViewPdf = React.useCallback(async (file) => {
+  //   try {
+  //     const res = await axiosInstance.get(`/api/file/download/${file._id}`, { responseType: "blob" });
+  //     const blob = new Blob([res.data], { type: res.headers["content-type"] || "application/pdf" });
+  //     const url = window.URL.createObjectURL(blob);
+  //     setPdfViewer({ url, name: file.filename || "Document" });
+  //   } catch (err) {
+  //     console.error("View error:", err);
+  //     alert("Could not open document.");
+  //   }
+  // }, []);
 
   const closePdfViewer = React.useCallback(() => {
     if (pdfViewer?.url) window.URL.revokeObjectURL(pdfViewer.url);

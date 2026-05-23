@@ -24,52 +24,26 @@ export const uploadFiles = async (files = []) => {
                    - But attach existing file info to compliance data
                 -------------------------------------------------- */
                 if (res?.duplicate && res?.file) {
-                    console.log('x1');
                     duplicates.push(f.originalname);
-
-                    uploaded.push({
-                        filId: res.file._id,
-                        filName: res.file.originalname,
-                        filContentType: res.file.mimetype,
-                        filContentSize: res.file.size,
-                        filPath: res.file.path,
-                        filUploadStatus: "Done",
-                    });
+                    uploaded.push(res.file);
                 }
 
                 /* --------------------------------------------------
                    New uploaded file
                 -------------------------------------------------- */
                 else if (res?.file) {
-                    console.log('x2');
-                    uploaded.push({
-                        filId: res.file._id,
-                        filName: res.file.originalname,
-                        filContentType: res.file.mimetype,
-                        filContentSize: res.file.size,
-                        filPath: res.file.path,
-                        filUploadStatus: "Done",
-                    });
+                    uploaded.push(res.file);
                 }
 
             } catch (err) {
                 console.error("Upload error:", err);
-
-                uploaded.push({
-                    filId: null,
-                    filName: f.originalname,
-                    filContentType: f.mimetype,
-                    filContentSize: f.size || 0,
-                    filPath: null,
-                    filUploadStatus: "Failed",
-                });
+                uploaded.push("Upload failed"+f.originalname);
             }
         })
     );
 
     return { uploaded, duplicates };
 };
-
 
 /* ------------------------------------------------------------------
    ✅ Get all files
@@ -81,7 +55,7 @@ export const getFiles = async () => {
 /* ------------------------------------------------------------------
    ✅ Download single file
 ------------------------------------------------------------------ */
-export const downloadFile = async (fileId) => {
+export const getFileById = async (fileId) => {
     return await getFileStream(fileId);
 };
 

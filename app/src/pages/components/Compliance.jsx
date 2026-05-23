@@ -7,7 +7,6 @@ import DoneAllIcon from '@mui/icons-material/DoneAll';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import AddCompliance from "./AddCompliance";
 import axiosInstance from "../../config/axiosInstance";
-import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -18,6 +17,8 @@ import { logActivity } from "../utils/activityLog";
 
 const COMPLIANCE_KEY = "compliance_data";
 const ACTIVITY_KEY = "activity_log";
+const FUNCTION_CODE = "COMPLIANCE";
+const COLLECTION_NAME = "compliances";
 
 const PAGE_SIZE = 8;
 
@@ -107,8 +108,6 @@ const Compliance = React.memo(function Compliance() {
   const [showExportSelection, setShowExportSelection] = React.useState(false);
   const [selectedRows, setSelectedRows] = React.useState([]);
 
-  const user = useSelector(state => state.auth.user)
-
   const fetchData = React.useCallback(async () => {
     setLoading(true);
     try {
@@ -182,7 +181,7 @@ const Compliance = React.memo(function Compliance() {
       q: params.get("q") || "",
     };
     navigate("/compliance", { replace: true });
-  }, [location.search]);
+  }, [location.search, navigate]);
 
   // Step 2: Once data loads (from empty → populated), apply stashed params
   React.useEffect(() => {
@@ -284,7 +283,8 @@ const Compliance = React.memo(function Compliance() {
         });
         console.log(editing);
         if (response.status === 201) {
-          logActivity("Compliance Updated", editing?.complianceId || editing?._id, user);
+          // logActivity("Compliance Updated", editing?.complianceId || editing?._id, user);
+          logActivity("Compliance Updated", "", FUNCTION_CODE, COLLECTION_NAME, "complianceId", editing?.complianceId, "");
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -299,7 +299,8 @@ const Compliance = React.memo(function Compliance() {
           headers: { "Content-Type": "multipart/form-data" }
         });
         if (response.status === 201) {
-          logActivity("Compliance Added", response.data?.data?.complianceId || "", user);
+          // logActivity("Compliance Added", response.data?.data?.complianceId || "", user);
+          logActivity("Compliance Added", "", FUNCTION_CODE, COLLECTION_NAME, "complianceId", editing?.complianceId, "");
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -313,7 +314,7 @@ const Compliance = React.memo(function Compliance() {
     } catch (error) {
       console.error(error);
     }
-  }, [editing, setSaved, setShowAddForm, fetchData, user]);
+  }, [editing, setSaved, setShowAddForm, fetchData]);
 
   const handleEdit = React.useCallback((row) => {
     setEditing(row);
@@ -339,7 +340,8 @@ const Compliance = React.memo(function Compliance() {
           );
           const blob = new Blob([response.data], { type: 'application/zip' });
           saveAs(blob, `${label}.zip`);
-          logActivity("Compliance Downloaded", label, user);
+          // logActivity("Compliance Downloaded", label, user);
+          logActivity("Compliance Downloaded", "", FUNCTION_CODE, "files", "filename", label, "");
           alert(`Files downloaded successfully!`);
           return;
         } catch (err) {
@@ -359,7 +361,8 @@ const Compliance = React.memo(function Compliance() {
       }
       const zipBlob = await zip.generateAsync({ type: "blob" });
       saveAs(zipBlob, `${label}.zip`);
-      logActivity("Compliance Downloaded", label, user);
+      // logActivity("Compliance Downloaded", label, user);
+      logActivity("Compliance Downloaded", "", FUNCTION_CODE, "files", "filename", label, "");
       alert(`ZIP exported successfully!`);
     } catch (err) {
       console.error(err);
@@ -372,7 +375,8 @@ const Compliance = React.memo(function Compliance() {
       if (window.confirm("Approve this compliance record?")) {
         const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=1`, row);
         if (response.status === 201) {
-          logActivity("Compliance Approved", row.complianceId || row._id, user);
+          // logActivity("Compliance Approved", row.complianceId || row._id, user);
+          logActivity("Compliance Approved", "", FUNCTION_CODE, COLLECTION_NAME, "complianceId", row.complianceId, "");
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -386,14 +390,15 @@ const Compliance = React.memo(function Compliance() {
     } catch (error) {
       console.error(error);
     }
-  }, [setSaved, setShowAddForm, fetchData, user]);
+  }, [setSaved, setShowAddForm, fetchData]);
 
   const handleReject = React.useCallback(async (row) => {
     try {
       if (window.confirm("Reject this compliance record?")) {
         const response = await axiosInstance.patch(`/api/comp/approve?id=${row._id}&flg=0`, row);
         if (response.status === 201) {
-          logActivity("Compliance Rejected", row.complianceId || row._id, user);
+          // logActivity("Compliance Rejected", row.complianceId || row._id, user);
+          logActivity("Compliance Rejected", "", FUNCTION_CODE, COLLECTION_NAME, "complianceId", row.complianceId, "");
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -407,7 +412,7 @@ const Compliance = React.memo(function Compliance() {
     } catch (error) {
       console.error(error);
     }
-  }, [setSaved, setShowAddForm, fetchData, user]);
+  }, [setSaved, setShowAddForm, fetchData]);
 
   const handleDelete = React.useCallback(async (id) => {
     try {
@@ -415,7 +420,8 @@ const Compliance = React.memo(function Compliance() {
         const response = await axiosInstance.delete(`/api/comp/delete?id=${id}`);
         console.log(response.data);
         if (response.status === 200) {
-          logActivity("Compliance Deleted", response.data?.data?.complianceId || id, user);
+          // logActivity("Compliance Deleted", response.data?.data?.complianceId || id, user);
+          logActivity("Compliance Deleted", "", FUNCTION_CODE, COLLECTION_NAME, "complianceId", response.data?.data?.complianceId, "");
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -428,12 +434,13 @@ const Compliance = React.memo(function Compliance() {
     } catch (error) {
       console.error(error);
     }
-  }, [setSaved, fetchData, user]);
+  }, [setSaved, fetchData]);
 
   const handleStatusChange = React.useCallback((id, newStatus) => {
     setData(prev => prev.map(d => d._id === id ? { ...d, status: newStatus } : d));
-    logActivity("Compliance Status Changed", `Status set to ${newStatus}`, user);
-  }, [user]);
+    // logActivity("Compliance Status Changed", `Status set to ${newStatus}`, user);
+    logActivity("Compliance Status Changed", "", FUNCTION_CODE, COLLECTION_NAME, "complianceId", id, `Status set to ${newStatus}`);
+  }, []);
 
   const handleSelectRow = (id) => {
     setSelectedRows(prev =>
@@ -493,12 +500,21 @@ const Compliance = React.memo(function Compliance() {
 
     XLSX.writeFile(workbook, 'Compliance_Datasheet.xlsx');
 
+    // logActivity(
+    //   "Compliance Exported",
+    //   `${exportData.length} records`,
+    //   user
+    // );
     logActivity(
       "Compliance Exported",
-      `${exportData.length} records`,
-      user
+      "",
+      FUNCTION_CODE,
+      COLLECTION_NAME,
+      "",
+      "",
+      `${exportData.length} records`
     );
-  }, [user]);
+  }, []);
 
   const handleExport = React.useCallback(() => {
     if (!filtered.length) {

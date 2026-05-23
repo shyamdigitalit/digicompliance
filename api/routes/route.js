@@ -85,7 +85,7 @@ const getRoutes = [
     { path: '/dynapprvl/fetch', handlers: [jwtHybrdProtect, dynapprvlController.read] },
     { path: '/dynapprvl/acc/filter', handlers: [jwtHybrdProtect, dynapprvlController.filterAccounts] },
     { path: '/file/fetch', handlers: [jwtHybrdProtect, fileOpController.getAllHandler] },
-    { path: '/file/download/:id', handlers: [jwtHybrdProtect, fileOpController.downloadHandler] },
+    { path: '/file/download/:id', handlers: [jwtHybrdProtect, fileOpController.getByIdHandler] },
     { path: '/file/downloadall', handlers: [jwtHybrdProtect, fileOpController.downloadAllHandler] },
     { path: '/activitylog/fetch', handlers: [jwtHybrdProtect, activitylogController.read] },
     { path: '/activitylog/fetchby/:id', handlers: [jwtHybrdProtect, activitylogController.readById] },

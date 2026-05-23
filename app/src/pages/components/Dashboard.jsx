@@ -91,9 +91,25 @@ const Dashboard = () => {
     fetchCompliance()
   }, [fetchCompliance])
 
+  const statusDistribution = React.useCallback((compianceStat) => {
+    const total      = compianceStat?.total || 1;
+    const completed  = compianceStat?.byStatus?.find(s => s.name === "Active")?.count || 0;
+    const inProgress = compianceStat?.byStatus?.find(s => s.name === "Open" || s.name === "Pending")?.count || 0;
+    const inactive    = compianceStat?.byStatus?.find(s => s.name === "Inactive" || s.name === "Closed")?.count || 0;
+    return [
+      { label:"Good", count:completed, pct:Math.round(completed / total * 100), cls:"good" },
+      { label:"Fair", count:inProgress, pct:Math.round(inProgress / total * 100), cls:"fair" },
+      { label:"Poor", count:inactive, pct:Math.round(inactive / total * 100), cls:"poor" },
+    ];
+  }, []);
+
   // Load activity log from localStorage on mount and on window focus
+  const loadActivities = React.useCallback(async () => {
+    const actv = await getActivityLog()
+    // console.log(actv);
+    setActivities(actv)
+  }, []);
   React.useEffect(() => {
-    const loadActivities = () => setActivities(getActivityLog());
     loadActivities();
     window.addEventListener("focus", loadActivities);
     // Also poll every 5s so activities appear quickly after actions
@@ -102,7 +118,7 @@ const Dashboard = () => {
       window.removeEventListener("focus", loadActivities);
       clearInterval(interval);
     };
-  }, []);
+  }, [loadActivities]);
 
   const fetchAllDashData = React.useCallback(async () => {
     setLoading(true);
@@ -116,22 +132,10 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusDistribution]);
   React.useEffect(() => {
     fetchAllDashData();
   }, [fetchAllDashData]);
-
-  const statusDistribution = React.useCallback((compianceStat) => {
-    const total      = compianceStat?.total || 1;
-    const completed  = compianceStat?.byStatus?.find(s => s.name === "Active")?.count || 0;
-    const inProgress = compianceStat?.byStatus?.find(s => s.name === "Open" || s.name === "Pending")?.count || 0;
-    const inactive    = compianceStat?.byStatus?.find(s => s.name === "Inactive" || s.name === "Closed")?.count || 0;
-    return [
-      { label:"Good", count:completed, pct:Math.round(completed / total * 100), cls:"good" },
-      { label:"Fair", count:inProgress, pct:Math.round(inProgress / total * 100), cls:"fair" },
-      { label:"Poor", count:inactive, pct:Math.round(inactive / total * 100), cls:"poor" },
-    ];
-  }, []);
 
   // const stats = React.useMemo(() => ({
   //   total:     complianceData.length,
@@ -263,14 +267,25 @@ const Dashboard = () => {
             <div className="right">
               <div className="panel-header"><h3>Recent Activity</h3></div>
               {(activities.length > 0 ? activities : defaultActivities).slice(0, 6).map((item, i) => (
-                <div className="activity-item" key={i}>
+                <div
+                  className="activity-item"
+                  key={i}
+                  onClick={
+                    item?.activityReferenceFunction?.code==="COMPLIANCE" ? (() => navigate(`/compliance?${item.activityReferenceUniqueFieldName}=${encodeURIComponent(item.activityReferenceUniqueFieldValue)}`))
+                    : item?.activityReferenceFunction?.code==="DOCUMENTS" && (() => navigate(`/document?${item.activityReferenceUniqueFieldName}=${encodeURIComponent(item.activityReferenceUniqueFieldValue)}`))
+                  }
+                >
                   <div className="activity-dot" />
                   <div className="activity-body">
-                    <div className="activity-text">{item.text}</div>
-                    <div className="activity-meta">By: {item.user}</div>
+                    <div className="activity-text">
+                      {item.activityName}&nbsp;
+                      {item.activityReferenceUniqueFieldValue&&`- [ID: ${item.activityReferenceUniqueFieldValue}]`}
+                      {item.activityReferenceInfo&&`:- ${item.activityReferenceInfo}`}
+                    </div>
+                    <div className="activity-meta">By: {item.activityReferenceBy?.acc_uname}</div>
                   </div>
                   <div className="activity-time">
-                    {item.time && item.time.includes("T") ? formatActivityTime(item.time) : item.time}
+                    {item.time && item.time.includes("T") ? formatActivityTime(item.createdAt) : item.createdAt}
                   </div>
                 </div>
               ))}
