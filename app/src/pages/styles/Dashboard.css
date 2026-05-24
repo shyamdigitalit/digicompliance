@@ -449,10 +449,23 @@
 }
 
 .activity-time {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex-direction: column;
   font-size: 11px;
-  color: #9ca3af;
   flex-shrink: 0;
   margin-top: 2px;
+  
+  .timespan {
+    font-size: 0.7rem;
+    color: #537dd1;
+    font-weight: 600;
+  }
+  .date-part {
+    font-size: 0.72rem;
+    color: #9ca3af;
+  }
 }
 
 /* ─── BOTTOM ROW ─────────────────────────────────────── */
@@ -995,8 +1008,8 @@
 .content .activity-item:hover {
   background: #f9fafb;
   border-radius: 10px;
-  padding: 6px 8px;
-  transform: translateX(4px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* Dot animation */

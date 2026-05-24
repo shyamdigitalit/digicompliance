@@ -4,6 +4,27 @@ import { useSelector } from "react-redux";
 import axiosInstance from '../../config/axiosInstance';
 import moment from 'moment';
 
+const DEFAULT_FORM = {
+  plant: "",
+  department: "",
+  complianceType: "",
+  complianceCategorization: "",
+  complianceFrequency: "",
+  criticality: "",
+  penaltyType: "",
+  dueDate: null,
+  legislation: "",
+  complianceHeader: "",
+  complianceDescription: "",
+  complianceApplicability: "",
+  additionalInformation: "",
+  provision: "",
+  complianceStatutoryAuthority: "",
+  location: "",
+  scheduledPeriodicity: "",
+  remarks: "",
+}
+
 const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mode = 'add', initialData, saved, masterData }) {
 
   const { user } = useSelector((state) => state.auth);
@@ -14,27 +35,7 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
   const [removedFileIds, setRemovedFileIds] = React.useState([]);
 
 
-  const [form, setForm] = React.useState({
-    plant: "",
-    department: "",
-    complianceType: "",
-    complianceCategorization: "",
-    complianceFrequency: "",
-    criticality: "",
-    penaltyType: "",
-    dueDate: null,
-    legislation: "",
-    complianceHeader: "",
-    complianceDescription: "",
-    complianceApplicability: "",
-    additionalInformation: "",
-    provision: "",
-    complianceStatutoryAuthority: "",
-    location: "",
-    scheduledPeriodicity: "",
-    remarks: "",
-    // allDocs: []
-  });
+  const [form, setForm] = React.useState(DEFAULT_FORM);
 
   const PLANTS = masterData.plants || [];
   const DEPARTMENTS = masterData.departments || [];
@@ -53,7 +54,7 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
   React.useEffect(() => {
     // console.log(mode);
     // console.log(initialData);
-    if (initialData) {
+    if (initialData && mode !== "add") {
       setForm({
         plant: initialData?.plant?._id || null,
         department: initialData?.department?._id || null,
@@ -74,8 +75,11 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
         scheduledPeriodicity: initialData?.scheduledPeriodicity || "",
         remarks: initialData?.remarks || "",
       })
-    };
-  }, [initialData])
+    }
+    else {
+      setForm(DEFAULT_FORM);
+    }
+  }, [initialData, mode]);
 
 
   // File Options
@@ -189,6 +193,7 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
         formData.append("removedDocs[]", id);
       });
 
+      setForm(DEFAULT_FORM)
       onSubmit(formData);
     } catch (error) {
       console.error(error);
@@ -212,6 +217,12 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
       }
     }
   }, [isHierarchyThree, user]);
+
+  const handleCancel = React.useCallback(() => {
+    if (isSubmitting) return;
+    setForm(DEFAULT_FORM);
+    onCancel();
+  }, [isSubmitting, onCancel]);
 
   return (
     <div className="add-page">
@@ -458,7 +469,7 @@ const AddCompliance = React.memo(function AddCompliance({ onCancel, onSubmit, mo
 
         {/* ACTIONS */}
         <div className="form-actions">
-          <button className="light-btn" onClick={onCancel}>Cancel</button>
+          <button className="light-btn" onClick={handleCancel}>Cancel</button>
           {(saved && mode === 'add') && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Created! Redirecting…</span>}
           {(saved && mode === 'edit') && <span style={{ color: "#16a34a", fontSize: "13px" }}>✓ Updated! Redirecting…</span>}
           <button className="dark-btn" onClick={handleSubmit}>Submit</button>

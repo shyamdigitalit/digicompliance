@@ -25,7 +25,7 @@ const create = async (req, res) => {
         if (existingLog) {
             delete activitylogPayload.activityCode
             const updatedLog = await activitylogModel.findByIdAndUpdate(existingLog?._id, activitylogPayload, { new: true })
-            if (updatedLog) return res.status(201).json({ message: 'Old Activity log updated successfully', success: true, data: savedActivitylog })
+            if (updatedLog) return res.status(201).json({ message: 'Old Activity log updated successfully', success: true, data: existingLog })
         }
         else {
             const newActivitylog = new activitylogModel(activitylogPayload)

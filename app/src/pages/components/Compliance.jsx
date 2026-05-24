@@ -284,7 +284,7 @@ const Compliance = React.memo(function Compliance() {
         console.log(editing);
         if (response.status === 201) {
           // logActivity("Compliance Updated", editing?.complianceId || editing?._id, user);
-          logActivity("Compliance Updated", "", FUNCTION_CODE, COLLECTION_NAME, "complianceId", editing?.complianceId, "");
+          logActivity("Compliance Updated", "", FUNCTION_CODE, COLLECTION_NAME, "complianceId", response.data?.data?.complianceId, "");
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -300,7 +300,7 @@ const Compliance = React.memo(function Compliance() {
         });
         if (response.status === 201) {
           // logActivity("Compliance Added", response.data?.data?.complianceId || "", user);
-          logActivity("Compliance Added", "", FUNCTION_CODE, COLLECTION_NAME, "complianceId", editing?.complianceId, "");
+          logActivity("Compliance Added", "", FUNCTION_CODE, COLLECTION_NAME, "complianceId", response.data?.data?.complianceId, "");
           setSaved(true);
           setTimeout(() => {
             setSaved(false);
@@ -557,7 +557,10 @@ const Compliance = React.memo(function Compliance() {
     <div className="compliance-page">
       {showAddForm ? (
         <AddCompliance
-        onCancel={() => setShowAddForm(false)}
+        onCancel={() => {
+          setEditing(null);
+          setShowAddForm(false);
+        }}
         onSubmit={handleAddEditSubmit}
         initialData={editing}
         mode={editing ? "edit" : "add"}

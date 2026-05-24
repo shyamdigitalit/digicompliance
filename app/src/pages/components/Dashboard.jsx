@@ -110,15 +110,19 @@ const Dashboard = () => {
     setActivities(actv)
   }, []);
   React.useEffect(() => {
-    loadActivities();
-    window.addEventListener("focus", loadActivities);
-    // Also poll every 5s so activities appear quickly after actions
-    const interval = setInterval(loadActivities, 5000);
-    return () => {
-      window.removeEventListener("focus", loadActivities);
-      clearInterval(interval);
-    };
-  }, [loadActivities]);
+    loadActivities()
+  }, [loadActivities])
+
+  // React.useEffect(() => {
+  //   loadActivities();
+  //   window.addEventListener("focus", loadActivities);
+  //   // Also poll every 5s so activities appear quickly after actions
+  //   const interval = setInterval(loadActivities, 5000);
+  //   return () => {
+  //     window.removeEventListener("focus", loadActivities);
+  //     clearInterval(interval);
+  //   };
+  // }, [loadActivities]);
 
   const fetchAllDashData = React.useCallback(async () => {
     setLoading(true);
@@ -285,7 +289,8 @@ const Dashboard = () => {
                     <div className="activity-meta">By: {item.activityReferenceBy?.acc_uname}</div>
                   </div>
                   <div className="activity-time">
-                    {item.time && item.time.includes("T") ? formatActivityTime(item.createdAt) : item.createdAt}
+                    <span className="timespan">{item.createdAt && item.createdAt.includes("T") ? formatActivityTime(item.createdAt) : item.createdAt}</span>
+                    <span className="date-part">{item.createdAt ? moment(item.createdAt).format("DD MMM YYYY, HH:mm") : ""}</span>
                   </div>
                 </div>
               ))}
