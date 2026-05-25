@@ -143,7 +143,6 @@ table {
 
 th, td {
   padding: 12px 14px;
-  font-size: 13px;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
@@ -163,11 +162,6 @@ th:nth-child(9), td:nth-child(9) { min-width: 110px; } /* Due Date */
 th:nth-child(10), td:nth-child(10) { min-width: 120px; } /* Approval Status */
 th:nth-child(11), td:nth-child(11) { min-width: 160px; } /* Actions */
 
-th {
-  color: #6b7280;
-  font-weight: 500;
-  background: #f9fafb;
-}
 
 tr {
   border-bottom: 1px solid #f1f5f9;

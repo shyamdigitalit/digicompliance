@@ -374,8 +374,8 @@ const Documents = React.memo(function Documents() {
           </div>
 
           <div className="table-container" style={{ marginBottom: "2rem" }}>
-            <div style={{ padding: "2rem 2rem 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ fontSize: "1.5rem" }}>All Uploaded Files</div>
+            <div style={{ padding: "2rem 2rem 0", display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+              {/* <div style={{ fontSize: "1rem" }}>All Uploaded Files</div> */}
               <button
                 className="dark-btn"
                 onClick={handleDownloadAll}

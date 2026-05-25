@@ -3,6 +3,7 @@ import axiosInstance from '../../../config/axiosInstance';
 import Loader from '../../../components/loader';
 import { generateAbbreviation } from '../../../utilities/genAbbreviation';
 import { AxiosError } from 'axios';
+
 // import { DndContext, KeyboardSensor, PointerSensor, useDroppable, pointerWithin } from "@dnd-kit/core";
 // import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 // import { CSS } from "@dnd-kit/utilities";
@@ -17,7 +18,7 @@ const Privileges = () => {
     <div className="profile-card privilege-card">
         <h3>Dynamic Privilege Management</h3>
         <p>Manage all user access controls dynamically.</p>
-
+        
         {/* {loading ? <Loader /> : (
             <div className="privilege-tabs plnt-tabs">
                 <button className="privilege-tab" onClick={() => { }}>Team Members</button>
