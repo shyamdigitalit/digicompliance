@@ -223,10 +223,16 @@ textarea {
 .table-scroll-wrap {
   width: 100%;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  /* Hide scrollbar visually but keep functionality */
-  scrollbar-width: thin;
-  scrollbar-color: #e5e7eb transparent;
+  /* -webkit-overflow-scrolling is deprecated/unsupported in many browsers; removed */
+  /* Hide scrollbar visually but keep functionality
+     Use feature query so browsers that don't support
+     `scrollbar-width` (Chrome <121, Safari, iOS Safari, Samsung Internet)
+     ignore these properties. WebKit browsers are handled via
+     ::-webkit-scrollbar rules below. */
+  @supports (scrollbar-width: thin) {
+    scrollbar-width: thin;
+    scrollbar-color: #e5e7eb transparent;
+  }
 }
 
 .table-scroll-wrap::-webkit-scrollbar {
@@ -359,7 +365,9 @@ tr:hover {
   border-bottom: 1px solid #eee;
   margin-bottom: 16px;
   gap: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .approval-tab {
@@ -450,7 +458,7 @@ tr:hover {
 
 .approvers-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
   gap: 10px;
 }
 
@@ -817,6 +825,7 @@ tr:hover {
 }
 /* ── Enhanced Approval Modal ── */
 .approval-modal-overlay {
+  -webkit-backdrop-filter: blur(4px) !important;
   backdrop-filter: blur(4px) !important;
   background: rgba(0, 0, 0, 0.4) !important;
   animation: fadeInOverlay 0.18s ease;

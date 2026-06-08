@@ -214,12 +214,24 @@ const ApprovalFlow = React.memo(function ApprovalFlow() {
         <h3>Dynamic Approval Flow</h3>
         <div className="approval-tabs plnt-tabs">
             {plants.map((t, i) => (
-            <button key={t?._id} className={`approval-tab ${activePlntTab === i ? "active" : ""}`} onClick={() => { setActivePlntTab(i); setSteps([]); }}>{t?.name}</button>
+                <button
+                key={t?._id}
+                className={`approval-tab ${activePlntTab === i ? "active" : ""}`}
+                onClick={() => { setActivePlntTab(i); setSteps([]); }}
+                >
+                    {t?.name}
+                </button>
             ))}
         </div>
         <div className="approval-tabs dept-tabs">
             {departments.map((t, i) => (
-            <button key={t?._id} className={`approval-tab ${activeDeptTab === i ? "active" : ""}`} onClick={() => { setActiveDeptTab(i); setSteps([]); }}>{t?.name}</button>
+                <button
+                key={t?._id}
+                className={`approval-tab ${activeDeptTab === i ? "active" : ""}`}
+                onClick={() => { setActiveDeptTab(i); setSteps([]); }}
+                >
+                    {t?.name}
+                </button>
             ))}
         </div>
 
