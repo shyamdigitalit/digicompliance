@@ -13,6 +13,8 @@ const TAG_LABELS = ["Minimum 1 approver", "Quorum required", "Executive signatur
 const SortableStep = React.memo(function SortableStep({ step, si, children, onRemove }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: step.id });
     const style = { transform: CSS.Transform.toString(transform), transition };
+    console.log(si);
+    
     return (
         <div ref={setNodeRef} style={style} {...attributes}>
             <div className="action-pane" style={{ display:'flex' }}>
