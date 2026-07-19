@@ -63,6 +63,8 @@ const update = async (req, res) => {
     try {
         const activitylogId = req.query.id
         const activitylogPayload = req.body
+        const user = req.user
+        activitylogPayload.activityReferenceBy = user._id
         if (activitylogPayload.activityReferenceFunction) {
             activitylogPayload.activityReferenceFunction = toObjectId(activitylogPayload.activityReferenceFunction)
         }

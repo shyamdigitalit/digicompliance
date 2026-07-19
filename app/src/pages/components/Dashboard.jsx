@@ -289,8 +289,8 @@ const Dashboard = () => {
                     <div className="activity-meta">By: {item.activityReferenceBy?.acc_uname}</div>
                   </div>
                   <div className="activity-time">
-                    <span className="timespan">{item.createdAt && item.createdAt.includes("T") ? formatActivityTime(item.createdAt) : item.createdAt}</span>
-                    <span className="date-part">{item.createdAt ? moment(item.createdAt).format("DD MMM YYYY, HH:mm") : ""}</span>
+                    <span className="timespan">{item.updatedAt && item.updatedAt.includes("T") ? formatActivityTime(item.updatedAt) : item.updatedAt}</span>
+                    <span className="date-part">{item.updatedAt ? moment(item.updatedAt).format("DD MMM YYYY, HH:mm") : ""}</span>
                   </div>
                 </div>
               ))}

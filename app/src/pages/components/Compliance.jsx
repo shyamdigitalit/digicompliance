@@ -667,8 +667,10 @@ const Compliance = React.memo(function Compliance() {
                         <th>Frequency</th>
                         <th>Criticality</th>
                         <th>Status</th>
-                        <th>Due Date</th>
                         <th>Approval Status</th>
+                        <th>Created On</th>
+                        <th>Updated At</th>
+                        <th>Actions</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -695,7 +697,15 @@ const Compliance = React.memo(function Compliance() {
                           <td className="link">{item.complianceId}</td>
                           <td>{item?.plant?.name}</td>
                           <td>{item?.department?.name}</td>
-                          <td>{moment(item?.dueDate).format("DD-MM-YYYY")}</td>
+                          {/* <td>{moment(item?.dueDate).format("DD-MM-YYYY")}</td> */}
+                          <td>
+                            {item.dueDate ? (
+                              <span className={isExpired(item.dueDate) ? "due-date expired" : "due-date"}>
+                                {new Date(item.dueDate).toLocaleDateString()}
+                                {isExpired(item.dueDate) && <span className="expired-badge">Expired</span>}
+                              </span>
+                            ) : "—"}
+                          </td>
                           <td>{item?.complianceType?.name}</td>
                           <td>{item?.complianceCategorization?.name}</td>
                           <td>{item?.complianceFrequency?.name}</td>
@@ -717,18 +727,12 @@ const Compliance = React.memo(function Compliance() {
                             </select>
                           </td>
                           <td>
-                            {item.dueDate ? (
-                              <span className={isExpired(item.dueDate) ? "due-date expired" : "due-date"}>
-                                {new Date(item.dueDate).toLocaleDateString()}
-                                {isExpired(item.dueDate) && <span className="expired-badge">Expired</span>}
-                              </span>
-                            ) : "—"}
-                          </td>
-                          <td>
                             <span className={`approval-badge approval-${getTag(item.approvalStatus)}`}>
                               {item.approvalStatus || "Pending"}
                             </span>
                           </td>
+                          <td>{moment(item.createdAt).format("DD-MM-YYYY HH:mm:ss")}</td>
+                          <td>{moment(item.updatedAt).format("DD-MM-YYYY HH:mm:ss")}</td>
                           <td>
                             <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
                               <button

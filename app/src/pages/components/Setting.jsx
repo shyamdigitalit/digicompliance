@@ -19,7 +19,7 @@ const subMenu = [
   { key: "security", tabName: "Security", level: 0 },
   { key: "notifications", tabName: "Notifications", level: 2 },
   { key: "approval", tabName: "Approval", level: 2 },
-  { key: "privilege", tabName: "Privilege", level: 1 },
+  // { key: "privilege", tabName: "Privilege", level: 1 },
 ]
 
 
